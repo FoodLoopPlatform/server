@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    Shared settings for every project under /tests. MSBuild walks up from each
+    .csproj looking for Directory.Build.props, so nothing needs to be imported
+    manually - just keep new test projects inside this folder.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>
