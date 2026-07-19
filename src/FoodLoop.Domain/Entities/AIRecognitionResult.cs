@@ -1,0 +1,16 @@
+using FoodLoop.Domain.Common;
+
+namespace FoodLoop.Domain.Entities;
+
+/// <summary>Stores AI analysis for an uploaded product image (see AI Design & Workflow doc, section 8).</summary>
+public class AIRecognitionResult : BaseEntity
+{
+    public Guid ListingId { get; set; }
+    public ProductListing? Listing { get; set; }
+
+    public string? DetectedProduct { get; set; }
+    public double ConfidenceScore { get; set; }
+    public DateOnly? ExtractedExpiryDate { get; set; }
+    public string? ExtractedText { get; set; }
+    public bool Reviewed { get; set; }
+}
