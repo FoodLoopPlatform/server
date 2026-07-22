@@ -7,6 +7,8 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHealthChecks();
+
 // ---- Services ----------------------------------------------------------
 
 builder.Services.AddControllers()
@@ -72,11 +74,11 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
+// if (app.Environment.IsDevelopment())
+// {
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+// }
 
 app.UseHttpsRedirection();
 
@@ -86,6 +88,19 @@ app.UseCors("Default");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/", () =>
+{
+    return Results.Ok(new
+    {
+        message = "Welcome to the FoodLoop API!",
+        version = "v1",
+        documentation = "/swagger",
+        health = "/health"
+    });
+});
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 
