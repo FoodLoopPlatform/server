@@ -2,6 +2,7 @@ using FoodLoop.Infrastructure.DependencyInjection;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.API.Middleware;
+using FoodLoop.API.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -40,11 +41,18 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.WebRootPath);
 
+builder.Services.AddOptions<CorsOptions>()
+    .Bind(builder.Configuration.GetSection(CorsOptions.SectionName));
+
+// AddCors' policy delegate below runs outside DI, so we still need a plain instance here;
+// the AddOptions<> above is what makes CorsOptions injectable anywhere else it's needed.
+var corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>() ?? new CorsOptions();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Default", policy =>
     {
-        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        var origins = corsOptions.AllowedOrigins;
         if (builder.Environment.IsDevelopment())
         {
             policy.SetIsOriginAllowed(origin => true)

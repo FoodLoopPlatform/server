@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Infrastructure.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -9,11 +10,11 @@ namespace FoodLoop.Infrastructure.Services;
 
 public class JwtTokenService : IJwtTokenService
 {
-    private readonly JwtSettings _settings;
+    private readonly JwtOptions _settings;
 
-    public JwtTokenService(IOptions<JwtSettings> settings)
+    public JwtTokenService(IOptions<JwtOptions> options)
     {
-        _settings = settings.Value;
+        _settings = options.Value;
     }
 
     public string GenerateAccessToken(Guid userId, string email, IEnumerable<string> roles)

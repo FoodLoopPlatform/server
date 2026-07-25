@@ -3,6 +3,7 @@ using FoodLoop.Application;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Infrastructure.Features.Auth;
 using FoodLoop.Infrastructure.Identity;
+using FoodLoop.Infrastructure.Options;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -44,8 +45,15 @@ public static class InfrastructureServiceRegistration
             .AddDefaultTokenProviders();
 
         // JWT Bearer authentication
-        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
-        var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // AddJwtBearer's options delegate below runs outside DI, so we still need a plain
+        // instance here to build TokenValidationParameters; the AddOptions<> above is what
+        // makes JwtOptions validated + injectable everywhere else (e.g. JwtTokenService).
+        var jwtSettings = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
         services.AddAuthentication(options =>
             {
