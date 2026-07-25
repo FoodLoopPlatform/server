@@ -1,4 +1,3 @@
-using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Domain.Common;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Identity;
@@ -10,9 +9,11 @@ namespace FoodLoop.Infrastructure.Persistence;
 /// <summary>
 /// EF Core context. Inherits IdentityDbContext to get Users/Roles/Claims/Logins/Tokens
 /// tables for free, and adds every other domain table from the Database Design doc.
+/// Data access from services goes through IUnitOfWork/IRepository (see
+/// Persistence/UnitOfWork.cs and Persistence/Repositories/) rather than this type directly.
 /// </summary>
 public class ApplicationDbContext
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>, IApplicationDbContext
+    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 

@@ -1,24 +1,23 @@
 using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Services;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Identity;
-using FoodLoop.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace FoodLoop.Infrastructure.Services;
 
 public class UserService : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UserService(UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext)
+    public UserService(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
     {
         _userManager = userManager;
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<UserDto> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -69,35 +68,15 @@ public class UserService : IUserService
 
     public async Task<IReadOnlyList<AddressDto>> GetAddressesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        // Projected inline (rather than via a ToDto(...) call) so EF Core can translate
-        // the projection into SQL instead of requiring client-side evaluation.
-        return await _dbContext.Addresses
-            .Where(a => a.UserId == userId)
-            .OrderByDescending(a => a.IsDefault)
-            .ThenByDescending(a => a.CreatedAt)
-            .Select(a => new AddressDto
-            {
-                Id = a.Id,
-                AddressType = a.AddressType,
-                City = a.City,
-                District = a.District,
-                Street = a.Street,
-                BuildingNo = a.BuildingNo,
-                Floor = a.Floor,
-                ApartmentNo = a.ApartmentNo,
-                Notes = a.Notes,
-                Latitude = a.Latitude,
-                Longitude = a.Longitude,
-                IsDefault = a.IsDefault,
-            })
-            .ToListAsync(cancellationToken);
+        var addresses = await _unitOfWork.Addresses.GetByUserIdAsync(userId, cancellationToken);
+        return addresses.Select(ToDto).ToList();
     }
 
     public async Task<AddressDto> CreateAddressAsync(Guid userId, CreateAddressRequest request, CancellationToken cancellationToken = default)
     {
         if (request.IsDefault)
         {
-            await ClearExistingDefaultAsync(userId, cancellationToken);
+            await _unitOfWork.Addresses.ClearDefaultAsync(userId, cancellationToken: cancellationToken);
         }
 
         var address = new Address
@@ -116,16 +95,15 @@ public class UserService : IUserService
             IsDefault = request.IsDefault,
         };
 
-        _dbContext.Addresses.Add(address);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _unitOfWork.Addresses.Add(address);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToDto(address);
     }
 
     public async Task<AddressDto> UpdateAddressAsync(Guid userId, Guid addressId, UpdateAddressRequest request, CancellationToken cancellationToken = default)
     {
-        var address = await _dbContext.Addresses
-            .FirstOrDefaultAsync(a => a.Id == addressId, cancellationToken)
+        var address = await _unitOfWork.Addresses.GetByIdAsync(addressId, cancellationToken)
             ?? throw new NotFoundException(nameof(Address), addressId);
 
         if (address.UserId != userId)
@@ -145,40 +123,27 @@ public class UserService : IUserService
         if (request.IsDefault.HasValue)
         {
             if (request.IsDefault.Value)
-                await ClearExistingDefaultAsync(userId, cancellationToken, exceptAddressId: address.Id);
+                await _unitOfWork.Addresses.ClearDefaultAsync(userId, exceptAddressId: address.Id, cancellationToken: cancellationToken);
 
             address.IsDefault = request.IsDefault.Value;
         }
 
         address.UpdatedAt = DateTimeOffset.UtcNow;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToDto(address);
     }
 
     public async Task DeleteAddressAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default)
     {
-        var address = await _dbContext.Addresses
-            .FirstOrDefaultAsync(a => a.Id == addressId, cancellationToken)
+        var address = await _unitOfWork.Addresses.GetByIdAsync(addressId, cancellationToken)
             ?? throw new NotFoundException(nameof(Address), addressId);
 
         if (address.UserId != userId)
             throw new ForbiddenAccessException("You cannot delete another user's address.");
 
-        _dbContext.Addresses.Remove(address);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task ClearExistingDefaultAsync(Guid userId, CancellationToken cancellationToken, Guid? exceptAddressId = null)
-    {
-        var currentDefaults = await _dbContext.Addresses
-            .Where(a => a.UserId == userId && a.IsDefault && a.Id != exceptAddressId)
-            .ToListAsync(cancellationToken);
-
-        foreach (var addr in currentDefaults)
-        {
-            addr.IsDefault = false;
-        }
+        _unitOfWork.Addresses.Remove(address);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<ApplicationUser> FindUserOrThrowAsync(Guid userId)

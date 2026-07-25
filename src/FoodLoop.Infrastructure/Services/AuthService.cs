@@ -6,9 +6,7 @@ using FoodLoop.Application.Services;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Identity;
-using FoodLoop.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FoodLoop.Infrastructure.Services;
@@ -16,20 +14,20 @@ namespace FoodLoop.Infrastructure.Services;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly ApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtTokenService _tokenService;
     private readonly IEmailService _emailService;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
-        ApplicationDbContext dbContext,
+        IUnitOfWork unitOfWork,
         IJwtTokenService tokenService,
         IEmailService emailService,
         ILogger<AuthService> logger)
     {
         _userManager = userManager;
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _tokenService = tokenService;
         _emailService = emailService;
         _logger = logger;
@@ -66,28 +64,42 @@ public class AuthService : IAuthService
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
-        var createResult = await _userManager.CreateAsync(user, request.Password);
-        if (!createResult.Succeeded)
+        // User creation goes through UserManager (its own SaveChanges call against the
+        // same DbContext), and the draft Store goes through the Unit of Work — wrapping
+        // both in one transaction means a failure partway through leaves neither behind.
+        await _unitOfWork.BeginTransactionAsync(cancellationToken);
+        try
         {
-            return Result<AuthResponse>.Fail(
-                "Registration failed.",
-                createResult.Errors.Select(e => e.Description));
-        }
-
-        var assignedRole = isBusinessAccount ? AppRole.Merchant : AppRole.Consumer;
-        await _userManager.AddToRoleAsync(user, assignedRole);
-
-        if (isBusinessAccount)
-        {
-            _dbContext.Stores.Add(new Store
+            var createResult = await _userManager.CreateAsync(user, request.Password);
+            if (!createResult.Succeeded)
             {
-                OwnerId = user.Id,
-                Name = request.BusinessName!.Trim(),
-                StoreType = request.AccountType == AccountType.Charity ? StoreType.Charity : StoreType.Standard,
-                BusinessCategory = request.BusinessCategory,
-                VerificationStatus = VerificationStatus.Unverified,
-            });
-            await _dbContext.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                return Result<AuthResponse>.Fail(
+                    "Registration failed.",
+                    createResult.Errors.Select(e => e.Description));
+            }
+
+            var assignedRole = isBusinessAccount ? AppRole.Merchant : AppRole.Consumer;
+            await _userManager.AddToRoleAsync(user, assignedRole);
+
+            if (isBusinessAccount)
+            {
+                _unitOfWork.Stores.Add(new Store
+                {
+                    OwnerId = user.Id,
+                    Name = request.BusinessName!.Trim(),
+                    StoreType = request.AccountType == AccountType.Charity ? StoreType.Charity : StoreType.Standard,
+                    BusinessCategory = request.BusinessCategory,
+                    VerificationStatus = VerificationStatus.Unverified,
+                });
+            }
+
+            await _unitOfWork.CommitTransactionAsync(cancellationToken);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+            throw;
         }
 
         await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName, cancellationToken);
@@ -121,8 +133,7 @@ public class AuthService : IAuthService
 
     public async Task<Result<AuthResponse>> RefreshTokenAsync(string refreshToken, string? ipAddress, CancellationToken cancellationToken = default)
     {
-        var existingToken = await _dbContext.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken, cancellationToken);
+        var existingToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken, cancellationToken);
 
         if (existingToken == null)
         {
@@ -135,9 +146,7 @@ public class AuthService : IAuthService
             // revoke every other active token for this user as a precaution.
             if (existingToken.IsRevoked)
             {
-                var siblingTokens = await _dbContext.RefreshTokens
-                    .Where(rt => rt.UserId == existingToken.UserId && rt.RevokedAt == null)
-                    .ToListAsync(cancellationToken);
+                var siblingTokens = await _unitOfWork.RefreshTokens.GetNonRevokedByUserIdAsync(existingToken.UserId, cancellationToken);
 
                 foreach (var sibling in siblingTokens)
                 {
@@ -145,7 +154,7 @@ public class AuthService : IAuthService
                     sibling.RevokedByIp = ipAddress;
                 }
 
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 _logger.LogWarning("Refresh token reuse detected for user {UserId}. All sessions revoked.", existingToken.UserId);
             }
 
@@ -170,13 +179,12 @@ public class AuthService : IAuthService
 
     public async Task<Result> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        var existingToken = await _dbContext.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken, cancellationToken);
+        var existingToken = await _unitOfWork.RefreshTokens.GetByTokenAsync(refreshToken, cancellationToken);
 
         if (existingToken is { IsActive: true })
         {
             existingToken.RevokedAt = DateTimeOffset.UtcNow;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
         return Result.Ok();
@@ -213,16 +221,14 @@ public class AuthService : IAuthService
         }
 
         // Resetting the password invalidates all existing sessions.
-        var tokens = await _dbContext.RefreshTokens
-            .Where(rt => rt.UserId == user.Id && rt.RevokedAt == null)
-            .ToListAsync(cancellationToken);
+        var tokens = await _unitOfWork.RefreshTokens.GetNonRevokedByUserIdAsync(user.Id, cancellationToken);
 
         foreach (var t in tokens)
         {
             t.RevokedAt = DateTimeOffset.UtcNow;
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Ok();
     }
@@ -236,7 +242,7 @@ public class AuthService : IAuthService
         var refreshTokenString = refreshTokenValue ?? _tokenService.GenerateRefreshToken();
         var refreshTokenExpiry = _tokenService.GetRefreshTokenExpiry();
 
-        _dbContext.RefreshTokens.Add(new RefreshToken
+        _unitOfWork.RefreshTokens.Add(new RefreshToken
         {
             UserId = user.Id,
             Token = refreshTokenString,
@@ -244,7 +250,7 @@ public class AuthService : IAuthService
             CreatedByIp = ipAddress,
         });
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new AuthResponse
         {

@@ -24,7 +24,7 @@ public static class InfrastructureServiceRegistration
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // ASP.NET Core Identity for password hashing, lockout, role management, tokens, etc.
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
