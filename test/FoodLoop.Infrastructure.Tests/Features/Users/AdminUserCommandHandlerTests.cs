@@ -31,7 +31,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.FindByEmailAsync("new@example.com")).ReturnsAsync((ApplicationUser?)null);
         _userManager.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), "Password123!"))
             .ReturnsAsync(IdentityResult.Success);
-        _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Consumer))
+        _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Customer))
             .ReturnsAsync(IdentityResult.Success);
 
         var handler = new CreateUserCommandHandler(_userManager.Object);
@@ -40,7 +40,7 @@ public class AdminUserCommandHandlerTests : IDisposable
             Email = "new@example.com",
             FullName = "New User",
             Password = "Password123!",
-            Role = AppRole.Consumer,
+            Role = AppRole.Customer,
             Status = "Active"
         };
         var command = new CreateUserCommand(request);
@@ -52,7 +52,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         result.Success.Should().BeTrue();
         result.Data.Should().NotBeNull();
         result.Data!.Email.Should().Be("new@example.com");
-        result.Data.Roles.Should().Contain(AppRole.Consumer);
+        result.Data.Roles.Should().Contain(AppRole.Customer);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         var user = new ApplicationUser { Id = Guid.NewGuid(), Email = "old@example.com", FullName = "Old Name" };
         _userManager.Setup(m => m.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
-        _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { AppRole.Consumer });
+        _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { AppRole.Customer });
 
         var handler = new UpdateUserCommandHandler(_userManager.Object);
         var request = new UpdateUserRequest
@@ -140,7 +140,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         var userId = Guid.NewGuid();
         var user = new ApplicationUser { Id = userId, Email = "get@example.com", FullName = "Get Me" };
         _userManager.Setup(m => m.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
-        _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { AppRole.Courier });
+        _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { AppRole.Charity });
 
         var handler = new GetUserByIdQueryHandler(_userManager.Object);
         var query = new GetUserByIdQuery(userId);
@@ -151,7 +151,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.FullName.Should().Be("Get Me");
-        result.Roles.Should().Contain(AppRole.Courier);
+        result.Roles.Should().Contain(AppRole.Charity);
     }
 
     [Fact]
@@ -174,8 +174,8 @@ public class AdminUserCommandHandlerTests : IDisposable
     public async Task ListUsers_should_filter_and_paginate_results_efficiently()
     {
         // Arrange
-        var adminRole = new ApplicationRole(AppRole.Administrator);
-        var consumerRole = new ApplicationRole(AppRole.Consumer);
+        var adminRole = new ApplicationRole(AppRole.Admin);
+        var consumerRole = new ApplicationRole(AppRole.Customer);
         _dbContext.Roles.AddRange(adminRole, consumerRole);
 
         var user1 = new ApplicationUser { Id = Guid.NewGuid(), UserName = "user1@example.com", Email = "user1@example.com", FullName = "Amina Ahmed", Status = UserStatus.Active, CreatedAt = DateTimeOffset.UtcNow };
@@ -192,8 +192,8 @@ public class AdminUserCommandHandlerTests : IDisposable
 
         var handler = new ListUsersQueryHandler(_dbContext);
 
-        // Scenario 1: Filter by Role = Consumer
-        var queryRole = new ListUsersQuery(Role: AppRole.Consumer);
+        // Scenario 1: Filter by Role = Customer
+        var queryRole = new ListUsersQuery(Role: AppRole.Customer);
         var resultRole = await handler.Handle(queryRole, CancellationToken.None);
         resultRole.Should().HaveCount(1);
         resultRole.First().FullName.Should().Be("Amina Ahmed");

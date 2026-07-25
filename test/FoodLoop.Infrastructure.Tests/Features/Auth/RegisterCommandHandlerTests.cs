@@ -39,7 +39,7 @@ public class RegisterCommandHandlerTests : IDisposable
         Name = "Amina Test",
         Email = "amina@example.com",
         Password = "Password123!",
-        AccountType = AccountType.User,
+        Role = AppRole.Customer,
     };
 
     [Fact]
@@ -48,7 +48,7 @@ public class RegisterCommandHandlerTests : IDisposable
         // Arrange
         var handler = CreateHandler();
         var request = ConsumerRegisterRequest();
-        request.AccountType = AccountType.StoreOwner;
+        request.Role = AppRole.Merchant;
         request.BusinessName = null;
 
         var command = new RegisterCommand(request, "127.0.0.1");
@@ -87,7 +87,7 @@ public class RegisterCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
         _userManager.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
             .ReturnsAsync(IdentityResult.Success);
-        _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Consumer))
+        _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Customer))
             .ReturnsAsync(IdentityResult.Success);
 
         _tokenIssuer.Setup(t => t.IssueTokensAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), null))
@@ -123,7 +123,7 @@ public class RegisterCommandHandlerTests : IDisposable
 
         var handler = CreateHandler();
         var request = ConsumerRegisterRequest();
-        request.AccountType = AccountType.StoreOwner;
+        request.Role = AppRole.Merchant;
         request.BusinessName = "Amina Bakery";
         request.BusinessCategory = BusinessCategory.Bakery;
 

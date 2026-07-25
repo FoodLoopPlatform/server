@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
+using FoodLoop.Infrastructure.Options;
 using FoodLoop.Infrastructure.Services;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -8,9 +9,9 @@ namespace FoodLoop.Infrastructure.Tests.Services;
 
 public class JwtTokenServiceTests
 {
-    private static JwtTokenService CreateService(JwtSettings? settings = null)
+    private static JwtTokenService CreateService(JwtOptions? settings = null)
     {
-        settings ??= new JwtSettings
+        settings ??= new JwtOptions
         {
             Issuer = "FoodLoop.Tests",
             Audience = "FoodLoop.Tests.Client",
@@ -20,7 +21,7 @@ public class JwtTokenServiceTests
             RefreshTokenExpirationDays = 30,
         };
 
-        return new JwtTokenService(Options.Create(settings));
+        return new JwtTokenService(Microsoft.Extensions.Options.Options.Create(settings));
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GenerateAccessToken_should_set_issuer_and_audience_from_settings()
     {
-        var settings = new JwtSettings
+        var settings = new JwtOptions
         {
             Issuer = "custom-issuer",
             Audience = "custom-audience",
@@ -71,7 +72,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GetAccessTokenExpiry_should_be_settings_driven_minutes_from_now()
     {
-        var service = CreateService(new JwtSettings
+        var service = CreateService(new JwtOptions
         {
             Issuer = "i",
             Audience = "a",
@@ -87,7 +88,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void GetRefreshTokenExpiry_should_be_settings_driven_days_from_now()
     {
-        var service = CreateService(new JwtSettings
+        var service = CreateService(new JwtOptions
         {
             Issuer = "i",
             Audience = "a",
