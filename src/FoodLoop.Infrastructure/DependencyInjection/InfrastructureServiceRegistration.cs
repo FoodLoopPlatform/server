@@ -1,7 +1,9 @@
 using System.Text;
+using FoodLoop.Application;
 using FoodLoop.Application.Common.Interfaces;
-using FoodLoop.Application.Services;
+using FoodLoop.Infrastructure.Features.Auth;
 using FoodLoop.Infrastructure.Identity;
+using FoodLoop.Infrastructure.Options;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -24,7 +26,7 @@ public static class InfrastructureServiceRegistration
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // ASP.NET Core Identity for password hashing, lockout, role management, tokens, etc.
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
@@ -43,8 +45,15 @@ public static class InfrastructureServiceRegistration
             .AddDefaultTokenProviders();
 
         // JWT Bearer authentication
-        services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
-        var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>() ?? new JwtSettings();
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // AddJwtBearer's options delegate below runs outside DI, so we still need a plain
+        // instance here to build TokenValidationParameters; the AddOptions<> above is what
+        // makes JwtOptions validated + injectable everywhere else (e.g. JwtTokenService).
+        var jwtSettings = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
         services.AddAuthentication(options =>
             {
@@ -73,10 +82,16 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IEmailService, NullEmailService>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IStoreService, StoreService>();
         services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
+
+        // CQRS: commands/queries live in the Application assembly, handlers live here in
+        // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other
+        // Infrastructure-only concerns), so MediatR needs to scan both assemblies.
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
+            AssemblyReference.Assembly,
+            typeof(InfrastructureServiceRegistration).Assembly));
+
+        services.AddScoped<IAuthTokenIssuer, AuthTokenIssuer>();
 
         return services;
     }

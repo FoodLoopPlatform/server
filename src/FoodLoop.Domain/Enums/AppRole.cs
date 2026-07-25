@@ -4,14 +4,19 @@ namespace FoodLoop.Domain.Enums;
 /// Canonical role names used for RBAC. These are seeded as ASP.NET Core Identity
 /// roles at startup (see Infrastructure/Identity/IdentitySeeder.cs) and referenced
 /// via [Authorize(Roles = ...)] rather than a hard enum on the user, since Identity
-/// roles are string-based.
+/// roles are string-based. This is the single source of truth for a user's account
+/// type — there is no separate AccountType concept; Customer/Merchant/Charity are
+/// chosen directly at signup, and Admin is granted only by an existing admin.
 /// </summary>
 public static class AppRole
 {
-    public const string Consumer = "Consumer";
+    public const string Customer = "Customer";
     public const string Merchant = "Merchant";
-    public const string Courier = "Courier";
-    public const string Administrator = "Administrator";
+    public const string Charity = "Charity";
+    public const string Admin = "Admin";
 
-    public static readonly string[] All = { Consumer, Merchant, Courier, Administrator };
+    /// <summary>All roles a user may self-select at registration (excludes Admin).</summary>
+    public static readonly string[] SelfRegisterable = { Customer, Merchant, Charity };
+
+    public static readonly string[] All = { Customer, Merchant, Charity, Admin };
 }

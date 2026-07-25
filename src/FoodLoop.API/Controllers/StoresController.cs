@@ -2,8 +2,10 @@ using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Stores;
-using FoodLoop.Application.Services;
+using FoodLoop.Application.Features.Stores.Commands;
+using FoodLoop.Application.Features.Stores.Queries;
 using FoodLoop.Domain.Enums;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,15 +20,15 @@ namespace FoodLoop.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("stores")]
-[Authorize(Roles = AppRole.Merchant)]
+[Authorize(Roles = AppRole.Merchant + "," + AppRole.Charity)]
 public class StoresController : ControllerBase
 {
-    private readonly IStoreService _storeService;
+    private readonly ISender _mediator;
     private readonly ICurrentUserService _currentUser;
 
-    public StoresController(IStoreService storeService, ICurrentUserService currentUser)
+    public StoresController(ISender mediator, ICurrentUserService currentUser)
     {
-        _storeService = storeService;
+        _mediator = mediator;
         _currentUser = currentUser;
     }
 
@@ -38,7 +40,7 @@ public class StoresController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMyStore(CancellationToken cancellationToken)
     {
-        var store = await _storeService.GetMyStoreAsync(OwnerId, cancellationToken);
+        var store = await _mediator.Send(new GetMyStoreQuery(OwnerId), cancellationToken);
         return Ok(ApiResponse<StoreDto>.Ok(store));
     }
 
@@ -46,7 +48,7 @@ public class StoresController : ControllerBase
     [HttpPatch("me/location")]
     public async Task<IActionResult> UpdateLocation([FromBody] UpdateStoreLocationRequest request, CancellationToken cancellationToken)
     {
-        var store = await _storeService.UpdateLocationAsync(OwnerId, request, cancellationToken);
+        var store = await _mediator.Send(new UpdateStoreLocationCommand(OwnerId, request), cancellationToken);
         return Ok(ApiResponse<StoreDto>.Ok(store));
     }
 
@@ -69,7 +71,7 @@ public class StoresController : ControllerBase
             ContentType = request.File.ContentType,
         };
 
-        var store = await _storeService.UploadDocumentAsync(OwnerId, request.Type, uploadRequest, cancellationToken);
+        var store = await _mediator.Send(new UploadStoreDocumentCommand(OwnerId, request.Type, uploadRequest), cancellationToken);
         return Ok(ApiResponse<StoreDto>.Ok(store));
     }
 }

@@ -7,7 +7,7 @@ namespace FoodLoop.Domain.Entities;
 /// established now so migrations and relations are stable from the start.
 ///
 /// A draft Store (Name + StoreType + BusinessCategory only, no location yet) is created by
-/// AuthService.RegisterAsync when the signup's AccountType is StoreOwner/Charity — matching
+/// RegisterCommandHandler when the signup's Role is Merchant/Charity — matching
 /// business_signup_step_1. Location and documents are filled in afterwards via
 /// StoreOnboardingController, matching business_verification_location (step 2) and
 /// verification_pending_step_3 (step 3).</summary>

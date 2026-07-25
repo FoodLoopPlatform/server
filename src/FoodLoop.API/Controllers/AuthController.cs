@@ -1,6 +1,7 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.DTOs.Auth;
-using FoodLoop.Application.Services;
+using FoodLoop.Application.Features.Auth.Commands;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FoodLoop.API.Controllers;
@@ -9,11 +10,11 @@ namespace FoodLoop.API.Controllers;
 [Route("auth")]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly ISender _mediator;
 
-    public AuthController(IAuthService authService)
+    public AuthController(ISender mediator)
     {
-        _authService = authService;
+        _mediator = mediator;
     }
 
     private string? ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -22,7 +23,7 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
-        var result = await _authService.RegisterAsync(request, ClientIp, cancellationToken);
+        var result = await _mediator.Send(new RegisterCommand(request, ClientIp), cancellationToken);
         if (!result.Success)
             return BadRequest(ApiResponse.Fail(result.Message ?? "Registration failed.", result.Errors));
 
@@ -33,7 +34,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        var result = await _authService.LoginAsync(request, ClientIp, cancellationToken);
+        var result = await _mediator.Send(new LoginCommand(request, ClientIp), cancellationToken);
         if (!result.Success)
             return Unauthorized(ApiResponse.Fail(result.Message ?? "Invalid credentials."));
 
@@ -44,7 +45,7 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var result = await _authService.RefreshTokenAsync(request.RefreshToken, ClientIp, cancellationToken);
+        var result = await _mediator.Send(new RefreshTokenCommand(request.RefreshToken, ClientIp), cancellationToken);
         if (!result.Success)
             return Unauthorized(ApiResponse.Fail(result.Message ?? "Invalid refresh token."));
 
@@ -55,7 +56,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
     {
-        await _authService.LogoutAsync(request.RefreshToken, cancellationToken);
+        await _mediator.Send(new LogoutCommand(request.RefreshToken), cancellationToken);
         return Ok(ApiResponse.Ok("Logged out."));
     }
 
@@ -63,7 +64,7 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        await _authService.ForgotPasswordAsync(request.Email, cancellationToken);
+        await _mediator.Send(new ForgotPasswordCommand(request.Email), cancellationToken);
         // Always 200, regardless of whether the email exists, to avoid account enumeration.
         return Ok(ApiResponse.Ok("If that email is registered, a reset link has been sent."));
     }
@@ -72,7 +73,7 @@ public class AuthController : ControllerBase
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        var result = await _authService.ResetPasswordAsync(request, cancellationToken);
+        var result = await _mediator.Send(new ResetPasswordCommand(request), cancellationToken);
         if (!result.Success)
             return BadRequest(ApiResponse.Fail(result.Message ?? "Unable to reset password.", result.Errors));
 
