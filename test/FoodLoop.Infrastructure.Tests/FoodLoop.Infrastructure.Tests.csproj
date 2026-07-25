@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FoodLoop.Infrastructure\FoodLoop.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\FoodLoop.Application\FoodLoop.Application.csproj" />
   </ItemGroup>
 
 </Project>
