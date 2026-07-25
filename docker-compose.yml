@@ -1,19 +1,14 @@
-# Local SQL Server for development. Run: docker compose up -d
-# Note: SQL Server requires a "strong" password (upper+lower+digit+symbol, 8+ chars)
-# or the container will refuse to start.
-services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: foodloop-sqlserver
-    restart: unless-stopped
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
-      MSSQL_PID: "Developer"
-    ports:
-      - "1433:1433"
-    volumes:
-      - foodloop_mssql_data:/var/opt/mssql
+version: "3.9"
 
-volumes:
-  foodloop_mssql_data:
+services:
+  foodloop-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foodloop-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080

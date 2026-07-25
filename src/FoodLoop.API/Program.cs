@@ -2,17 +2,20 @@ using FoodLoop.Infrastructure.DependencyInjection;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.API.Middleware;
+using FoodLoop.API.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddHealthChecks();
 
 // ---- Services ----------------------------------------------------------
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Enums (AccountType, AddressType, StoreType, etc.) go over the wire as strings
+        // Enums (AddressType, StoreType, VerificationStatus, etc.) go over the wire as strings
         // ("StoreOwner", not 1) so the request/response bodies match what the UI sends.
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
@@ -38,11 +41,18 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment.WebRootPath);
 
+builder.Services.AddOptions<CorsOptions>()
+    .Bind(builder.Configuration.GetSection(CorsOptions.SectionName));
+
+// AddCors' policy delegate below runs outside DI, so we still need a plain instance here;
+// the AddOptions<> above is what makes CorsOptions injectable anywhere else it's needed.
+var corsOptions = builder.Configuration.GetSection(CorsOptions.SectionName).Get<CorsOptions>() ?? new CorsOptions();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Default", policy =>
     {
-        var origins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        var origins = corsOptions.AllowedOrigins;
         if (builder.Environment.IsDevelopment())
         {
             policy.SetIsOriginAllowed(origin => true)
@@ -72,11 +82,11 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
+// if (app.Environment.IsDevelopment())
+// {
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+// }
 
 app.UseHttpsRedirection();
 
@@ -86,6 +96,19 @@ app.UseCors("Default");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/", () =>
+{
+    return Results.Ok(new
+    {
+        message = "Welcome to the FoodLoop API!",
+        version = "v1",
+        documentation = "/swagger",
+        health = "/health"
+    });
+});
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 

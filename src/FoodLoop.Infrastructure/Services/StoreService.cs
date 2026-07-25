@@ -5,18 +5,17 @@ using FoodLoop.Application.DTOs.Stores;
 using FoodLoop.Application.Services;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
 
 namespace FoodLoop.Infrastructure.Services;
 
 public class StoreService : IStoreService
 {
-    private readonly IApplicationDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
 
-    public StoreService(IApplicationDbContext dbContext, IFileStorageService fileStorage)
+    public StoreService(IUnitOfWork unitOfWork, IFileStorageService fileStorage)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
     }
 
@@ -38,7 +37,7 @@ public class StoreService : IStoreService
         store.Longitude = request.Longitude;
         store.UpdatedAt = DateTimeOffset.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         return ToDto(store);
     }
 
@@ -65,7 +64,7 @@ public class StoreService : IStoreService
         }
         else
         {
-            _dbContext.StoreVerifications.Add(new StoreVerification
+            store.Verifications.Add(new StoreVerification
             {
                 StoreId = store.Id,
                 VerificationType = verificationType,
@@ -82,16 +81,14 @@ public class StoreService : IStoreService
         }
 
         store.UpdatedAt = DateTimeOffset.UtcNow;
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToDto(store);
     }
 
     private async Task<Store> FindStoreOrThrowAsync(Guid ownerId, CancellationToken cancellationToken)
     {
-        var store = await _dbContext.Stores
-            .Include(s => s.Verifications)
-            .FirstOrDefaultAsync(s => s.OwnerId == ownerId, cancellationToken);
+        var store = await _unitOfWork.Stores.GetByOwnerIdAsync(ownerId, cancellationToken);
 
         return store ?? throw new NotFoundException(
             "No store was found for this account. Business accounts get a draft store automatically at registration.");
