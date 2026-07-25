@@ -1,7 +1,9 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Users;
-using FoodLoop.Application.Services;
+using FoodLoop.Application.Features.Users.Commands;
+using FoodLoop.Application.Features.Users.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,12 +14,12 @@ namespace FoodLoop.API.Controllers;
 [Authorize]
 public class UsersController : ControllerBase
 {
-    private readonly IUserService _userService;
+    private readonly ISender _mediator;
     private readonly ICurrentUserService _currentUser;
 
-    public UsersController(IUserService userService, ICurrentUserService currentUser)
+    public UsersController(ISender mediator, ICurrentUserService currentUser)
     {
-        _userService = userService;
+        _mediator = mediator;
         _currentUser = currentUser;
     }
 
@@ -27,7 +29,7 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
-        var user = await _userService.GetCurrentUserAsync(UserId, cancellationToken);
+        var user = await _mediator.Send(new GetCurrentUserQuery(UserId), cancellationToken);
         return Ok(ApiResponse<UserDto>.Ok(user));
     }
 
@@ -35,7 +37,7 @@ public class UsersController : ControllerBase
     [HttpPatch("me")]
     public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken)
     {
-        var user = await _userService.UpdateProfileAsync(UserId, request, cancellationToken);
+        var user = await _mediator.Send(new UpdateProfileCommand(UserId, request), cancellationToken);
         return Ok(ApiResponse<UserDto>.Ok(user));
     }
 
@@ -43,7 +45,7 @@ public class UsersController : ControllerBase
     [HttpPatch("me/preferences")]
     public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesRequest request, CancellationToken cancellationToken)
     {
-        await _userService.UpdatePreferencesAsync(UserId, request, cancellationToken);
+        await _mediator.Send(new UpdatePreferencesCommand(UserId, request), cancellationToken);
         return Ok(ApiResponse.Ok("Preferences updated."));
     }
 
@@ -51,7 +53,7 @@ public class UsersController : ControllerBase
     [HttpGet("me/addresses")]
     public async Task<IActionResult> GetAddresses(CancellationToken cancellationToken)
     {
-        var addresses = await _userService.GetAddressesAsync(UserId, cancellationToken);
+        var addresses = await _mediator.Send(new GetAddressesQuery(UserId), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AddressDto>>.Ok(addresses));
     }
 
@@ -59,7 +61,7 @@ public class UsersController : ControllerBase
     [HttpPost("me/addresses")]
     public async Task<IActionResult> CreateAddress([FromBody] CreateAddressRequest request, CancellationToken cancellationToken)
     {
-        var address = await _userService.CreateAddressAsync(UserId, request, cancellationToken);
+        var address = await _mediator.Send(new CreateAddressCommand(UserId, request), cancellationToken);
         return CreatedAtAction(nameof(GetAddresses), ApiResponse<AddressDto>.Ok(address));
     }
 
@@ -67,7 +69,7 @@ public class UsersController : ControllerBase
     [HttpPatch("me/addresses/{id:guid}")]
     public async Task<IActionResult> UpdateAddress(Guid id, [FromBody] UpdateAddressRequest request, CancellationToken cancellationToken)
     {
-        var address = await _userService.UpdateAddressAsync(UserId, id, request, cancellationToken);
+        var address = await _mediator.Send(new UpdateAddressCommand(UserId, id, request), cancellationToken);
         return Ok(ApiResponse<AddressDto>.Ok(address));
     }
 
@@ -75,7 +77,7 @@ public class UsersController : ControllerBase
     [HttpDelete("me/addresses/{id:guid}")]
     public async Task<IActionResult> DeleteAddress(Guid id, CancellationToken cancellationToken)
     {
-        await _userService.DeleteAddressAsync(UserId, id, cancellationToken);
+        await _mediator.Send(new DeleteAddressCommand(UserId, id), cancellationToken);
         return NoContent();
     }
 }

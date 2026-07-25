@@ -1,6 +1,7 @@
 using System.Text;
+using FoodLoop.Application;
 using FoodLoop.Application.Common.Interfaces;
-using FoodLoop.Application.Services;
+using FoodLoop.Infrastructure.Features.Auth;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Services;
@@ -73,10 +74,16 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IEmailService, NullEmailService>();
-        services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IStoreService, StoreService>();
         services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
+
+        // CQRS: commands/queries live in the Application assembly, handlers live here in
+        // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other
+        // Infrastructure-only concerns), so MediatR needs to scan both assemblies.
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
+            AssemblyReference.Assembly,
+            typeof(InfrastructureServiceRegistration).Assembly));
+
+        services.AddScoped<IAuthTokenIssuer, AuthTokenIssuer>();
 
         return services;
     }
