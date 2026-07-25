@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FoodLoop.Infrastructure.Identity;
 
-/// <summary>Ensures the RBAC roles (Consumer, Merchant, Courier, Administrator) exist on startup.</summary>
+/// <summary>Ensures the RBAC roles (Customer, Merchant, Charity, Admin) exist on startup.</summary>
 public static class IdentitySeeder
 {
     public static async Task SeedRolesAsync(IServiceProvider services)

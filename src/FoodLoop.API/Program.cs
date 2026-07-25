@@ -14,7 +14,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Enums (AccountType, AddressType, StoreType, etc.) go over the wire as strings
+        // Enums (AddressType, StoreType, VerificationStatus, etc.) go over the wire as strings
         // ("StoreOwner", not 1) so the request/response bodies match what the UI sends.
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });

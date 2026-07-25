@@ -33,15 +33,22 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
     {
         var request = command.Request;
 
-        // "User" maps to the Consumer role; "Store Owner" and "Charity" both map to the
-        // Merchant role, with the business/charity distinction captured on the Store itself
+        // Admin is never self-registerable — it can only be granted by an existing admin
+        // via UsersController.
+        if (!AppRole.SelfRegisterable.Contains(request.Role))
+        {
+            return Result<AuthResponse>.Fail(
+                $"Invalid role '{request.Role}'. Expected one of: {string.Join(", ", AppRole.SelfRegisterable)}.");
+        }
+
+        // Merchant and Charity are both business accounts, distinguished on the Store itself
         // via StoreType — see create_account_account_type_selection / business_signup_step_1.
-        var isBusinessAccount = request.AccountType is AccountType.StoreOwner or AccountType.Charity;
+        var isBusinessAccount = request.Role is AppRole.Merchant or AppRole.Charity;
 
         if (isBusinessAccount && string.IsNullOrWhiteSpace(request.BusinessName))
         {
             return Result<AuthResponse>.Fail(
-                "Business name is required for store owner and charity accounts.");
+                "Business name is required for merchant and charity accounts.");
         }
 
         var existing = await _userManager.FindByEmailAsync(request.Email);
@@ -77,8 +84,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
                     createResult.Errors.Select(e => e.Description));
             }
 
-            var assignedRole = isBusinessAccount ? AppRole.Merchant : AppRole.Consumer;
-            await _userManager.AddToRoleAsync(user, assignedRole);
+            await _userManager.AddToRoleAsync(user, request.Role);
 
             if (isBusinessAccount)
             {
@@ -86,7 +92,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
                 {
                     OwnerId = user.Id,
                     Name = request.BusinessName!.Trim(),
-                    StoreType = request.AccountType == AccountType.Charity ? StoreType.Charity : StoreType.Standard,
+                    StoreType = request.Role == AppRole.Charity ? StoreType.Charity : StoreType.Standard,
                     BusinessCategory = request.BusinessCategory,
                     VerificationStatus = VerificationStatus.Unverified,
                 });

@@ -84,7 +84,7 @@ public class UsersController : ControllerBase
 
     /// <summary>GET /users — lists all users with optional filtering (Admin only).</summary>
     [HttpGet]
-    [Authorize(Roles = AppRole.Administrator)]
+    [Authorize(Roles = AppRole.Admin)]
     public async Task<IActionResult> ListUsers(
         [FromQuery] string? role,
         [FromQuery] string? status,
@@ -99,7 +99,7 @@ public class UsersController : ControllerBase
 
     /// <summary>GET /users/{id} — returns specific user details (Admin only).</summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = AppRole.Administrator)]
+    [Authorize(Roles = AppRole.Admin)]
     public async Task<IActionResult> GetUserById(Guid id, CancellationToken cancellationToken)
     {
         var user = await _mediator.Send(new GetUserByIdQuery(id), cancellationToken);
@@ -108,7 +108,7 @@ public class UsersController : ControllerBase
 
     /// <summary>POST /users — creates a user directly (Admin only).</summary>
     [HttpPost]
-    [Authorize(Roles = AppRole.Administrator)]
+    [Authorize(Roles = AppRole.Admin)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new CreateUserCommand(request), cancellationToken);
@@ -120,7 +120,7 @@ public class UsersController : ControllerBase
 
     /// <summary>PATCH /users/{id} — updates user details (Admin only).</summary>
     [HttpPatch("{id:guid}")]
-    [Authorize(Roles = AppRole.Administrator)]
+    [Authorize(Roles = AppRole.Admin)]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new UpdateUserCommand(id, request), cancellationToken);
@@ -132,7 +132,7 @@ public class UsersController : ControllerBase
 
     /// <summary>DELETE /users/{id} — removes user account (Admin only).</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = AppRole.Administrator)]
+    [Authorize(Roles = AppRole.Admin)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new DeleteUserCommand(id), cancellationToken);
