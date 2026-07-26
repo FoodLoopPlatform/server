@@ -58,7 +58,7 @@ public class RegisterCommandHandlerTests : IDisposable
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Business name is required");
+        result.Message.Should().Contain("organization name is required");
     }
 
     [Fact]
@@ -134,12 +134,54 @@ public class RegisterCommandHandlerTests : IDisposable
 
         // Assert
         result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.AccessToken.Should().BeEmpty();
+        result.Data.RefreshToken.Should().BeEmpty();
 
         // Verify draft store was inserted into EF InMemory
         var store = await _dbContext.Stores.FirstOrDefaultAsync();
         store.Should().NotBeNull();
         store!.Name.Should().Be("Amina Bakery");
         store.VerificationStatus.Should().Be(VerificationStatus.Unverified);
-        store.StoreType.Should().Be(StoreType.Standard);
+    }
+
+    [Fact]
+    public async Task Handle_should_register_charity_successfully_without_creating_store()
+    {
+        // Arrange
+        _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
+        _userManager.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Success);
+        _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Charity))
+            .ReturnsAsync(IdentityResult.Success);
+
+        _tokenIssuer.Setup(t => t.IssueTokensAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), null))
+            .ReturnsAsync(new AuthResponse { AccessToken = "access", RefreshToken = "refresh" });
+
+        var handler = CreateHandler();
+        var request = ConsumerRegisterRequest();
+        request.Role = AppRole.Charity;
+        request.BusinessName = "Helpful NGO";
+
+        var command = new RegisterCommand(request, "127.0.0.1");
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.AccessToken.Should().BeEmpty();
+        result.Data.RefreshToken.Should().BeEmpty();
+
+        // Verify user was created with NGO name and status is PendingVerification
+        _userManager.Verify(m => m.CreateAsync(
+            It.Is<ApplicationUser>(u => u.FullName == "Helpful NGO" && u.Status == UserStatus.PendingVerification),
+            It.IsAny<string>()
+        ), Times.Once);
+
+        // Verify no store was created
+        var store = await _dbContext.Stores.FirstOrDefaultAsync();
+        store.Should().BeNull();
     }
 }
