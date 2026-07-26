@@ -20,7 +20,7 @@ namespace FoodLoop.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("stores")]
-[Authorize(Roles = AppRole.Merchant + "," + AppRole.Charity)]
+[Authorize(Roles = AppRole.Merchant)]
 public class StoresController : ControllerBase
 {
     private readonly ISender _mediator;

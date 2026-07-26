@@ -5,6 +5,7 @@ using FoodLoop.Application.Features.Auth.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Identity;
+using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
@@ -41,14 +42,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
                 $"Invalid role '{request.Role}'. Expected one of: {string.Join(", ", AppRole.SelfRegisterable)}.");
         }
 
-        // Merchant and Charity are both business accounts, distinguished on the Store itself
-        // via StoreType — see create_account_account_type_selection / business_signup_step_1.
-        var isBusinessAccount = request.Role is AppRole.Merchant or AppRole.Charity;
+        // Only Merchant accounts hold a physical Store and go through Store Onboarding.
+        // Charity role is treated as a premium customer account without a Store.
+        var isBusinessAccount = request.Role == AppRole.Merchant;
+        var isCharityAccount = request.Role == AppRole.Charity;
+        var isBusinessOrCharityRole = isBusinessAccount || isCharityAccount;
 
-        if (isBusinessAccount && string.IsNullOrWhiteSpace(request.BusinessName))
+        if (isBusinessOrCharityRole && string.IsNullOrWhiteSpace(request.BusinessName))
         {
             return Result<AuthResponse>.Fail(
-                "Business name is required for merchant and charity accounts.");
+                "Business or organization name is required.");
         }
 
         var existing = await _userManager.FindByEmailAsync(request.Email);
@@ -61,11 +64,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
         {
             UserName = request.Email,
             Email = request.Email,
-            FullName = request.Name,
+            FullName = isCharityAccount && !string.IsNullOrWhiteSpace(request.BusinessName)
+                ? request.BusinessName.Trim()
+                : request.Name,
             PhoneNumber = request.PhoneNumber,
-            // Business accounts start out under review; they can still log in to complete
-            // the onboarding wizard (location + documents), matching verification_pending_step_3.
-            Status = isBusinessAccount ? UserStatus.PendingVerification : UserStatus.Active,
+            // Only customer accounts are verified immediately; merchants and charities are pending.
+            Status = request.Role == AppRole.Customer ? UserStatus.Active : UserStatus.PendingVerification,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
@@ -92,7 +96,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
                 {
                     OwnerId = user.Id,
                     Name = request.BusinessName!.Trim(),
-                    StoreType = request.Role == AppRole.Charity ? StoreType.Charity : StoreType.Standard,
                     BusinessCategory = request.BusinessCategory,
                     VerificationStatus = VerificationStatus.Unverified,
                 });
@@ -107,6 +110,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
         }
 
         await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName, cancellationToken);
+
+        // If the account is unverified, do not return access and refresh tokens
+        if (user.Status == UserStatus.PendingVerification)
+        {
+            return Result<AuthResponse>.Ok(new AuthResponse
+            {
+                User = user.ToDto(new[] { request.Role }),
+                AccessToken = string.Empty,
+                RefreshToken = string.Empty,
+                AccessTokenExpiresAt = DateTimeOffset.MinValue
+            });
+        }
 
         var authResponse = await _tokenIssuer.IssueTokensAsync(user, command.IpAddress, cancellationToken);
         return Result<AuthResponse>.Ok(authResponse);
