@@ -6,8 +6,8 @@ namespace FoodLoop.Domain.Entities;
 /// <summary>Represents a merchant's business. Full CRUD ships in Sprint 2; the model is
 /// established now so migrations and relations are stable from the start.
 ///
-/// A draft Store (Name + StoreType + BusinessCategory only, no location yet) is created by
-/// RegisterCommandHandler when the signup's Role is Merchant/Charity — matching
+/// A draft Store (Name + BusinessCategory only, no location yet) is created by
+/// RegisterCommandHandler when the signup's Role is Merchant — matching
 /// business_signup_step_1. Location and documents are filled in afterwards via
 /// StoreOnboardingController, matching business_verification_location (step 2) and
 /// verification_pending_step_3 (step 3).</summary>
@@ -19,7 +19,6 @@ public class Store : BaseEntity, ISoftDelete
     public string? Description { get; set; }
     public string? Logo { get; set; }
 
-    public StoreType StoreType { get; set; } = StoreType.Standard;
     public BusinessCategory? BusinessCategory { get; set; }
 
     // Structured location, matching the business_verification_location UI screen.

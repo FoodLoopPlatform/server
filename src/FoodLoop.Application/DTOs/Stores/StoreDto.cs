@@ -8,7 +8,6 @@ public class StoreDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public StoreType StoreType { get; set; }
     public BusinessCategory? BusinessCategory { get; set; }
 
     public string? Governorate { get; set; }
