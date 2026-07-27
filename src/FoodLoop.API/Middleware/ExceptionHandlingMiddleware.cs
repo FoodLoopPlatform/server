@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 
 namespace FoodLoop.API.Middleware;
 
@@ -34,13 +35,17 @@ public class ExceptionHandlingMiddleware
 
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        // ILocalizationService is scoped — resolve from the per-request scope so the
+        // correct culture (set by UseRequestLocalization) is used.
+        var loc = context.RequestServices.GetService<ILocalizationService>();
+
         var (statusCode, message) = exception switch
         {
             NotFoundException => (HttpStatusCode.NotFound, exception.Message),
             ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message),
-            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized."),
+            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, loc?["Unauthorized"] ?? "Unauthorized."),
             ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
-            _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred."),
+            _ => (HttpStatusCode.InternalServerError, loc?["UnexpectedError"] ?? "An unexpected error occurred."),
         };
 
         if (statusCode == HttpStatusCode.InternalServerError)

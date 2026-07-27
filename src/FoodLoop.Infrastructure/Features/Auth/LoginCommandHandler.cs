@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
@@ -13,11 +14,16 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuthTokenIssuer _tokenIssuer;
+    private readonly ILocalizationService _loc;
 
-    public LoginCommandHandler(UserManager<ApplicationUser> userManager, IAuthTokenIssuer tokenIssuer)
+    public LoginCommandHandler(
+        UserManager<ApplicationUser> userManager,
+        IAuthTokenIssuer tokenIssuer,
+        ILocalizationService loc)
     {
         _userManager = userManager;
         _tokenIssuer = tokenIssuer;
+        _loc = loc;
     }
 
     public async Task<Result<AuthResponse>> Handle(LoginCommand command, CancellationToken cancellationToken)
@@ -27,18 +33,18 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
-            return Result<AuthResponse>.Fail("Invalid email or password.");
+            return Result<AuthResponse>.Fail(_loc["InvalidEmailOrPassword"]);
         }
 
         if (user.Status is UserStatus.Suspended or UserStatus.Banned)
         {
-            return Result<AuthResponse>.Fail("This account is not active. Please contact support.");
+            return Result<AuthResponse>.Fail(_loc["AccountNotActive"]);
         }
 
         var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!passwordValid)
         {
-            return Result<AuthResponse>.Fail("Invalid email or password.");
+            return Result<AuthResponse>.Fail(_loc["InvalidEmailOrPassword"]);
         }
 
         // Pending accounts have not yet been verified by an admin — return the user

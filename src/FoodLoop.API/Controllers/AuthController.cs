@@ -1,4 +1,5 @@
 using FoodLoop.API.Common;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
 using MediatR;
@@ -11,10 +12,12 @@ namespace FoodLoop.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly ISender _mediator;
+    private readonly ILocalizationService _loc;
 
-    public AuthController(ISender mediator)
+    public AuthController(ISender mediator, ILocalizationService loc)
     {
         _mediator = mediator;
+        _loc = loc;
     }
 
     private string? ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -57,7 +60,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new LogoutCommand(request.RefreshToken), cancellationToken);
-        return Ok(ApiResponse.Ok("Logged out."));
+        return Ok(ApiResponse.Ok(_loc["LoggedOut"]));
     }
 
     /// <summary>POST /auth/forgot-password — sends a password reset email.</summary>
@@ -77,8 +80,8 @@ public class AuthController : ControllerBase
     {
         var result = await _mediator.Send(new ResetPasswordCommand(request), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Unable to reset password.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["UnableToResetPassword"], result.Errors));
 
-        return Ok(ApiResponse.Ok("Password has been reset."));
+        return Ok(ApiResponse.Ok(_loc["PasswordReset"]));
     }
 }

@@ -17,11 +17,13 @@ public class UsersController : ControllerBase
 {
     private readonly ISender _mediator;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILocalizationService _loc;
 
-    public UsersController(ISender mediator, ICurrentUserService currentUser)
+    public UsersController(ISender mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
+        _loc = loc;
     }
 
     private Guid UserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
@@ -47,7 +49,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new UpdatePreferencesCommand(UserId, request), cancellationToken);
-        return Ok(ApiResponse.Ok("Preferences updated."));
+        return Ok(ApiResponse.Ok(_loc["PreferencesUpdated"]));
     }
 
     /// <summary>GET /users/me/addresses</summary>

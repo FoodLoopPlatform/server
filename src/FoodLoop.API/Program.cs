@@ -5,10 +5,25 @@ using FoodLoop.API.Middleware;
 using FoodLoop.API.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHealthChecks();
+
+// ---- Localization -------------------------------------------------------
+
+builder.Services.AddLocalization();
+
+var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("ar") };
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("en");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+    // Resolution order: Accept-Language header → query string ?culture=ar → default "en"
+    options.ApplyCurrentCultureToResponseHeaders = true;
+});
 
 // ---- Services ----------------------------------------------------------
 
@@ -84,6 +99,8 @@ var app = builder.Build();
 // ---- Middleware pipeline ------------------------------------------------
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseRequestLocalization();
 
 // if (app.Environment.IsDevelopment())
 // {

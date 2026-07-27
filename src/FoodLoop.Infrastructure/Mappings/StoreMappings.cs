@@ -9,6 +9,9 @@ internal static class StoreMappings
     {
         Id = store.Id,
         Name = store.Name,
+        NameAr = store.NameAr,
+        Description = store.Description,
+        DescriptionAr = store.DescriptionAr,
         BusinessCategory = store.BusinessCategory,
         Governorate = store.Governorate,
         City = store.City,

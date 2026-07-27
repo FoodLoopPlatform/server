@@ -11,11 +11,16 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocalizationService _loc;
 
-    public ResetPasswordCommandHandler(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
+    public ResetPasswordCommandHandler(
+        UserManager<ApplicationUser> userManager,
+        IUnitOfWork unitOfWork,
+        ILocalizationService loc)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
+        _loc = loc;
     }
 
     public async Task<Result> Handle(ResetPasswordCommand command, CancellationToken cancellationToken)
@@ -25,13 +30,13 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
-            return Result.Fail("Invalid request.");
+            return Result.Fail(_loc["InvalidResetRequest"]);
         }
 
         var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
         if (!result.Succeeded)
         {
-            return Result.Fail("Unable to reset password.", result.Errors.Select(e => e.Description));
+            return Result.Fail(_loc["UnableToResetPassword"], result.Errors.Select(e => e.Description));
         }
 
         // Resetting the password invalidates all existing sessions.

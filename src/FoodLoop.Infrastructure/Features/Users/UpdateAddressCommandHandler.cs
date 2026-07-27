@@ -11,10 +11,12 @@ namespace FoodLoop.Infrastructure.Features.Users;
 public class UpdateAddressCommandHandler : IRequestHandler<UpdateAddressCommand, AddressDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocalizationService _loc;
 
-    public UpdateAddressCommandHandler(IUnitOfWork unitOfWork)
+    public UpdateAddressCommandHandler(IUnitOfWork unitOfWork, ILocalizationService loc)
     {
         _unitOfWork = unitOfWork;
+        _loc = loc;
     }
 
     public async Task<AddressDto> Handle(UpdateAddressCommand command, CancellationToken cancellationToken)
@@ -23,7 +25,7 @@ public class UpdateAddressCommandHandler : IRequestHandler<UpdateAddressCommand,
             ?? throw new NotFoundException(nameof(Address), command.AddressId);
 
         if (address.UserId != command.UserId)
-            throw new ForbiddenAccessException("You cannot modify another user's address.");
+            throw new ForbiddenAccessException(_loc["CannotModifyOtherUserAddress"]);
 
         var request = command.Request;
 

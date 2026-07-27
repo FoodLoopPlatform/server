@@ -9,15 +9,17 @@ namespace FoodLoop.Infrastructure.Features.Stores;
 public class UpdateStoreLocationCommandHandler : IRequestHandler<UpdateStoreLocationCommand, StoreDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocalizationService _loc;
 
-    public UpdateStoreLocationCommandHandler(IUnitOfWork unitOfWork)
+    public UpdateStoreLocationCommandHandler(IUnitOfWork unitOfWork, ILocalizationService loc)
     {
         _unitOfWork = unitOfWork;
+        _loc = loc;
     }
 
     public async Task<StoreDto> Handle(UpdateStoreLocationCommand command, CancellationToken cancellationToken)
     {
-        var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, cancellationToken);
+        var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, _loc["StoreNotFound"], cancellationToken);
         var request = command.Request;
 
         store.Governorate = request.Governorate;

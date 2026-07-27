@@ -1,4 +1,5 @@
 using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.Features.Users.Commands;
 using FoodLoop.Infrastructure.Identity;
@@ -10,10 +11,12 @@ namespace FoodLoop.Infrastructure.Features.Users;
 public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Result>
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILocalizationService _loc;
 
-    public DeleteUserCommandHandler(UserManager<ApplicationUser> userManager)
+    public DeleteUserCommandHandler(UserManager<ApplicationUser> userManager, ILocalizationService loc)
     {
         _userManager = userManager;
+        _loc = loc;
     }
 
     public async Task<Result> Handle(DeleteUserCommand command, CancellationToken cancellationToken)
@@ -25,7 +28,7 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
         if (!result.Succeeded)
         {
             return Result.Fail(
-                "Failed to delete user. The user might have active relationships (e.g. store, orders) preventing deletion.",
+                _loc["UnableToDeleteUser"],
                 result.Errors.Select(e => e.Description));
         }
 
