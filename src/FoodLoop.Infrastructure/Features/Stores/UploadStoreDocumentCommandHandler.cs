@@ -27,7 +27,7 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadStoreDocu
                 $"Unknown document type '{command.VerificationType}'. Expected one of: {string.Join(", ", DocumentTypes.All)}.");
         }
 
-        var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, cancellationToken);
+        var store = await _unitOfWork.FindByOwnerEmailOrThrowAsync(command.OwnerEmail, cancellationToken);
 
         var documentUrl = await _fileStorage.SaveAsync(command.File, $"stores/{store.Id}", cancellationToken);
 

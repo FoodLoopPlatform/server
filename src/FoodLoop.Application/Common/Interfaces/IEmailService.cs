@@ -7,6 +7,10 @@ namespace FoodLoop.Application.Common.Interfaces;
 /// </summary>
 public interface IEmailService
 {
+    /// <summary>When true the implementation does not actually send emails (dev/staging stub).
+    /// Callers can use this flag to surface tokens in the API response for testing.</summary>
+    bool IsDevStub { get; }
+
     Task SendPasswordResetEmailAsync(string toEmail, string resetToken, CancellationToken cancellationToken = default);
     Task SendWelcomeEmailAsync(string toEmail, string fullName, CancellationToken cancellationToken = default);
 }

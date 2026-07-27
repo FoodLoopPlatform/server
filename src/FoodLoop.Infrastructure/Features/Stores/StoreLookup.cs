@@ -14,4 +14,12 @@ internal static class StoreLookup
         return store ?? throw new NotFoundException(
             "No store was found for this account. Business accounts get a draft store automatically at registration.");
     }
+
+    public static async Task<Store> FindByOwnerEmailOrThrowAsync(this IUnitOfWork unitOfWork, string email, CancellationToken cancellationToken)
+    {
+        var store = await unitOfWork.Stores.GetByOwnerEmailAsync(email, cancellationToken);
+
+        return store ?? throw new NotFoundException(
+            "No store was found for the provided email. Make sure you registered as a Merchant account.");
+    }
 }
