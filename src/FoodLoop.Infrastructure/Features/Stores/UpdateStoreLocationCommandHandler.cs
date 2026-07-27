@@ -24,6 +24,7 @@ public class UpdateStoreLocationCommandHandler : IRequestHandler<UpdateStoreLoca
         store.City = request.City;
         store.Neighborhood = request.Neighborhood;
         store.Street = request.Street;
+        store.BuildingNo = request.BuildingNo;
         store.Latitude = request.Latitude;
         store.Longitude = request.Longitude;
         store.UpdatedAt = DateTimeOffset.UtcNow;

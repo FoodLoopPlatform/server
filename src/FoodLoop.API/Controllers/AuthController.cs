@@ -64,9 +64,11 @@ public class AuthController : ControllerBase
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new ForgotPasswordCommand(request.Email), cancellationToken);
+        var result = await _mediator.Send(new ForgotPasswordCommand(request.Email), cancellationToken);
         // Always 200, regardless of whether the email exists, to avoid account enumeration.
-        return Ok(ApiResponse.Ok("If that email is registered, a reset link has been sent."));
+        // In dev mode (no real email provider) the reset token is returned directly in the
+        // response so it can be passed straight to POST /auth/reset-password.
+        return Ok(ApiResponse<ForgotPasswordResult>.Ok(result.Data!));
     }
 
     /// <summary>POST /auth/reset-password — updates the user's password using a reset token.</summary>

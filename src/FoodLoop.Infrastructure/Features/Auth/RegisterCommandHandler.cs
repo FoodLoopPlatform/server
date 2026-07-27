@@ -60,6 +60,16 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
             return Result<AuthResponse>.Fail("Email is already registered.");
         }
 
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phoneExists = _userManager.Users
+                .Any(u => u.PhoneNumber == request.PhoneNumber);
+            if (phoneExists)
+            {
+                return Result<AuthResponse>.Fail("Phone number is already registered.");
+            }
+        }
+
         var user = new ApplicationUser
         {
             UserName = request.Email,

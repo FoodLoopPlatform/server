@@ -14,6 +14,7 @@ internal static class StoreMappings
         City = store.City,
         Neighborhood = store.Neighborhood,
         Street = store.Street,
+        BuildingNo = store.BuildingNo,
         Latitude = store.Latitude,
         Longitude = store.Longitude,
         VerificationStatus = store.VerificationStatus.ToString(),

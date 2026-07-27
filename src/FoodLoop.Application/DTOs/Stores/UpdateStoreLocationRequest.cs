@@ -18,6 +18,9 @@ public class UpdateStoreLocationRequest
     [Required, MaxLength(200)]
     public string Street { get; set; } = string.Empty;
 
+    [MaxLength(100)]
+    public string? BuildingNo { get; set; }
+
     [Range(-90, 90)]
     public double? Latitude { get; set; }
 

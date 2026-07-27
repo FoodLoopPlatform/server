@@ -17,6 +17,9 @@ public class NullEmailService : IEmailService
         _logger = logger;
     }
 
+    /// <inheritdoc />
+    public bool IsDevStub => true;
+
     public Task SendPasswordResetEmailAsync(string toEmail, string resetToken, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("[DEV EMAIL] Password reset for {Email}. Token: {Token}", toEmail, resetToken);

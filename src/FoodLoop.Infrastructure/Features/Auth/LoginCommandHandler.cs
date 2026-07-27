@@ -3,6 +3,7 @@ using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Identity;
+using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
@@ -38,6 +39,21 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
         if (!passwordValid)
         {
             return Result<AuthResponse>.Fail("Invalid email or password.");
+        }
+
+        // Pending accounts have not yet been verified by an admin — return the user
+        // record so the front-end can redirect to the verification-pending screen, but
+        // do not issue tokens (they cannot access protected endpoints until approved).
+        if (user.Status == UserStatus.PendingVerification)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            return Result<AuthResponse>.Ok(new AuthResponse
+            {
+                User = user.ToDto(roles),
+                AccessToken = string.Empty,
+                RefreshToken = string.Empty,
+                AccessTokenExpiresAt = DateTimeOffset.MinValue,
+            });
         }
 
         var authResponse = await _tokenIssuer.IssueTokensAsync(user, command.IpAddress, cancellationToken);

@@ -69,6 +69,9 @@ builder.Services.AddCors(options =>
         }
         else
         {
+            // No origins configured — fall back to allowing any origin without credentials
+            // (AllowAnyOrigin + AllowCredentials is rejected by ASP.NET Core and produces
+            // no CORS header at all, which is worse than a permissive fallback).
             policy.AllowAnyOrigin()
                   .AllowAnyHeader()
                   .AllowAnyMethod();
