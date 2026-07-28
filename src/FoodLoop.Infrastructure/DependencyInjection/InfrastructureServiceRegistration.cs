@@ -44,6 +44,12 @@ public static class InfrastructureServiceRegistration
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+        // Admin user options
+        services.AddOptions<AdminUserOptions>()
+            .Bind(configuration.GetSection(AdminUserOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         // JWT Bearer authentication
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
