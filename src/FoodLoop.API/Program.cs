@@ -13,6 +13,9 @@ builder.Services.AddHealthChecks();
 
 // ---- Localization -------------------------------------------------------
 
+// IStringLocalizerFactory is registered here; LocalizationService uses factory.Create()
+// with an explicit assembly reference so resource files in FoodLoop.Infrastructure are found
+// regardless of where AddLocalization() is called from.
 builder.Services.AddLocalization();
 
 var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("ar") };

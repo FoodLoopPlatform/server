@@ -36,11 +36,22 @@
   <data name="StoreNotFound"><value>لم يتم العثور على متجر لهذا الحساب. يتم إنشاء مسودة متجر تلقائياً عند التسجيل كتاجر.</value></data>
   <data name="StoreNotFoundByEmail"><value>لم يتم العثور على متجر بهذا البريد الإلكتروني. تأكد من التسجيل كحساب تاجر.</value></data>
   <data name="UnknownDocumentType"><value>نوع المستند '{0}' غير معروف. الأنواع المتاحة: {1}.</value></data>
+  <data name="OwnerEmailRequired"><value>البريد الإلكتروني للمالك مطلوب لربط المستندات بالحساب.</value></data>
+  <data name="FileRequired"><value>الملف مطلوب.</value></data>
   <data name="UnableToDeleteUser"><value>فشل حذف المستخدم. قد يكون لديه علاقات نشطة (متجر، طلبات) تمنع الحذف.</value></data>
 
   <!-- Address -->
   <data name="CannotDeleteOtherUserAddress"><value>لا يمكنك حذف عنوان مستخدم آخر.</value></data>
   <data name="CannotModifyOtherUserAddress"><value>لا يمكنك تعديل عنوان مستخدم آخر.</value></data>
+
+  <data name="FailedToCreateUser"><value>فشل إنشاء المستخدم.</value></data>
+  <data name="FailedToUpdateUser"><value>فشل تحديث المستخدم.</value></data>
+  <data name="FailedToDeleteUser"><value>فشل حذف المستخدم.</value></data>
+  <data name="InvalidUserStatus"><value>حالة المستخدم '{0}' غير صالحة. القيم المتاحة: {1}.</value></data>
+
+  <data name="InvalidRefreshToken"><value>رمز التحديث غير صالح.</value></data>
+  <data name="RefreshTokenExpired"><value>رمز التحديث لم يعد صالحاً. يرجى تسجيل الدخول مجدداً.</value></data>
+  <data name="AccountNotAvailable"><value>الحساب غير متاح.</value></data>
 
   <!-- Generic -->
   <data name="Unauthorized"><value>غير مصرح.</value></data>

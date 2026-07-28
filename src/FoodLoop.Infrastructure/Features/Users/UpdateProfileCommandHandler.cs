@@ -31,7 +31,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             user.ProfileImage = request.ProfileImage;
 
         if (!string.IsNullOrWhiteSpace(request.PreferredLanguage))
-            user.Language = request.PreferredLanguage;
+            user.Language = request.PreferredLanguage == "ar" ? "ar" : "en";
 
         user.UpdatedAt = DateTimeOffset.UtcNow;
 

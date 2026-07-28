@@ -115,7 +115,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new CreateUserCommand(request), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to create user.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["FailedToCreateUser"], result.Errors));
 
         return CreatedAtAction(nameof(GetUserById), new { id = result.Data!.Id }, ApiResponse<UserDto>.Ok(result.Data));
     }
@@ -127,7 +127,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new UpdateUserCommand(id, request), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to update user.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["FailedToUpdateUser"], result.Errors));
 
         return Ok(ApiResponse<UserDto>.Ok(result.Data!));
     }
@@ -139,7 +139,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new DeleteUserCommand(id), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to delete user.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["FailedToDeleteUser"], result.Errors));
 
         return NoContent();
     }

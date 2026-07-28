@@ -85,10 +85,6 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
         services.AddScoped<ILocalizationService, LocalizationService>();
 
-        // Localization — resource files live in Infrastructure/Resources/Messages.{culture}.resx.
-        // AddLocalization must point at the assembly that owns the .resx files.
-        services.AddLocalization(opts => opts.ResourcesPath = "Resources");
-
         // CQRS: commands/queries live in the Application assembly, handlers live here in
         // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other
         // Infrastructure-only concerns), so MediatR needs to scan both assemblies.

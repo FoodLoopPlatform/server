@@ -25,11 +25,13 @@ public class StoresController : ControllerBase
 {
     private readonly ISender _mediator;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILocalizationService _loc;
 
-    public StoresController(ISender mediator, ICurrentUserService currentUser)
+    public StoresController(ISender mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
+        _loc = loc;
     }
 
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
@@ -62,12 +64,12 @@ public class StoresController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Email))
         {
-            return BadRequest(ApiResponse.Fail("The owner email is required to link documents to an account."));
+            return BadRequest(ApiResponse.Fail(_loc["OwnerEmailRequired"]));
         }
 
         if (request.File == null || request.File.Length == 0)
         {
-            return BadRequest(ApiResponse.Fail("A file is required."));
+            return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
         }
 
         await using var stream = request.File.OpenReadStream();

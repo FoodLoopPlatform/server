@@ -28,7 +28,7 @@ public class AuthController : ControllerBase
     {
         var result = await _mediator.Send(new RegisterCommand(request, ClientIp), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Registration failed.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["RegistrationFailed"], result.Errors));
 
         return CreatedAtAction(nameof(Register), ApiResponse<AuthResponse>.Ok(result.Data!));
     }
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
     {
         var result = await _mediator.Send(new LoginCommand(request, ClientIp), cancellationToken);
         if (!result.Success)
-            return Unauthorized(ApiResponse.Fail(result.Message ?? "Invalid credentials."));
+            return Unauthorized(ApiResponse.Fail(result.Message ?? _loc["InvalidEmailOrPassword"]));
 
         return Ok(ApiResponse<AuthResponse>.Ok(result.Data!));
     }
@@ -50,7 +50,7 @@ public class AuthController : ControllerBase
     {
         var result = await _mediator.Send(new RefreshTokenCommand(request.RefreshToken, ClientIp), cancellationToken);
         if (!result.Success)
-            return Unauthorized(ApiResponse.Fail(result.Message ?? "Invalid refresh token."));
+            return Unauthorized(ApiResponse.Fail(result.Message ?? _loc["Unauthorized"]));
 
         return Ok(ApiResponse<AuthResponse>.Ok(result.Data!));
     }

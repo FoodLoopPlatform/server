@@ -36,11 +36,22 @@
   <data name="StoreNotFound"><value>No store was found for this account. Business accounts get a draft store automatically at registration.</value></data>
   <data name="StoreNotFoundByEmail"><value>No store was found for the provided email. Make sure you registered as a Merchant account.</value></data>
   <data name="UnknownDocumentType"><value>Unknown document type '{0}'. Expected one of: {1}.</value></data>
+  <data name="OwnerEmailRequired"><value>The owner email is required to link documents to an account.</value></data>
+  <data name="FileRequired"><value>A file is required.</value></data>
   <data name="UnableToDeleteUser"><value>Failed to delete user. The user might have active relationships (e.g. store, orders) preventing deletion.</value></data>
 
   <!-- Address -->
   <data name="CannotDeleteOtherUserAddress"><value>You cannot delete another user's address.</value></data>
   <data name="CannotModifyOtherUserAddress"><value>You cannot modify another user's address.</value></data>
+
+  <data name="FailedToCreateUser"><value>Failed to create user.</value></data>
+  <data name="FailedToUpdateUser"><value>Failed to update user.</value></data>
+  <data name="FailedToDeleteUser"><value>Failed to delete user.</value></data>
+  <data name="InvalidUserStatus"><value>Invalid user status '{0}'. Expected values: {1}.</value></data>
+
+  <data name="InvalidRefreshToken"><value>Invalid refresh token.</value></data>
+  <data name="RefreshTokenExpired"><value>Refresh token is no longer valid. Please log in again.</value></data>
+  <data name="AccountNotAvailable"><value>Account is not available.</value></data>
 
   <!-- Generic -->
   <data name="Unauthorized"><value>Unauthorized.</value></data>
