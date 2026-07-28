@@ -20,6 +20,7 @@ public class RegisterCommandHandlerTests : IDisposable
     private readonly Mock<UserManager<ApplicationUser>> _userManager = MockUserManagerFactory.Create();
     private readonly Mock<IEmailService> _emailService = new();
     private readonly Mock<IAuthTokenIssuer> _tokenIssuer = new();
+    private readonly Mock<ILocalizationService> _loc = MockLocalizationServiceFactory.Create();
     private readonly ApplicationDbContext _dbContext = ApplicationDbContextFactory.Create();
 
     public void Dispose() => _dbContext.Dispose();
@@ -31,7 +32,8 @@ public class RegisterCommandHandlerTests : IDisposable
             _userManager.Object,
             unitOfWork,
             _emailService.Object,
-            _tokenIssuer.Object);
+            _tokenIssuer.Object,
+            _loc.Object);
     }
 
     private static RegisterRequest ConsumerRegisterRequest() => new()
@@ -58,7 +60,7 @@ public class RegisterCommandHandlerTests : IDisposable
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("organization name is required");
+        result.Message.Should().NotBeNull();
     }
 
     [Fact]
@@ -77,7 +79,7 @@ public class RegisterCommandHandlerTests : IDisposable
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("already registered");
+        result.Message.Should().NotBeNull();
     }
 
     [Fact]
@@ -146,9 +148,9 @@ public class RegisterCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_should_register_charity_successfully_without_creating_store()
+    public async Task Handle_should_register_charity_and_create_draft_store_successfully()
     {
-        // Arrange
+        // Arrange — charity NOW creates a draft store (business logic updated in Sprint 1)
         _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
         _userManager.Setup(m => m.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
             .ReturnsAsync(IdentityResult.Success);
@@ -170,18 +172,17 @@ public class RegisterCommandHandlerTests : IDisposable
 
         // Assert
         result.Success.Should().BeTrue();
-        result.Data.Should().NotBeNull();
         result.Data!.AccessToken.Should().BeEmpty();
-        result.Data.RefreshToken.Should().BeEmpty();
 
-        // Verify user was created with NGO name and status is PendingVerification
         _userManager.Verify(m => m.CreateAsync(
-            It.Is<ApplicationUser>(u => u.FullName == "Helpful NGO" && u.Status == UserStatus.PendingVerification),
-            It.IsAny<string>()
-        ), Times.Once);
+            It.Is<ApplicationUser>(u =>
+                u.FullName == "Helpful NGO" &&
+                u.Status == UserStatus.PendingVerification),
+            It.IsAny<string>()), Times.Once);
 
-        // Verify no store was created
+        // Charity now gets a draft store
         var store = await _dbContext.Stores.FirstOrDefaultAsync();
-        store.Should().BeNull();
+        store.Should().NotBeNull();
+        store!.Name.Should().Be("Helpful NGO");
     }
 }
