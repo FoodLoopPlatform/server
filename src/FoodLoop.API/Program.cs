@@ -147,7 +147,7 @@ using (var scope = app.Services.CreateScope())
         await dbContext.Database.MigrateAsync();
     }
 
-    await IdentitySeeder.SeedRolesAsync(services);
+    await IdentitySeeder.SeedAsync(services);
 }
 
 app.Run();
