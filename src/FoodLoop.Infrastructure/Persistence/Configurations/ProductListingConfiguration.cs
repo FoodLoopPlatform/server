@@ -9,6 +9,7 @@ public class ProductListingConfiguration : IEntityTypeConfiguration<ProductListi
     public void Configure(EntityTypeBuilder<ProductListing> builder)
     {
         builder.Property(p => p.Title).HasMaxLength(200).IsRequired();
+        builder.Property(p => p.TitleAr).HasMaxLength(200);
         builder.Property(p => p.OriginalPrice).HasPrecision(10, 2);
         builder.Property(p => p.DiscountedPrice).HasPrecision(10, 2);
 

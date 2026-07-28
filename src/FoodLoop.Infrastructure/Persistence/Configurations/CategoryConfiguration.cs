@@ -9,6 +9,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
     public void Configure(EntityTypeBuilder<Category> builder)
     {
         builder.Property(c => c.Name).HasMaxLength(100).IsRequired();
+        builder.Property(c => c.NameAr).HasMaxLength(100);
         builder.HasIndex(c => c.Name).IsUnique();
         builder.HasQueryFilter(c => !c.IsDeleted);
     }

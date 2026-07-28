@@ -30,7 +30,7 @@ public class UpdatePreferencesCommandHandler : IRequestHandler<UpdatePreferences
             user.MarketingNotificationsEnabled = request.MarketingNotificationsEnabled.Value;
 
         if (!string.IsNullOrWhiteSpace(request.PreferredLanguage))
-            user.Language = request.PreferredLanguage;
+            user.Language = request.PreferredLanguage == "ar" ? "ar" : "en";
 
         user.UpdatedAt = DateTimeOffset.UtcNow;
 

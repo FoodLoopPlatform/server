@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Users.Commands;
@@ -12,10 +13,12 @@ namespace FoodLoop.Infrastructure.Features.Users;
 public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Result<UserDto>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILocalizationService _loc;
 
-    public CreateUserCommandHandler(UserManager<ApplicationUser> userManager)
+    public CreateUserCommandHandler(UserManager<ApplicationUser> userManager, ILocalizationService loc)
     {
         _userManager = userManager;
+        _loc = loc;
     }
 
     public async Task<Result<UserDto>> Handle(CreateUserCommand command, CancellationToken cancellationToken)
@@ -25,19 +28,19 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
         if (!AppRole.All.Contains(request.Role))
         {
             return Result<UserDto>.Fail(
-                $"Invalid role '{request.Role}'. Expected one of: {string.Join(", ", AppRole.All)}.");
+                _loc["InvalidRole", request.Role, string.Join(", ", AppRole.All)]);
         }
 
         if (!Enum.TryParse<UserStatus>(request.Status, true, out var userStatus))
         {
             return Result<UserDto>.Fail(
-                $"Invalid user status '{request.Status}'. Expected values: {string.Join(", ", Enum.GetNames<UserStatus>())}.");
+                _loc["InvalidUserStatus", request.Status, string.Join(", ", Enum.GetNames<UserStatus>())]);
         }
 
         var existing = await _userManager.FindByEmailAsync(request.Email);
         if (existing != null)
         {
-            return Result<UserDto>.Fail("Email is already registered.");
+            return Result<UserDto>.Fail(_loc["EmailAlreadyRegistered"]);
         }
 
         var user = new ApplicationUser
@@ -54,7 +57,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
         if (!createResult.Succeeded)
         {
             return Result<UserDto>.Fail(
-                "Failed to create user.",
+                _loc["FailedToCreateUser"],
                 createResult.Errors.Select(e => e.Description));
         }
 

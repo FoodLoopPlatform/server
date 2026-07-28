@@ -34,4 +34,8 @@ public class RegisterRequest
 
     /// <summary>Optional business_type dropdown from business_signup_step_1 (supermarket, restaurant, etc.).</summary>
     public BusinessCategory? BusinessCategory { get; set; }
+
+    /// <summary>Preferred UI language — "en" or "ar". Defaults to "en".</summary>
+    [MaxLength(10)]
+    public string Language { get; set; } = "en";
 }

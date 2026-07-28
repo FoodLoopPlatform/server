@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Users;
 using MediatR;
 
@@ -9,4 +10,4 @@ public record ListUsersQuery(
     string? SearchTerm = null,
     int Page = 1,
     int PageSize = 10
-) : IRequest<IReadOnlyList<UserDto>>;
+) : IRequest<PagedResult<UserDto>>;

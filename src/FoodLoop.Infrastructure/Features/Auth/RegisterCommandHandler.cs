@@ -17,17 +17,20 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
     private readonly IAuthTokenIssuer _tokenIssuer;
+    private readonly ILocalizationService _loc;
 
     public RegisterCommandHandler(
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
         IEmailService emailService,
-        IAuthTokenIssuer tokenIssuer)
+        IAuthTokenIssuer tokenIssuer,
+        ILocalizationService loc)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
         _tokenIssuer = tokenIssuer;
+        _loc = loc;
     }
 
     public async Task<Result<AuthResponse>> Handle(RegisterCommand command, CancellationToken cancellationToken)
@@ -39,7 +42,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
         if (!AppRole.SelfRegisterable.Contains(request.Role))
         {
             return Result<AuthResponse>.Fail(
-                $"Invalid role '{request.Role}'. Expected one of: {string.Join(", ", AppRole.SelfRegisterable)}.");
+                _loc["InvalidRole", request.Role, string.Join(", ", AppRole.SelfRegisterable)]);
         }
 
         // Only Merchant accounts hold a physical Store and go through Store Onboarding.
@@ -50,14 +53,23 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
 
         if (isBusinessOrCharityRole && string.IsNullOrWhiteSpace(request.BusinessName))
         {
-            return Result<AuthResponse>.Fail(
-                "Business or organization name is required.");
+            return Result<AuthResponse>.Fail(_loc["BusinessNameRequired"]);
         }
 
         var existing = await _userManager.FindByEmailAsync(request.Email);
         if (existing != null)
         {
-            return Result<AuthResponse>.Fail("Email is already registered.");
+            return Result<AuthResponse>.Fail(_loc["EmailAlreadyRegistered"]);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            var phoneExists = _userManager.Users
+                .Any(u => u.PhoneNumber == request.PhoneNumber);
+            if (phoneExists)
+            {
+                return Result<AuthResponse>.Fail(_loc["PhoneAlreadyRegistered"]);
+            }
         }
 
         var user = new ApplicationUser
@@ -68,6 +80,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
                 ? request.BusinessName.Trim()
                 : request.Name,
             PhoneNumber = request.PhoneNumber,
+            Language = request.Language == "ar" ? "ar" : "en",
             // Only customer accounts are verified immediately; merchants and charities are pending.
             Status = request.Role == AppRole.Customer ? UserStatus.Active : UserStatus.PendingVerification,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -84,13 +97,13 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 return Result<AuthResponse>.Fail(
-                    "Registration failed.",
+                    _loc["RegistrationFailed"],
                     createResult.Errors.Select(e => e.Description));
             }
 
             await _userManager.AddToRoleAsync(user, request.Role);
 
-            if (isBusinessAccount)
+            if (isBusinessAccount || isCharityAccount)
             {
                 _unitOfWork.Stores.Add(new Store
                 {

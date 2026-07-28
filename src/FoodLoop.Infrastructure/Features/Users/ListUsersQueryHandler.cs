@@ -1,15 +1,16 @@
+using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Domain.Enums;
-using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Mappings;
+using FoodLoop.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodLoop.Infrastructure.Features.Users;
 
-public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, IReadOnlyList<UserDto>>
+public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, PagedResult<UserDto>>
 {
     private readonly ApplicationDbContext _context;
 
@@ -18,11 +19,11 @@ public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, IReadOnlyLi
         _context = context;
     }
 
-    public async Task<IReadOnlyList<UserDto>> Handle(ListUsersQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<UserDto>> Handle(ListUsersQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Users.AsQueryable();
 
-        // 1. Filter by Role
+        // Filter by Role
         if (!string.IsNullOrWhiteSpace(request.Role))
         {
             query = from user in query
@@ -32,24 +33,27 @@ public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, IReadOnlyLi
                     select user;
         }
 
-        // 2. Filter by Status
-        if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<UserStatus>(request.Status, true, out var userStatus))
+        // Filter by Status
+        if (!string.IsNullOrWhiteSpace(request.Status) &&
+            Enum.TryParse<UserStatus>(request.Status, true, out var userStatus))
         {
             query = query.Where(u => u.Status == userStatus);
         }
 
-        // 3. Search Term (Name, Email, Phone)
+        // Search Term (Name, Email, Phone)
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             var search = request.SearchTerm.Trim();
-            query = query.Where(u => u.FullName.Contains(search) || 
-                                     (u.Email != null && u.Email.Contains(search)) || 
-                                     (u.PhoneNumber != null && u.PhoneNumber.Contains(search)));
+            query = query.Where(u =>
+                u.FullName.Contains(search) ||
+                (u.Email != null && u.Email.Contains(search)) ||
+                (u.PhoneNumber != null && u.PhoneNumber.Contains(search)));
         }
 
-        // 4. Paginate
+        var totalCount = await query.CountAsync(cancellationToken);
+
         var page = request.Page > 0 ? request.Page : 1;
-        var pageSize = request.PageSize > 0 ? request.PageSize : 10;
+        var pageSize = request.PageSize is > 0 and <= 100 ? request.PageSize : 10;
 
         var pagedUsers = await query
             .OrderByDescending(u => u.CreatedAt)
@@ -57,24 +61,30 @@ public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, IReadOnlyLi
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        // 5. Fetch Roles efficiently in one query to avoid N+1 queries
-        var pagedUserIds = pagedUsers.Select(u => u.Id).ToList();
-        var userRoles = await (from userRole in _context.Set<IdentityUserRole<Guid>>()
-                               join role in _context.Roles on userRole.RoleId equals role.Id
-                               where pagedUserIds.Contains(userRole.UserId)
-                               select new { userRole.UserId, RoleName = role.Name })
+        // Fetch roles in one query to avoid N+1
+        var userIds = pagedUsers.Select(u => u.Id).ToList();
+        var userRoles = await (from ur in _context.Set<IdentityUserRole<Guid>>()
+                               join r in _context.Roles on ur.RoleId equals r.Id
+                               where userIds.Contains(ur.UserId)
+                               select new { ur.UserId, RoleName = r.Name })
                               .ToListAsync(cancellationToken);
 
         var rolesLookup = userRoles
-            .GroupBy(ur => ur.UserId)
-            .ToDictionary(g => g.Key, g => g.Select(ur => ur.RoleName).ToList());
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.RoleName).ToList());
 
-        var userDtos = pagedUsers.Select(u =>
+        var items = pagedUsers.Select(u =>
         {
             var roles = rolesLookup.TryGetValue(u.Id, out var r) ? r : new List<string>();
             return u.ToDto(roles);
         }).ToList();
 
-        return userDtos;
+        return new PagedResult<UserDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+        };
     }
 }

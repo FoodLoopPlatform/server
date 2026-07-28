@@ -11,5 +11,6 @@ public class UpdateProfileRequest
     public string? ProfileImage { get; set; }
 
     [MaxLength(10)]
+    [RegularExpression("^(en|ar)$", ErrorMessage = "Language must be 'en' or 'ar'.")]
     public string? PreferredLanguage { get; set; }
 }
