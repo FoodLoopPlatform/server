@@ -1,5 +1,6 @@
 using FluentAssertions;
 using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Users.Commands;
 using FoodLoop.Application.Features.Users.Queries;
@@ -18,6 +19,7 @@ namespace FoodLoop.Infrastructure.Tests.Users;
 public class AdminUserCommandHandlerTests : IDisposable
 {
     private readonly Mock<UserManager<ApplicationUser>> _userManager = MockUserManagerFactory.Create();
+    private readonly Mock<ILocalizationService> _loc = MockLocalizationServiceFactory.Create();
     private readonly ApplicationDbContext _dbContext = ApplicationDbContextFactory.Create();
 
     public void Dispose() => _dbContext.Dispose();
@@ -34,7 +36,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Customer))
             .ReturnsAsync(IdentityResult.Success);
 
-        var handler = new CreateUserCommandHandler(_userManager.Object);
+        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object);
         var request = new CreateUserRequest
         {
             Email = "new@example.com",
@@ -59,7 +61,7 @@ public class AdminUserCommandHandlerTests : IDisposable
     public async Task CreateUser_should_fail_for_invalid_role()
     {
         // Arrange
-        var handler = new CreateUserCommandHandler(_userManager.Object);
+        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object);
         var request = new CreateUserRequest
         {
             Email = "new@example.com",
@@ -75,7 +77,7 @@ public class AdminUserCommandHandlerTests : IDisposable
 
         // Assert
         result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Invalid role");
+        result.Message.Should().NotBeNull();
     }
 
     // ---------- UpdateUserCommandHandler ----------
@@ -89,7 +91,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
         _userManager.Setup(m => m.GetRolesAsync(user)).ReturnsAsync(new List<string> { AppRole.Customer });
 
-        var handler = new UpdateUserCommandHandler(_userManager.Object);
+        var handler = new UpdateUserCommandHandler(_userManager.Object, _loc.Object);
         var request = new UpdateUserRequest
         {
             FullName = "New Name",
@@ -121,7 +123,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.FindByIdAsync(userId.ToString())).ReturnsAsync(user);
         _userManager.Setup(m => m.DeleteAsync(user)).ReturnsAsync(IdentityResult.Success);
 
-        var handler = new DeleteUserCommandHandler(_userManager.Object);
+        var handler = new DeleteUserCommandHandler(_userManager.Object, _loc.Object);
         var command = new DeleteUserCommand(userId);
 
         // Act
@@ -195,19 +197,19 @@ public class AdminUserCommandHandlerTests : IDisposable
         // Scenario 1: Filter by Role = Customer
         var queryRole = new ListUsersQuery(Role: AppRole.Customer);
         var resultRole = await handler.Handle(queryRole, CancellationToken.None);
-        resultRole.Should().HaveCount(1);
-        resultRole.First().FullName.Should().Be("Amina Ahmed");
+        resultRole.Items.Should().HaveCount(1);
+        resultRole.Items.First().FullName.Should().Be("Amina Ahmed");
 
         // Scenario 2: Search term = "Doe"
         var querySearch = new ListUsersQuery(SearchTerm: "Doe");
         var resultSearch = await handler.Handle(querySearch, CancellationToken.None);
-        resultSearch.Should().HaveCount(1);
-        resultSearch.First().FullName.Should().Be("John Doe");
+        resultSearch.Items.Should().HaveCount(1);
+        resultSearch.Items.First().FullName.Should().Be("John Doe");
 
         // Scenario 3: Filter by Status = Suspended
         var queryStatus = new ListUsersQuery(Status: "Suspended");
         var resultStatus = await handler.Handle(queryStatus, CancellationToken.None);
-        resultStatus.Should().HaveCount(1);
-        resultStatus.First().FullName.Should().Be("John Doe");
+        resultStatus.Items.Should().HaveCount(1);
+        resultStatus.Items.First().FullName.Should().Be("John Doe");
     }
 }
