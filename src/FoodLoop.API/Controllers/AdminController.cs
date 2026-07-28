@@ -1,6 +1,7 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Admin;
+using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Admin.Commands;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Enums;
@@ -62,5 +63,32 @@ public class AdminController : ControllerBase
     {
         var store = await _mediator.Send(new VerifyStoreCommand(id, AdminId, request), cancellationToken);
         return Ok(ApiResponse<AdminStoreDto>.Ok(store));
+    }
+
+    // ── User management ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// PATCH /admin/users/{id}/status — suspend, ban, or reactivate a user.
+    /// Body: { "status": "Active" | "Suspended" | "Banned" }
+    /// </summary>
+    [HttpPatch("users/{id:guid}/status")]
+    public async Task<IActionResult> UpdateUserStatus(
+        Guid id, [FromBody] UpdateUserStatusRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new UpdateUserStatusCommand(id, request), cancellationToken);
+        if (!result.Success)
+            return BadRequest(ApiResponse.Fail(result.Message!, result.Errors));
+        return Ok(ApiResponse<UserDto>.Ok(result.Data!));
+    }
+
+    /// <summary>
+    /// GET /admin/users/{id}/activity-log — recent events for a user (account created,
+    /// documents verified, orders placed, support tickets).
+    /// </summary>
+    [HttpGet("users/{id:guid}/activity-log")]
+    public async Task<IActionResult> GetUserActivityLog(Guid id, CancellationToken cancellationToken)
+    {
+        var log = await _mediator.Send(new GetUserActivityLogQuery(id), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
     }
 }

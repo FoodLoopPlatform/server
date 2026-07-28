@@ -20,4 +20,13 @@ public class UpdateStoreProfileRequest
 
     /// <summary>URL of the store logo image.</summary>
     public string? Logo { get; set; }
+
+    [Phone, MaxLength(20)]
+    public string? Phone { get; set; }
+
+    [EmailAddress, MaxLength(256)]
+    public string? Email { get; set; }
+
+    /// <summary>JSON-encoded weekly schedule, e.g. {"Monday":{"open":"09:00","close":"17:00"},...}</summary>
+    public string? OpeningHours { get; set; }
 }

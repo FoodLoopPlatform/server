@@ -15,6 +15,8 @@ internal static class AdminStoreMappings
         DescriptionAr = store.DescriptionAr,
         BusinessCategory = store.BusinessCategory,
         Logo = store.Logo,
+        Phone = store.Phone,
+        Email = store.Email,
         Governorate = store.Governorate,
         City = store.City,
         Neighborhood = store.Neighborhood,

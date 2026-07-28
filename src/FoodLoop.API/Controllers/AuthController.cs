@@ -63,6 +63,17 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse.Ok(_loc["LoggedOut"]));
     }
 
+    /// <summary>POST /auth/resend-verification — re-sends the verification email
+    /// for accounts still in PendingVerification status.</summary>
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerification(
+        [FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ResendVerificationCommand(request.Email), cancellationToken);
+        // Always 200 to avoid leaking account existence.
+        return Ok(ApiResponse.Ok("If that account is pending verification, a new email has been sent."));
+    }
+
     /// <summary>POST /auth/forgot-password — sends a password reset email.</summary>
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)

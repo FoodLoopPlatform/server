@@ -30,6 +30,9 @@ public class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateStoreProfi
         if (req.DescriptionAr != null) store.DescriptionAr = req.DescriptionAr;
         if (req.BusinessCategory.HasValue) store.BusinessCategory = req.BusinessCategory;
         if (req.Logo != null) store.Logo = req.Logo;
+        if (req.Phone != null) store.Phone = req.Phone;
+        if (req.Email != null) store.Email = req.Email;
+        if (req.OpeningHours != null) store.OpeningHours = req.OpeningHours;
 
         store.UpdatedAt = DateTimeOffset.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
