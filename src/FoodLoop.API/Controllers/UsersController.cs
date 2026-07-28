@@ -1,5 +1,6 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Users.Commands;
 using FoodLoop.Application.Features.Users.Queries;
@@ -95,8 +96,8 @@ public class UsersController : ControllerBase
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var users = await _mediator.Send(new ListUsersQuery(role, status, searchTerm, page, pageSize), cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<UserDto>>.Ok(users));
+        var result = await _mediator.Send(new ListUsersQuery(role, status, searchTerm, page, pageSize), cancellationToken);
+        return Ok(ApiResponse<PagedResult<UserDto>>.Ok(result));
     }
 
     /// <summary>GET /users/{id} — returns specific user details (Admin only).</summary>

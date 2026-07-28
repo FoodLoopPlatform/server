@@ -103,7 +103,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
 
             await _userManager.AddToRoleAsync(user, request.Role);
 
-            if (isBusinessAccount)
+            if (isBusinessAccount || isCharityAccount)
             {
                 _unitOfWork.Stores.Add(new Store
                 {

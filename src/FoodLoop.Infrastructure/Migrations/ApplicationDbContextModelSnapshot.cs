@@ -65,7 +65,7 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.HasIndex("ListingId")
                         .IsUnique();
 
-                    b.ToTable("AIRecognitionResults");
+                    b.ToTable("AIRecognitionResults", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Address", b =>
@@ -136,7 +136,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Addresses");
+                    b.ToTable("Addresses", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Category", b =>
@@ -183,7 +183,7 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Favorite", b =>
@@ -201,7 +201,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("ListingId");
 
-                    b.ToTable("Favorites");
+                    b.ToTable("Favorites", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Notification", b =>
@@ -249,7 +249,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Order", b =>
@@ -291,7 +291,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.OrderItem", b =>
@@ -313,7 +313,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("ListingId");
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderItems", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Payment", b =>
@@ -358,7 +358,7 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.HasIndex("OrderId")
                         .IsUnique();
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.ProductImage", b =>
@@ -394,7 +394,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("ListingId");
 
-                    b.ToTable("ProductImages");
+                    b.ToTable("ProductImages", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.ProductListing", b =>
@@ -474,7 +474,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("ProductListings");
+                    b.ToTable("ProductListings", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.RefreshToken", b =>
@@ -525,7 +525,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Review", b =>
@@ -571,7 +571,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Store", b =>
@@ -665,7 +665,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("VerificationStatus");
 
-                    b.ToTable("Stores");
+                    b.ToTable("Stores", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.StoreVerification", b =>
@@ -712,7 +712,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("StoreVerifications");
+                    b.ToTable("StoreVerifications", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.SupportTicket", b =>
@@ -749,7 +749,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SupportTickets");
+                    b.ToTable("SupportTickets", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.TicketMessage", b =>
@@ -788,7 +788,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("TicketId");
 
-                    b.ToTable("TicketMessages");
+                    b.ToTable("TicketMessages", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Infrastructure.Identity.ApplicationRole", b =>

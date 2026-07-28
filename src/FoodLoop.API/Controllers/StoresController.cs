@@ -8,6 +8,7 @@ using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace FoodLoop.API.Controllers;
 
@@ -20,7 +21,7 @@ namespace FoodLoop.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("stores")]
-[Authorize(Roles = AppRole.Merchant)]
+[Authorize(Roles = $"{AppRole.Merchant},{AppRole.Charity}")]
 public class StoresController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -43,6 +44,14 @@ public class StoresController : ControllerBase
     public async Task<IActionResult> GetMyStore(CancellationToken cancellationToken)
     {
         var store = await _mediator.Send(new GetMyStoreQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<StoreDto>.Ok(store));
+    }
+
+    /// <summary>PATCH /stores/me — updates the store's name, description, category, and logo.</summary>
+    [HttpPatch("me")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateStoreProfileRequest request, CancellationToken cancellationToken)
+    {
+        var store = await _mediator.Send(new UpdateStoreProfileCommand(OwnerId, request), cancellationToken);
         return Ok(ApiResponse<StoreDto>.Ok(store));
     }
 
@@ -87,7 +96,13 @@ public class StoresController : ControllerBase
 
 public class UploadStoreDocumentRequest
 {
+    [Required, EmailAddress]
     public string Email { get; set; } = null!;
+
+    /// <summary>One of: CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto</summary>
+    [Required]
     public string Type { get; set; } = null!;
+
+    [Required]
     public IFormFile File { get; set; } = null!;
 }
