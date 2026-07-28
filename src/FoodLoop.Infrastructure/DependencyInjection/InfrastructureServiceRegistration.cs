@@ -20,7 +20,7 @@ public static class InfrastructureServiceRegistration
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, string webRootPath)
     {
         var resolvedWebRoot = string.IsNullOrEmpty(webRootPath) 
-            ? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot") 
+            ? Path.Combine(AppContext.BaseDirectory, "wwwroot") 
             : webRootPath;
 
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -43,6 +43,12 @@ public static class InfrastructureServiceRegistration
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
+
+        // Admin user options
+        services.AddOptions<AdminUserOptions>()
+            .Bind(configuration.GetSection(AdminUserOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // JWT Bearer authentication
         services.AddOptions<JwtOptions>()
