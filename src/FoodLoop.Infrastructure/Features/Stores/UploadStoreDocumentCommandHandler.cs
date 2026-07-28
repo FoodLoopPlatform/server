@@ -50,13 +50,15 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadStoreDocu
         }
         else
         {
-            store.Verifications.Add(new StoreVerification
+            var storeVerification = new StoreVerification
             {
                 StoreId = store.Id,
                 VerificationType = command.VerificationType,
                 DocumentUrl = documentUrl,
                 Status = VerificationStatus.Pending,
-            });
+            };
+            _unitOfWork.Repository<StoreVerification>().Add(storeVerification);
+            store.Verifications.Add(storeVerification);
         }
 
         // Once all three required documents are in, the store moves from Unverified
