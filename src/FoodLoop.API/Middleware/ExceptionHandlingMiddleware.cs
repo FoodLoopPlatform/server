@@ -3,6 +3,7 @@ using System.Text.Json;
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
+using Microsoft.Extensions.Hosting;
 
 namespace FoodLoop.API.Middleware;
 
@@ -14,11 +15,13 @@ public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IHostEnvironment _env;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env)
     {
         _next = next;
         _logger = logger;
+        _env = env;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -45,7 +48,9 @@ public class ExceptionHandlingMiddleware
             ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, loc?["Unauthorized"] ?? "Unauthorized."),
             ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
-            _ => (HttpStatusCode.InternalServerError, loc?["UnexpectedError"] ?? "An unexpected error occurred."),
+            _ => (HttpStatusCode.InternalServerError, !_env.IsProduction()
+                ? $"[{exception.GetType().Name}] {exception.Message} {(exception.InnerException != null ? "Inner: " + exception.InnerException.Message : "")}"
+                : (loc?["UnexpectedError"] ?? "An unexpected error occurred.")),
         };
 
         if (statusCode == HttpStatusCode.InternalServerError)
