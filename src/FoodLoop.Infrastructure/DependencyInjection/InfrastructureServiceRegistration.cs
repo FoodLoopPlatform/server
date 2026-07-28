@@ -83,6 +83,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IEmailService, NullEmailService>();
         services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
+        services.AddScoped<ILocalizationService, LocalizationService>();
 
         // CQRS: commands/queries live in the Application assembly, handlers live here in
         // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other

@@ -9,6 +9,7 @@ public class StoreConfiguration : IEntityTypeConfiguration<Store>
     public void Configure(EntityTypeBuilder<Store> builder)
     {
         builder.Property(s => s.Name).HasMaxLength(150).IsRequired();
+        builder.Property(s => s.NameAr).HasMaxLength(150);
         builder.Property(s => s.Governorate).HasMaxLength(100);
         builder.Property(s => s.City).HasMaxLength(100);
         builder.Property(s => s.Neighborhood).HasMaxLength(100);

@@ -9,10 +9,12 @@ namespace FoodLoop.Infrastructure.Features.Users;
 public class DeleteAddressCommandHandler : IRequestHandler<DeleteAddressCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILocalizationService _loc;
 
-    public DeleteAddressCommandHandler(IUnitOfWork unitOfWork)
+    public DeleteAddressCommandHandler(IUnitOfWork unitOfWork, ILocalizationService loc)
     {
         _unitOfWork = unitOfWork;
+        _loc = loc;
     }
 
     public async Task Handle(DeleteAddressCommand command, CancellationToken cancellationToken)
@@ -21,7 +23,7 @@ public class DeleteAddressCommandHandler : IRequestHandler<DeleteAddressCommand>
             ?? throw new NotFoundException(nameof(Address), command.AddressId);
 
         if (address.UserId != command.UserId)
-            throw new ForbiddenAccessException("You cannot delete another user's address.");
+            throw new ForbiddenAccessException(_loc["CannotDeleteOtherUserAddress"]);
 
         _unitOfWork.Addresses.Remove(address);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

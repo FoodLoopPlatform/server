@@ -16,6 +16,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtTokenService _tokenService;
     private readonly IAuthTokenIssuer _tokenIssuer;
+    private readonly ILocalizationService _loc;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
@@ -23,12 +24,14 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         IUnitOfWork unitOfWork,
         IJwtTokenService tokenService,
         IAuthTokenIssuer tokenIssuer,
+        ILocalizationService loc,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
         _tokenIssuer = tokenIssuer;
+        _loc = loc;
         _logger = logger;
     }
 
@@ -38,7 +41,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
         if (existingToken == null)
         {
-            return Result<AuthResponse>.Fail("Invalid refresh token.");
+            return Result<AuthResponse>.Fail(_loc["InvalidRefreshToken"]);
         }
 
         if (!existingToken.IsActive)
@@ -59,13 +62,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
                 _logger.LogWarning("Refresh token reuse detected for user {UserId}. All sessions revoked.", existingToken.UserId);
             }
 
-            return Result<AuthResponse>.Fail("Refresh token is no longer valid. Please log in again.");
+            return Result<AuthResponse>.Fail(_loc["RefreshTokenExpired"]);
         }
 
         var user = await _userManager.FindByIdAsync(existingToken.UserId.ToString());
         if (user == null || user.Status is UserStatus.Suspended or UserStatus.Banned)
         {
-            return Result<AuthResponse>.Fail("Account is not available.");
+            return Result<AuthResponse>.Fail(_loc["AccountNotAvailable"]);
         }
 
         // Rotate: revoke the used token and issue a brand new pair.

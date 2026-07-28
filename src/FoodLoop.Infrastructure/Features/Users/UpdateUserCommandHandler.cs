@@ -1,4 +1,5 @@
 using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Users.Commands;
@@ -13,10 +14,12 @@ namespace FoodLoop.Infrastructure.Features.Users;
 public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Result<UserDto>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILocalizationService _loc;
 
-    public UpdateUserCommandHandler(UserManager<ApplicationUser> userManager)
+    public UpdateUserCommandHandler(UserManager<ApplicationUser> userManager, ILocalizationService loc)
     {
         _userManager = userManager;
+        _loc = loc;
     }
 
     public async Task<Result<UserDto>> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
@@ -29,13 +32,13 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
         if (request.Role != null && !AppRole.All.Contains(request.Role))
         {
             return Result<UserDto>.Fail(
-                $"Invalid role '{request.Role}'. Expected one of: {string.Join(", ", AppRole.All)}.");
+                _loc["InvalidRole", request.Role, string.Join(", ", AppRole.All)]);
         }
 
         if (request.Status != null && !Enum.TryParse<UserStatus>(request.Status, true, out _))
         {
             return Result<UserDto>.Fail(
-                $"Invalid user status '{request.Status}'. Expected values: {string.Join(", ", Enum.GetNames<UserStatus>())}.");
+                _loc["InvalidUserStatus", request.Status, string.Join(", ", Enum.GetNames<UserStatus>())]);
         }
 
         if (!string.IsNullOrWhiteSpace(request.Email) && !request.Email.Equals(user.Email, StringComparison.OrdinalIgnoreCase))
@@ -43,7 +46,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
             var existing = await _userManager.FindByEmailAsync(request.Email);
             if (existing != null)
             {
-                return Result<UserDto>.Fail("Email is already registered.");
+                return Result<UserDto>.Fail(_loc["EmailAlreadyRegistered"]);
             }
             user.Email = request.Email;
             user.UserName = request.Email;
@@ -56,7 +59,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
             user.PhoneNumber = request.PhoneNumber;
 
         if (!string.IsNullOrWhiteSpace(request.Language))
-            user.Language = request.Language;
+            user.Language = request.Language == "ar" ? "ar" : "en";
 
         if (request.Status != null)
         {
@@ -70,7 +73,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
         if (!updateResult.Succeeded)
         {
             return Result<UserDto>.Fail(
-                "Failed to update user.",
+                _loc["FailedToUpdateUser"],
                 updateResult.Errors.Select(e => e.Description));
         }
 
@@ -78,9 +81,8 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
         {
             var currentRoles = await _userManager.GetRolesAsync(user);
             if (currentRoles.Count > 0)
-            {
                 await _userManager.RemoveFromRolesAsync(user, currentRoles);
-            }
+
             await _userManager.AddToRoleAsync(user, request.Role);
         }
 

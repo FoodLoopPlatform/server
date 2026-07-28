@@ -12,11 +12,16 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadStoreDocu
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
+    private readonly ILocalizationService _loc;
 
-    public UploadStoreDocumentCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage)
+    public UploadStoreDocumentCommandHandler(
+        IUnitOfWork unitOfWork,
+        IFileStorageService fileStorage,
+        ILocalizationService loc)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
+        _loc = loc;
     }
 
     public async Task<StoreDto> Handle(UploadStoreDocumentCommand command, CancellationToken cancellationToken)
@@ -24,10 +29,13 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadStoreDocu
         if (!DocumentTypes.All.Contains(command.VerificationType))
         {
             throw new ArgumentException(
-                $"Unknown document type '{command.VerificationType}'. Expected one of: {string.Join(", ", DocumentTypes.All)}.");
+                _loc["UnknownDocumentType", command.VerificationType, string.Join(", ", DocumentTypes.All)]);
         }
 
-        var store = await _unitOfWork.FindByOwnerEmailOrThrowAsync(command.OwnerEmail, cancellationToken);
+        var store = await _unitOfWork.FindByOwnerEmailOrThrowAsync(
+            command.OwnerEmail,
+            _loc["StoreNotFoundByEmail"],
+            cancellationToken);
 
         var documentUrl = await _fileStorage.SaveAsync(command.File, $"stores/{store.Id}", cancellationToken);
 

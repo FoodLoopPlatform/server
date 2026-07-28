@@ -1,5 +1,6 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Users.Commands;
 using FoodLoop.Application.Features.Users.Queries;
@@ -17,11 +18,13 @@ public class UsersController : ControllerBase
 {
     private readonly ISender _mediator;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILocalizationService _loc;
 
-    public UsersController(ISender mediator, ICurrentUserService currentUser)
+    public UsersController(ISender mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
+        _loc = loc;
     }
 
     private Guid UserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
@@ -47,7 +50,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesRequest request, CancellationToken cancellationToken)
     {
         await _mediator.Send(new UpdatePreferencesCommand(UserId, request), cancellationToken);
-        return Ok(ApiResponse.Ok("Preferences updated."));
+        return Ok(ApiResponse.Ok(_loc["PreferencesUpdated"]));
     }
 
     /// <summary>GET /users/me/addresses</summary>
@@ -93,8 +96,8 @@ public class UsersController : ControllerBase
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var users = await _mediator.Send(new ListUsersQuery(role, status, searchTerm, page, pageSize), cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<UserDto>>.Ok(users));
+        var result = await _mediator.Send(new ListUsersQuery(role, status, searchTerm, page, pageSize), cancellationToken);
+        return Ok(ApiResponse<PagedResult<UserDto>>.Ok(result));
     }
 
     /// <summary>GET /users/{id} — returns specific user details (Admin only).</summary>
@@ -113,7 +116,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new CreateUserCommand(request), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to create user.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["FailedToCreateUser"], result.Errors));
 
         return CreatedAtAction(nameof(GetUserById), new { id = result.Data!.Id }, ApiResponse<UserDto>.Ok(result.Data));
     }
@@ -125,7 +128,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new UpdateUserCommand(id, request), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to update user.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["FailedToUpdateUser"], result.Errors));
 
         return Ok(ApiResponse<UserDto>.Ok(result.Data!));
     }
@@ -137,7 +140,7 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new DeleteUserCommand(id), cancellationToken);
         if (!result.Success)
-            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to delete user.", result.Errors));
+            return BadRequest(ApiResponse.Fail(result.Message ?? _loc["FailedToDeleteUser"], result.Errors));
 
         return NoContent();
     }

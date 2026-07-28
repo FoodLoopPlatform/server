@@ -8,6 +8,7 @@ using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace FoodLoop.API.Controllers;
 
@@ -20,16 +21,18 @@ namespace FoodLoop.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("stores")]
-[Authorize(Roles = AppRole.Merchant)]
+[Authorize(Roles = $"{AppRole.Merchant},{AppRole.Charity}")]
 public class StoresController : ControllerBase
 {
     private readonly ISender _mediator;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILocalizationService _loc;
 
-    public StoresController(ISender mediator, ICurrentUserService currentUser)
+    public StoresController(ISender mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
+        _loc = loc;
     }
 
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
@@ -41,6 +44,14 @@ public class StoresController : ControllerBase
     public async Task<IActionResult> GetMyStore(CancellationToken cancellationToken)
     {
         var store = await _mediator.Send(new GetMyStoreQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<StoreDto>.Ok(store));
+    }
+
+    /// <summary>PATCH /stores/me — updates the store's name, description, category, and logo.</summary>
+    [HttpPatch("me")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateStoreProfileRequest request, CancellationToken cancellationToken)
+    {
+        var store = await _mediator.Send(new UpdateStoreProfileCommand(OwnerId, request), cancellationToken);
         return Ok(ApiResponse<StoreDto>.Ok(store));
     }
 
@@ -62,12 +73,12 @@ public class StoresController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.Email))
         {
-            return BadRequest(ApiResponse.Fail("The owner email is required to link documents to an account."));
+            return BadRequest(ApiResponse.Fail(_loc["OwnerEmailRequired"]));
         }
 
         if (request.File == null || request.File.Length == 0)
         {
-            return BadRequest(ApiResponse.Fail("A file is required."));
+            return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
         }
 
         await using var stream = request.File.OpenReadStream();
@@ -85,7 +96,13 @@ public class StoresController : ControllerBase
 
 public class UploadStoreDocumentRequest
 {
+    [Required, EmailAddress]
     public string Email { get; set; } = null!;
+
+    /// <summary>One of: CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto</summary>
+    [Required]
     public string Type { get; set; } = null!;
+
+    [Required]
     public IFormFile File { get; set; } = null!;
 }

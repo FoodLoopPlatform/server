@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+
+  <!-- Auth -->
+  <data name="InvalidEmailOrPassword"><value>البريد الإلكتروني أو كلمة المرور غير صحيحة.</value></data>
+  <data name="AccountNotActive"><value>هذا الحساب غير نشط. يرجى التواصل مع الدعم.</value></data>
+  <data name="EmailAlreadyRegistered"><value>البريد الإلكتروني مسجل بالفعل.</value></data>
+  <data name="PhoneAlreadyRegistered"><value>رقم الهاتف مسجل بالفعل.</value></data>
+  <data name="InvalidRole"><value>الدور '{0}' غير صالح. الأدوار المتاحة: {1}.</value></data>
+  <data name="BusinessNameRequired"><value>اسم النشاط التجاري أو المنظمة مطلوب.</value></data>
+  <data name="RegistrationFailed"><value>فشل إنشاء الحساب.</value></data>
+  <data name="InvalidResetRequest"><value>طلب غير صالح.</value></data>
+  <data name="UnableToResetPassword"><value>تعذّر إعادة تعيين كلمة المرور.</value></data>
+
+  <!-- Store -->
+  <data name="StoreNotFound"><value>لم يتم العثور على متجر لهذا الحساب. يتم إنشاء مسودة متجر تلقائياً عند التسجيل كتاجر.</value></data>
+  <data name="StoreNotFoundByEmail"><value>لم يتم العثور على متجر بهذا البريد الإلكتروني. تأكد من التسجيل كحساب تاجر.</value></data>
+  <data name="UnknownDocumentType"><value>نوع المستند '{0}' غير معروف. الأنواع المتاحة: {1}.</value></data>
+  <data name="OwnerEmailRequired"><value>البريد الإلكتروني للمالك مطلوب لربط المستندات بالحساب.</value></data>
+  <data name="FileRequired"><value>الملف مطلوب.</value></data>
+  <data name="UnableToDeleteUser"><value>فشل حذف المستخدم. قد يكون لديه علاقات نشطة (متجر، طلبات) تمنع الحذف.</value></data>
+
+  <!-- Address -->
+  <data name="CannotDeleteOtherUserAddress"><value>لا يمكنك حذف عنوان مستخدم آخر.</value></data>
+  <data name="CannotModifyOtherUserAddress"><value>لا يمكنك تعديل عنوان مستخدم آخر.</value></data>
+
+  <data name="FailedToCreateUser"><value>فشل إنشاء المستخدم.</value></data>
+  <data name="FailedToUpdateUser"><value>فشل تحديث المستخدم.</value></data>
+  <data name="FailedToDeleteUser"><value>فشل حذف المستخدم.</value></data>
+  <data name="InvalidUserStatus"><value>حالة المستخدم '{0}' غير صالحة. القيم المتاحة: {1}.</value></data>
+
+  <data name="InvalidRefreshToken"><value>رمز التحديث غير صالح.</value></data>
+  <data name="RefreshTokenExpired"><value>رمز التحديث لم يعد صالحاً. يرجى تسجيل الدخول مجدداً.</value></data>
+  <data name="AccountNotAvailable"><value>الحساب غير متاح.</value></data>
+
+  <!-- Generic -->
+  <data name="Unauthorized"><value>غير مصرح.</value></data>
+  <data name="UnexpectedError"><value>حدث خطأ غير متوقع.</value></data>
+  <data name="PreferencesUpdated"><value>تم تحديث التفضيلات.</value></data>
+  <data name="LoggedOut"><value>تم تسجيل الخروج.</value></data>
+  <data name="PasswordReset"><value>تم إعادة تعيين كلمة المرور.</value></data>
+  <data name="ForgotPasswordSent"><value>إذا كان البريد الإلكتروني مسجلاً، فسيتم إرسال رابط إعادة التعيين.</value></data>
+</root>

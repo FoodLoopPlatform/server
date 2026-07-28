@@ -9,6 +9,12 @@ internal static class StoreMappings
     {
         Id = store.Id,
         Name = store.Name,
+        NameAr = store.NameAr,
+        Description = store.Description,
+        DescriptionAr = store.DescriptionAr,
+        Logo = store.Logo,
+        Phone = store.Phone,
+        Email = store.Email,
         BusinessCategory = store.BusinessCategory,
         Governorate = store.Governorate,
         City = store.City,
@@ -18,6 +24,7 @@ internal static class StoreMappings
         Latitude = store.Latitude,
         Longitude = store.Longitude,
         VerificationStatus = store.VerificationStatus.ToString(),
+        OpeningHours = store.OpeningHours,
         Documents = store.Verifications.Select(v => new StoreDocumentDto
         {
             Id = v.Id,

@@ -8,6 +8,12 @@ public class StoreDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? NameAr { get; set; }
+    public string? Description { get; set; }
+    public string? DescriptionAr { get; set; }
+    public string? Logo { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
     public BusinessCategory? BusinessCategory { get; set; }
 
     public string? Governorate { get; set; }
@@ -19,6 +25,7 @@ public class StoreDto
     public double? Longitude { get; set; }
 
     public string VerificationStatus { get; set; } = string.Empty;
+    public string? OpeningHours { get; set; }
     public IReadOnlyList<StoreDocumentDto> Documents { get; set; } = Array.Empty<StoreDocumentDto>();
 }
 
