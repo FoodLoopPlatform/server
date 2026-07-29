@@ -61,20 +61,18 @@ public class StoreService : IStoreService
         // Validate allowed document types based on role
         if (isCharity)
         {
-            if (verificationType == UploadDocumentType.StoreFacilityPhoto)
+            var allowedCharityTypes = new[] { UploadDocumentType.AssociationCertificate, UploadDocumentType.CharityBylaws, UploadDocumentType.BoardOfDirectorsList };
+            if (!allowedCharityTypes.Contains(verificationType))
             {
-                throw new ArgumentException("Charities cannot upload store facility photos.");
-            }
-            if (verificationType == UploadDocumentType.TaxIdCertificate)
-            {
-                throw new ArgumentException("Charities upload registration and tax id in CommercialRegistration slot.");
+                throw new ArgumentException("Charities can only upload AssociationCertificate, CharityBylaws, or BoardOfDirectorsList.");
             }
         }
         else
         {
-            if (verificationType == UploadDocumentType.HealthCertificate)
+            var allowedMerchantTypes = new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.StoreFacilityPhoto };
+            if (!allowedMerchantTypes.Contains(verificationType))
             {
-                throw new ArgumentException("Stores cannot upload health certificates.");
+                throw new ArgumentException("Stores can only upload CommercialRegistration, TaxIdCertificate, or StoreFacilityPhoto.");
             }
         }
 
@@ -91,18 +89,23 @@ public class StoreService : IStoreService
         }
         else
         {
-            store.Verifications.Add(new StoreVerification
+            var storeVerification = new StoreVerification
             {
                 StoreId = store.Id,
                 VerificationType = verificationType,
                 DocumentUrl = documentUrl,
                 Status = VerificationStatus.Pending,
-            });
+            };
+            _unitOfWork.Repository<StoreVerification>().Add(storeVerification);
+            if (!store.Verifications.Contains(storeVerification))
+            {
+                store.Verifications.Add(storeVerification);
+            }
         }
 
         // Determine required document types
         var requiredTypes = isCharity
-            ? new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.HealthCertificate }
+            ? new[] { UploadDocumentType.AssociationCertificate, UploadDocumentType.CharityBylaws, UploadDocumentType.BoardOfDirectorsList }
             : new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.StoreFacilityPhoto };
 
         if (requiredTypes.All(t => store.Verifications.Any(v => v.VerificationType == t)))
