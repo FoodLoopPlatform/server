@@ -65,6 +65,17 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<AdminStoreDto>.Ok(store));
     }
 
+    /// <summary>
+    /// PATCH /admin/charities/{id}/verify — approve or reject a charity's onboarding verification.
+    /// Action must be "Approved" or "Rejected".
+    /// </summary>
+    [HttpPatch("charities/{id:guid}/verify")]
+    public async Task<IActionResult> VerifyCharity(Guid id, [FromBody] VerifyStoreRequest request, CancellationToken cancellationToken)
+    {
+        var store = await _mediator.Send(new VerifyStoreCommand(id, AdminId, request), cancellationToken);
+        return Ok(ApiResponse<AdminStoreDto>.Ok(store));
+    }
+
     // ── User management ──────────────────────────────────────────────────────
 
     /// <summary>
