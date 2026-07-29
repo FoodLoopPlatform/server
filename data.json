@@ -1,0 +1,52 @@
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "c370a54a-26f6-4bd5-1665-08deed75ae60",
+      "fullName": "Hope Food Distribution",
+      "email": "charity.hope.formation@example.com",
+      "phoneNumber": null,
+      "profileImage": null,
+      "language": "en",
+      "status": "PendingVerification",
+      "orderUpdatesEnabled": true,
+      "marketingNotificationsEnabled": false,
+      "roles": [
+        "Charity"
+      ],
+      "createdAt": "2026-07-29T13:31:22.0509863+00:00"
+    },
+    "accessToken": "",
+    "refreshToken": "",
+    "accessTokenExpiresAt": "0001-01-01T00:00:00+00:00"
+  },
+  "message": null,
+  "errors": []
+}
+
+
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "c5ac2a65-8be0-4c4f-b1a4-08deecf46c93",
+      "fullName": "System Administrator",
+      "email": "admin@foodloop.com",
+      "phoneNumber": null,
+      "profileImage": null,
+      "language": "en",
+      "status": "Active",
+      "orderUpdatesEnabled": true,
+      "marketingNotificationsEnabled": false,
+      "roles": [
+        "Admin"
+      ],
+      "createdAt": "2026-07-28T22:06:06.7492953+00:00"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNWFjMmE2NS04YmUwLTRjNGYtYjFhNC0wOGRlZWNmNDZjOTMiLCJlbWFpbCI6ImFkbWluQGZvb2Rsb29wLmNvbSIsImp0aSI6IjdhZGFlNTA0LWQyZTYtNDZiNC1hYmUyLWQxZjdiODVlMzg3MSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYzVhYzJhNjUtOGJlMC00YzRmLWIxYTQtMDhkZWVjZjQ2YzkzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3ODUzMzMxMDUsImlzcyI6IkZvb2RMb29wLkFQSSIsImF1ZCI6IkZvb2RMb29wLkNsaWVudHMifQ.Q6xlVXEf0LovIPsJ7ywmqaJaUFyIGFvpJKlk5Xcxz0c",
+    "refreshToken": "xBy/HlZyGTF7HR3Afhp+ZQ34Y6SmYviO8fhlGACYLRDciJb4ib5GlOMeUzhcKTAGxtio7QfuzIC69nm/SKuXpA==",
+    "accessTokenExpiresAt": "2026-07-29T13:51:45.8830021+00:00"
+  },
+  "message": null,
+  "errors": []
+}
