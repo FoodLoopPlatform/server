@@ -28,7 +28,7 @@ internal static class StoreMappings
         Documents = store.Verifications.Select(v => new StoreDocumentDto
         {
             Id = v.Id,
-            VerificationType = v.VerificationType,
+            VerificationType = v.VerificationType.ToString(),
             DocumentUrl = v.DocumentUrl,
             Status = v.Status.ToString(),
         }).ToArray(),
