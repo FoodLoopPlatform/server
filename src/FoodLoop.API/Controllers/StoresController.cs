@@ -65,7 +65,7 @@ public class StoresController : ControllerBase
 
     /// <summary>POST /stores/me/documents — step 2's document upload (document_upload_step_2).
     /// Does not require authentication: the store is identified by the owner's registered email.
-    /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto.</summary>
+    /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto | HealthCertificate.</summary>
     [HttpPost("me/documents")]
     [AllowAnonymous]
     [RequestSizeLimit(10_000_000)]
@@ -99,9 +99,9 @@ public class UploadStoreDocumentRequest
     [Required, EmailAddress]
     public string Email { get; set; } = null!;
 
-    /// <summary>One of: CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto</summary>
+    /// <summary>Document type: CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto | HealthCertificate</summary>
     [Required]
-    public string Type { get; set; } = null!;
+    public UploadDocumentType Type { get; set; }
 
     [Required]
     public IFormFile File { get; set; } = null!;

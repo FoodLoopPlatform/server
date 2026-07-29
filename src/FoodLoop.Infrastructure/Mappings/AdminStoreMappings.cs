@@ -34,7 +34,7 @@ internal static class AdminStoreMappings
         Documents = store.Verifications.Select(v => new AdminStoreDocumentDto
         {
             Id = v.Id,
-            VerificationType = v.VerificationType,
+            VerificationType = v.VerificationType.ToString(),
             DocumentUrl = v.DocumentUrl,
             Status = v.Status.ToString(),
             ReviewedAt = v.ReviewedAt,

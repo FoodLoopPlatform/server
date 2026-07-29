@@ -8,7 +8,10 @@ public class StoreVerificationConfiguration : IEntityTypeConfiguration<StoreVeri
 {
     public void Configure(EntityTypeBuilder<StoreVerification> builder)
     {
-        builder.Property(v => v.VerificationType).HasMaxLength(100).IsRequired();
+        builder.Property(v => v.VerificationType)
+            .HasConversion<string>()
+            .HasMaxLength(100)
+            .IsRequired();
         builder.Property(v => v.DocumentUrl).HasMaxLength(500).IsRequired();
     }
 }

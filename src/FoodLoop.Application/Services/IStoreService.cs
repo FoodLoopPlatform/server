@@ -1,5 +1,6 @@
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Stores;
+using FoodLoop.Domain.Enums;
 
 namespace FoodLoop.Application.Services;
 
@@ -17,5 +18,5 @@ public interface IStoreService
     Task<StoreDto> UpdateLocationAsync(Guid ownerId, UpdateStoreLocationRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>POST /stores/me/documents — step 2's document upload (called once per document type).</summary>
-    Task<StoreDto> UploadDocumentAsync(Guid ownerId, string verificationType, FileUploadRequest file, CancellationToken cancellationToken = default);
+    Task<StoreDto> UploadDocumentAsync(Guid ownerId, UploadDocumentType verificationType, FileUploadRequest file, CancellationToken cancellationToken = default);
 }

@@ -5,6 +5,9 @@ using FoodLoop.Application.DTOs.Stores;
 using FoodLoop.Application.Services;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
+using FoodLoop.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
+using System.Linq;
 
 namespace FoodLoop.Infrastructure.Services;
 
@@ -12,11 +15,13 @@ public class StoreService : IStoreService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public StoreService(IUnitOfWork unitOfWork, IFileStorageService fileStorage)
+    public StoreService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
+        _userManager = userManager;
     }
 
     public async Task<StoreDto> GetMyStoreAsync(Guid ownerId, CancellationToken cancellationToken = default)
@@ -41,15 +46,37 @@ public class StoreService : IStoreService
         return ToDto(store);
     }
 
-    public async Task<StoreDto> UploadDocumentAsync(Guid ownerId, string verificationType, FileUploadRequest file, CancellationToken cancellationToken = default)
+    public async Task<StoreDto> UploadDocumentAsync(Guid ownerId, UploadDocumentType verificationType, FileUploadRequest file, CancellationToken cancellationToken = default)
     {
-        if (!DocumentTypes.All.Contains(verificationType))
+        var store = await FindStoreOrThrowAsync(ownerId, cancellationToken);
+
+        var owner = await _userManager.FindByIdAsync(store.OwnerId.ToString());
+        if (owner == null)
         {
-            throw new ArgumentException(
-                $"Unknown document type '{verificationType}'. Expected one of: {string.Join(", ", DocumentTypes.All)}.");
+            throw new NotFoundException("Owner user not found.");
         }
 
-        var store = await FindStoreOrThrowAsync(ownerId, cancellationToken);
+        var isCharity = await _userManager.IsInRoleAsync(owner, AppRole.Charity);
+
+        // Validate allowed document types based on role
+        if (isCharity)
+        {
+            if (verificationType == UploadDocumentType.StoreFacilityPhoto)
+            {
+                throw new ArgumentException("Charities cannot upload store facility photos.");
+            }
+            if (verificationType == UploadDocumentType.TaxIdCertificate)
+            {
+                throw new ArgumentException("Charities upload registration and tax id in CommercialRegistration slot.");
+            }
+        }
+        else
+        {
+            if (verificationType == UploadDocumentType.HealthCertificate)
+            {
+                throw new ArgumentException("Stores cannot upload health certificates.");
+            }
+        }
 
         var documentUrl = await _fileStorage.SaveAsync(file, $"stores/{store.Id}", cancellationToken);
 
@@ -73,9 +100,12 @@ public class StoreService : IStoreService
             });
         }
 
-        // Once all three required documents are in, the store moves from Unverified
-        // to Pending admin review (matches verification_pending_step_3).
-        if (DocumentTypes.All.All(t => store.Verifications.Any(v => v.VerificationType == t)))
+        // Determine required document types
+        var requiredTypes = isCharity
+            ? new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.HealthCertificate }
+            : new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.StoreFacilityPhoto };
+
+        if (requiredTypes.All(t => store.Verifications.Any(v => v.VerificationType == t)))
         {
             store.VerificationStatus = VerificationStatus.Pending;
         }
@@ -109,7 +139,7 @@ public class StoreService : IStoreService
         Documents = store.Verifications.Select(v => new StoreDocumentDto
         {
             Id = v.Id,
-            VerificationType = v.VerificationType,
+            VerificationType = v.VerificationType.ToString(),
             DocumentUrl = v.DocumentUrl,
             Status = v.Status.ToString(),
         }).ToArray(),
