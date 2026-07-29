@@ -14,25 +14,25 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Admin;
 
-public class GetAdminStoresQueryHandler : IRequestHandler<GetAdminStoresQuery, IReadOnlyList<AdminStoreDto>>
+public class GetAdminCharitiesQueryHandler : IRequestHandler<GetAdminCharitiesQuery, IReadOnlyList<AdminStoreDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public GetAdminStoresQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+    public GetAdminCharitiesQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
     }
 
-    public async Task<IReadOnlyList<AdminStoreDto>> Handle(GetAdminStoresQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AdminStoreDto>> Handle(GetAdminCharitiesQuery request, CancellationToken cancellationToken)
     {
-        var merchantUsers = await _userManager.GetUsersInRoleAsync(AppRole.Merchant);
-        var merchantUserIds = merchantUsers.Select(u => u.Id).ToList();
+        var charityUsers = await _userManager.GetUsersInRoleAsync(AppRole.Charity);
+        var charityUserIds = charityUsers.Select(u => u.Id).ToList();
 
         var query = _unitOfWork.Stores.Query()
             .Include(s => s.Verifications)
-            .Where(s => !s.IsDeleted && merchantUserIds.Contains(s.OwnerId))
+            .Where(s => !s.IsDeleted && charityUserIds.Contains(s.OwnerId))
             .AsQueryable();
 
         if (request.Status.HasValue)
@@ -49,7 +49,7 @@ public class GetAdminStoresQueryHandler : IRequestHandler<GetAdminStoresQuery, I
         var result = new List<AdminStoreDto>();
         foreach (var store in stores)
         {
-            var owner = merchantUsers.FirstOrDefault(u => u.Id == store.OwnerId);
+            var owner = charityUsers.FirstOrDefault(u => u.Id == store.OwnerId);
             if (owner != null)
                 result.Add(store.ToAdminDto(owner));
         }

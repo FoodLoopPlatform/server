@@ -1,0 +1,25 @@
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "238e0505-471b-4427-f96a-08deed782fc5",
+      "fullName": "Pure Charity Distribution",
+      "email": "charity.pure@example.com",
+      "phoneNumber": null,
+      "profileImage": null,
+      "language": "en",
+      "status": "PendingVerification",
+      "orderUpdatesEnabled": true,
+      "marketingNotificationsEnabled": false,
+      "roles": [
+        "Charity"
+      ],
+      "createdAt": "2026-07-29T13:49:18.2393655+00:00"
+    },
+    "accessToken": "",
+    "refreshToken": "",
+    "accessTokenExpiresAt": "0001-01-01T00:00:00+00:00"
+  },
+  "message": null,
+  "errors": []
+}
