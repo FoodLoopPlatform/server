@@ -131,6 +131,20 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<IReadOnlyList<AdminStoreDto>>.Ok(stores));
     }
 
+    /// <summary>
+    /// GET /admin/charities — list all charities with optional VerificationStatus filter.
+    /// </summary>
+    [HttpGet("charities")]
+    public async Task<IActionResult> GetCharities(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] VerificationStatus? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var charities = await _mediator.Send(new GetAdminCharitiesQuery(pageNumber, pageSize, status), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminStoreDto>>.Ok(charities));
+    }
+
     // ── Review moderation ─────────────────────────────────────────────────────
 
     /// <summary>

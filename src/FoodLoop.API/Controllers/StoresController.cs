@@ -21,7 +21,7 @@ namespace FoodLoop.API.Controllers;
 /// </summary>
 [ApiController]
 [Route("stores")]
-[Authorize(Roles = $"{AppRole.Merchant},{AppRole.Charity}")]
+[Authorize(Roles = AppRole.Merchant)]
 public class StoresController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -65,7 +65,7 @@ public class StoresController : ControllerBase
 
     /// <summary>POST /stores/me/documents — step 2's document upload (document_upload_step_2).
     /// Does not require authentication: the store is identified by the owner's registered email.
-    /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto | AssociationCertificate | CharityBylaws | BoardOfDirectorsList.</summary>
+    /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto.</summary>
     [HttpPost("me/documents")]
     [AllowAnonymous]
     [RequestSizeLimit(10_000_000)]
@@ -99,7 +99,7 @@ public class UploadStoreDocumentRequest
     [Required, EmailAddress]
     public string Email { get; set; } = null!;
 
-    /// <summary>Document type: CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto | AssociationCertificate | CharityBylaws | BoardOfDirectorsList</summary>
+    /// <summary>Document type: CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto</summary>
     [Required]
     public UploadDocumentType Type { get; set; }
 
