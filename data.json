@@ -2,23 +2,23 @@
   "success": true,
   "data": {
     "user": {
-      "id": "c5ac2a65-8be0-4c4f-b1a4-08deecf46c93",
-      "fullName": "System Administrator",
-      "email": "admin@foodloop.com",
+      "id": "238e0505-471b-4427-f96a-08deed782fc5",
+      "fullName": "Pure Charity Distribution",
+      "email": "charity.pure@example.com",
       "phoneNumber": null,
       "profileImage": null,
       "language": "en",
-      "status": "Active",
+      "status": "PendingVerification",
       "orderUpdatesEnabled": true,
       "marketingNotificationsEnabled": false,
       "roles": [
-        "Admin"
+        "Charity"
       ],
-      "createdAt": "2026-07-28T22:06:06.7492953+00:00"
+      "createdAt": "2026-07-29T13:49:18.2393655+00:00"
     },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNWFjMmE2NS04YmUwLTRjNGYtYjFhNC0wOGRlZWNmNDZjOTMiLCJlbWFpbCI6ImFkbWluQGZvb2Rsb29wLmNvbSIsImp0aSI6ImQ5N2UzNzI3LWJhMWItNDFhZS05ODYxLWI4MWRiZDEwZjgzMiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYzVhYzJhNjUtOGJlMC00YzRmLWIxYTQtMDhkZWVjZjQ2YzkzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3ODUzMzM0NTksImlzcyI6IkZvb2RMb29wLkFQSSIsImF1ZCI6IkZvb2RMb29wLkNsaWVudHMifQ.IeUCjzGnWFMISXCndK9Ejqbcrd5TZ2-FfsSHLbRcbkk",
-    "refreshToken": "OvUlxyrAmPdaFSgRX+pd6qpvj1H5i5gvTUTnlbaGLRtAcKGY1V8T7eXR7H4VwyFhPYKStKQ1OCKJsYhHrU9qMw==",
-    "accessTokenExpiresAt": "2026-07-29T13:57:39.7305656+00:00"
+    "accessToken": "",
+    "refreshToken": "",
+    "accessTokenExpiresAt": "0001-01-01T00:00:00+00:00"
   },
   "message": null,
   "errors": []
