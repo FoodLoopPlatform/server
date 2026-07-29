@@ -91,4 +91,134 @@ public class AdminController : ControllerBase
         var log = await _mediator.Send(new GetUserActivityLogQuery(id), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
     }
+
+    // ── Analytics ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/analytics/summary — high-level metrics for dashboard (total users, stores, sales, savings).
+    /// </summary>
+    [HttpGet("analytics/summary")]
+    public async Task<IActionResult> GetAnalyticsSummary(CancellationToken cancellationToken)
+    {
+        var summary = await _mediator.Send(new GetAnalyticsSummaryQuery(), cancellationToken);
+        return Ok(ApiResponse<AnalyticsSummaryDto>.Ok(summary));
+    }
+
+    // ── Store moderation ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/stores — list all stores with optional VerificationStatus filter.
+    /// </summary>
+    [HttpGet("stores")]
+    public async Task<IActionResult> GetStores(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] VerificationStatus? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var stores = await _mediator.Send(new GetAdminStoresQuery(pageNumber, pageSize, status), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminStoreDto>>.Ok(stores));
+    }
+
+    // ── Review moderation ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/reviews — list all reviews with optional Rating and StoreId filters.
+    /// </summary>
+    [HttpGet("reviews")]
+    public async Task<IActionResult> GetReviews(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] int? rating = null,
+        [FromQuery] Guid? storeId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var reviews = await _mediator.Send(new GetAdminReviewsQuery(pageNumber, pageSize, rating, storeId), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminReviewDto>>.Ok(reviews));
+    }
+
+    /// <summary>
+    /// DELETE /admin/reviews/{id} — moderate and remove an inappropriate review.
+    /// </summary>
+    [HttpDelete("reviews/{id:guid}")]
+    public async Task<IActionResult> DeleteReview(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteReviewCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    // ── Product Listing moderation ───────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/listings — list all product listings with optional Status and StoreId filters.
+    /// </summary>
+    [HttpGet("listings")]
+    public async Task<IActionResult> GetListings(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] Guid? storeId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var listings = await _mediator.Send(new GetAdminListingsQuery(pageNumber, pageSize, status, storeId), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminListingDto>>.Ok(listings));
+    }
+
+    /// <summary>
+    /// DELETE /admin/listings/{id} — suspend and soft-delete a product listing.
+    /// </summary>
+    [HttpDelete("listings/{id:guid}")]
+    public async Task<IActionResult> DeleteListing(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteListingCommand(id), cancellationToken);
+        return NoContent();
+    }
+
+    // ── Support Tickets ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/support-tickets — list support tickets with status and priority filters.
+    /// </summary>
+    [HttpGet("support-tickets")]
+    public async Task<IActionResult> GetSupportTickets(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? status = null,
+        [FromQuery] string? priority = null,
+        CancellationToken cancellationToken = default)
+    {
+        var tickets = await _mediator.Send(new GetSupportTicketsQuery(pageNumber, pageSize, status, priority), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<SupportTicketDto>>.Ok(tickets));
+    }
+
+    /// <summary>
+    /// GET /admin/support-tickets/{id} — get a ticket detail with full conversation history.
+    /// </summary>
+    [HttpGet("support-tickets/{id:guid}")]
+    public async Task<IActionResult> GetSupportTicketDetail(Guid id, CancellationToken cancellationToken)
+    {
+        var ticket = await _mediator.Send(new GetSupportTicketDetailQuery(id), cancellationToken);
+        return Ok(ApiResponse<SupportTicketDetailDto>.Ok(ticket));
+    }
+
+    /// <summary>
+    /// POST /admin/support-tickets/{id}/reply — reply to a support ticket.
+    /// </summary>
+    [HttpPost("support-tickets/{id:guid}/reply")]
+    public async Task<IActionResult> ReplyToSupportTicket(
+        Guid id, [FromBody] string message, CancellationToken cancellationToken)
+    {
+        var replyDto = await _mediator.Send(new ReplyToSupportTicketCommand(id, AdminId, message), cancellationToken);
+        return Ok(ApiResponse<TicketMessageDto>.Ok(replyDto));
+    }
+
+    /// <summary>
+    /// PATCH /admin/support-tickets/{id}/close — resolve and close a support ticket.
+    /// </summary>
+    [HttpPatch("support-tickets/{id:guid}/close")]
+    public async Task<IActionResult> CloseSupportTicket(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new CloseSupportTicketCommand(id), cancellationToken);
+        return NoContent();
+    }
 }
