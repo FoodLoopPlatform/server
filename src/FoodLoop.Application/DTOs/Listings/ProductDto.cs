@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace FoodLoop.Application.DTOs.Listings;
 
-public class ProductListingDto
+public class ProductDto
 {
     public Guid Id { get; set; }
     public Guid StoreId { get; set; }

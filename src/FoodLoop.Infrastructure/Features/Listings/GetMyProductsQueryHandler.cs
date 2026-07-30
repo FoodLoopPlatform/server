@@ -15,20 +15,20 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Listings;
 
-public class GetMyListingsQueryHandler : IRequestHandler<GetMyListingsQuery, IReadOnlyList<ProductListingDto>>
+public class GetMyProductsQueryHandler : IRequestHandler<GetMyProductsQuery, IReadOnlyList<ProductDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public GetMyListingsQueryHandler(IUnitOfWork unitOfWork)
+    public GetMyProductsQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IReadOnlyList<ProductListingDto>> Handle(GetMyListingsQuery query, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ProductDto>> Handle(GetMyProductsQuery query, CancellationToken cancellationToken)
     {
         var store = await _unitOfWork.FindByOwnerOrThrowAsync(query.OwnerId, "Store not found.", cancellationToken);
 
-        var dbQuery = _unitOfWork.Repository<ProductListing>().Query()
+        var dbQuery = _unitOfWork.Repository<Product>().Query()
             .Include(l => l.Category)
             .Include(l => l.Images)
             .Where(l => l.StoreId == store.Id && !l.IsDeleted)
@@ -53,12 +53,12 @@ public class GetMyListingsQueryHandler : IRequestHandler<GetMyListingsQuery, IRe
             dbQuery = dbQuery.Where(l => l.Title.ToLower().Contains(search) || (l.TitleAr != null && l.TitleAr.ToLower().Contains(search)));
         }
 
-        var listings = await dbQuery
+        var products = await dbQuery
             .OrderByDescending(l => l.CreatedAt)
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
-        return listings.Select(l => l.ToDto()).ToList();
+        return products.Select(l => l.ToDto()).ToList();
     }
 }

@@ -2,10 +2,10 @@ using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Listings;
 using MediatR;
 using System;
+using System.Collections.Generic;
 
 namespace FoodLoop.Application.Features.Listings.Commands;
 
-public record UploadListingImageCommand(
+public record BulkUploadProductsCommand(
     Guid OwnerId,
-    Guid ListingId,
-    FileUploadRequest File) : IRequest<ProductListingDto>;
+    FileUploadRequest File) : IRequest<IReadOnlyList<ProductDto>>;

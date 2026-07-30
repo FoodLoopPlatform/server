@@ -8,12 +8,12 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 {
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
-        builder.HasKey(i => new { i.OrderId, i.ListingId });
+        builder.HasKey(i => new { i.OrderId, i.ProductId });
         builder.Property(i => i.UnitPrice).HasPrecision(10, 2);
 
-        builder.HasOne(i => i.Listing)
+        builder.HasOne(i => i.Product)
             .WithMany(p => p.OrderItems)
-            .HasForeignKey(i => i.ListingId)
+            .HasForeignKey(i => i.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

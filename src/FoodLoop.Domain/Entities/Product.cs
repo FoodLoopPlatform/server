@@ -1,9 +1,11 @@
 using FoodLoop.Domain.Common;
 using FoodLoop.Domain.Enums;
+using System;
+using System.Collections.Generic;
 
 namespace FoodLoop.Domain.Entities;
 
-public class ProductListing : BaseEntity, ISoftDelete
+public class Product : BaseEntity, ISoftDelete
 {
     public Guid StoreId { get; set; }
     public Store? Store { get; set; }

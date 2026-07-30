@@ -8,7 +8,7 @@ public class Category : BaseEntity, ISoftDelete
     public string? NameAr { get; set; }
     public string? Icon { get; set; }
 
-    public ICollection<ProductListing> ProductListings { get; set; } = new List<ProductListing>();
+    public ICollection<Product> Products { get; set; } = new List<Product>();
 
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid? DeletedBy { get; set; }

@@ -13,21 +13,21 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Listings;
 
-public class CreateProductListingCommandHandler : IRequestHandler<CreateProductListingCommand, ProductListingDto>
+public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, ProductDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public CreateProductListingCommandHandler(IUnitOfWork unitOfWork)
+    public CreateProductCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ProductListingDto> Handle(CreateProductListingCommand command, CancellationToken cancellationToken)
+    public async Task<ProductDto> Handle(CreateProductCommand command, CancellationToken cancellationToken)
     {
         var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Store not found.", cancellationToken);
         if (store.VerificationStatus != VerificationStatus.Verified)
         {
-            throw new ArgumentException("Your store must be verified by an admin before you can manage product listings.");
+            throw new ArgumentException("Your store must be verified by an admin before you can manage products.");
         }
 
         var category = await _unitOfWork.Repository<Category>().GetByIdAsync(command.CategoryId, cancellationToken)
@@ -48,7 +48,7 @@ public class CreateProductListingCommandHandler : IRequestHandler<CreateProductL
             throw new ArgumentException("Quantity available cannot be negative.");
         }
 
-        var listing = new ProductListing
+        var product = new Product
         {
             StoreId = store.Id,
             CategoryId = command.CategoryId,
@@ -63,12 +63,12 @@ public class CreateProductListingCommandHandler : IRequestHandler<CreateProductL
             Status = ListingStatus.Active
         };
 
-        _unitOfWork.Repository<ProductListing>().Add(listing);
+        _unitOfWork.Repository<Product>().Add(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Fetch category info to populate DTO
-        listing.Category = category;
+        product.Category = category;
 
-        return listing.ToDto();
+        return product.ToDto();
     }
 }

@@ -2,7 +2,7 @@ using System;
 
 namespace FoodLoop.Application.DTOs.Admin;
 
-public class AdminListingDto
+public class AdminProductDto
 {
     public Guid Id { get; set; }
     public Guid StoreId { get; set; }

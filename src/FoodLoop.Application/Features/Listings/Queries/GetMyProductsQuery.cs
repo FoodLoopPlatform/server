@@ -5,10 +5,10 @@ using System.Collections.Generic;
 
 namespace FoodLoop.Application.Features.Listings.Queries;
 
-public record GetMyListingsQuery(
+public record GetMyProductsQuery(
     Guid OwnerId,
     int PageNumber = 1,
     int PageSize = 10,
     Guid? CategoryId = null,
     string? Status = null,
-    string? SearchTerm = null) : IRequest<IReadOnlyList<ProductListingDto>>;
+    string? SearchTerm = null) : IRequest<IReadOnlyList<ProductDto>>;
