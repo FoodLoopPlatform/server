@@ -19,15 +19,15 @@ using System.Threading.Tasks;
 namespace FoodLoop.API.Controllers;
 
 [ApiController]
-[Route("stores/me/listings")]
+[Route("stores/me/products")]
 [Authorize(Roles = AppRole.Merchant)]
-public class MerchantListingsController : ControllerBase
+public class MerchantProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly ILocalizationService _loc;
 
-    public MerchantListingsController(IMediator mediator, ICurrentUserService currentUser, ILocalizationService loc)
+    public MerchantProductsController(IMediator mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
@@ -37,10 +37,10 @@ public class MerchantListingsController : ControllerBase
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     /// <summary>
-    /// POST /stores/me/listings — create a new product listing.
+    /// POST /stores/me/products — create a new product.
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> CreateListing([FromBody] CreateProductListingRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateProductListingCommand(
             OwnerId,
@@ -59,10 +59,10 @@ public class MerchantListingsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /stores/me/listings — list all product listings belonging to the caller's store.
+    /// GET /stores/me/products — list all products belonging to the caller's store.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetMyListings(
+    public async Task<IActionResult> GetMyProducts(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] Guid? categoryId = null,
@@ -76,10 +76,10 @@ public class MerchantListingsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /stores/me/listings/{id} — get details of a single product listing.
+    /// GET /stores/me/products/{id} — get details of a single product.
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetListingDetail(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProductDetail(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetListingDetailQuery(OwnerId, id);
         var listing = await _mediator.Send(query, cancellationToken);
@@ -87,10 +87,10 @@ public class MerchantListingsController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /stores/me/listings/{id} — update a product listing.
+    /// PATCH /stores/me/products/{id} — update a product.
     /// </summary>
     [HttpPatch("{id:guid}")]
-    public async Task<IActionResult> UpdateListing(Guid id, [FromBody] UpdateProductListingRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateProductListingCommand(
             OwnerId,
@@ -111,10 +111,10 @@ public class MerchantListingsController : ControllerBase
     }
 
     /// <summary>
-    /// DELETE /stores/me/listings/{id} — soft-delete a product listing.
+    /// DELETE /stores/me/products/{id} — soft-delete a product.
     /// </summary>
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteListing(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteProductListingCommand(OwnerId, id);
         await _mediator.Send(command, cancellationToken);
@@ -122,7 +122,7 @@ public class MerchantListingsController : ControllerBase
     }
 
     /// <summary>
-    /// POST /stores/me/listings/{id}/images — upload an image for a product listing.
+    /// POST /stores/me/products/{id}/images — upload an image for a product.
     /// </summary>
     [HttpPost("{id:guid}/images")]
     [RequestSizeLimit(10_000_000)]
@@ -147,7 +147,7 @@ public class MerchantListingsController : ControllerBase
     }
 
     /// <summary>
-    /// POST /stores/me/listings/bulk — upload product listings in bulk via CSV.
+    /// POST /stores/me/products/bulk — upload products in bulk via CSV.
     /// </summary>
     [HttpPost("bulk")]
     [RequestSizeLimit(15_000_000)]
@@ -172,7 +172,7 @@ public class MerchantListingsController : ControllerBase
     }
 }
 
-public class CreateProductListingRequest
+public class CreateProductRequest
 {
     [Required]
     public Guid CategoryId { get; set; }
@@ -197,7 +197,7 @@ public class CreateProductListingRequest
     public DateOnly ExpirationDate { get; set; }
 }
 
-public class UpdateProductListingRequest
+public class UpdateProductRequest
 {
     public Guid? CategoryId { get; set; }
     public string? Title { get; set; }
