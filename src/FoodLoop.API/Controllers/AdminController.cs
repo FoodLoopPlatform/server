@@ -172,13 +172,13 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
-    // ── Product Listing moderation ───────────────────────────────────────────
+    // ── Product moderation ───────────────────────────────────────────
 
     /// <summary>
-    /// GET /admin/listings — list all product listings with optional Status and StoreId filters.
+    /// GET /admin/products — list all products with optional Status and StoreId filters.
     /// </summary>
-    [HttpGet("listings")]
-    public async Task<IActionResult> GetListings(
+    [HttpGet("products")]
+    public async Task<IActionResult> GetProducts(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? status = null,
@@ -190,10 +190,10 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// DELETE /admin/listings/{id} — suspend and soft-delete a product listing.
+    /// DELETE /admin/products/{id} — suspend and soft-delete a product.
     /// </summary>
-    [HttpDelete("listings/{id:guid}")]
-    public async Task<IActionResult> DeleteListing(Guid id, CancellationToken cancellationToken)
+    [HttpDelete("products/{id:guid}")]
+    public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeleteListingCommand(id), cancellationToken);
         return NoContent();
