@@ -1,9 +1,13 @@
+using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Options;
+using FoodLoop.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FoodLoop.Infrastructure.Identity;
 
@@ -17,6 +21,7 @@ public static class IdentitySeeder
     {
         await SeedRolesAsync(services);
         await SeedAdminAsync(services);
+        await SeedCategoriesAsync(services);
     }
 
     private static async Task SeedRolesAsync(IServiceProvider services)
@@ -95,6 +100,29 @@ public static class IdentitySeeder
             await userManager.AddToRoleAsync(admin, AppRole.Admin);
 
             logger.LogInformation("Default administrator account created.");
+        }
+    }
+
+    private static async Task SeedCategoriesAsync(IServiceProvider services)
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeeder");
+
+        if (!context.Categories.Any())
+        {
+            var categories = new List<Category>
+            {
+                new() { Id = Guid.NewGuid(), Name = "Fruits & Vegetables", NameAr = "خضروات وفواكه" },
+                new() { Id = Guid.NewGuid(), Name = "Bakery", NameAr = "مخبوزات" },
+                new() { Id = Guid.NewGuid(), Name = "Dairy & Eggs", NameAr = "ألبان وبيض" },
+                new() { Id = Guid.NewGuid(), Name = "Meals", NameAr = "وجبات جاهزة" },
+                new() { Id = Guid.NewGuid(), Name = "Groceries", NameAr = "مواد غذائية" },
+                new() { Id = Guid.NewGuid(), Name = "Desserts", NameAr = "حلويات" }
+            };
+
+            await context.Categories.AddRangeAsync(categories);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded standard product categories.");
         }
     }
 }
