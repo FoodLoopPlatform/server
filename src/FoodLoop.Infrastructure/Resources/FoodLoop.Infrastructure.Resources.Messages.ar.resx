@@ -60,4 +60,5 @@
   <data name="LoggedOut"><value>تم تسجيل الخروج.</value></data>
   <data name="PasswordReset"><value>تم إعادة تعيين كلمة المرور.</value></data>
   <data name="ForgotPasswordSent"><value>إذا كان البريد الإلكتروني مسجلاً، فسيتم إرسال رابط إعادة التعيين.</value></data>
+  <data name="ListingDeletedSuccessfully"><value>تم حذف المنتج بنجاح.</value></data>
 </root>

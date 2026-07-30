@@ -1,9 +1,13 @@
+using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Options;
+using FoodLoop.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace FoodLoop.Infrastructure.Identity;
 
@@ -17,6 +21,7 @@ public static class IdentitySeeder
     {
         await SeedRolesAsync(services);
         await SeedAdminAsync(services);
+        await SeedCategoriesAsync(services);
     }
 
     private static async Task SeedRolesAsync(IServiceProvider services)
@@ -95,6 +100,43 @@ public static class IdentitySeeder
             await userManager.AddToRoleAsync(admin, AppRole.Admin);
 
             logger.LogInformation("Default administrator account created.");
+        }
+    }
+
+    private static async Task SeedCategoriesAsync(IServiceProvider services)
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeeder");
+
+        var standardCategories = new List<(string Name, string NameAr)>
+        {
+            ("Fruits & Vegetables", "خضروات وفواكه"),
+            ("Bakery", "مخبوزات"),
+            ("Dairy & Eggs", "ألبان وبيض"),
+            ("Meals", "وجبات جاهزة"),
+            ("Groceries", "مواد غذائية"),
+            ("Desserts", "حلويات")
+        };
+
+        var addedAny = false;
+        foreach (var std in standardCategories)
+        {
+            if (!context.Categories.Any(c => c.Name == std.Name))
+            {
+                context.Categories.Add(new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = std.Name,
+                    NameAr = std.NameAr
+                });
+                addedAny = true;
+            }
+        }
+
+        if (addedAny)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded missing standard product categories.");
         }
     }
 }

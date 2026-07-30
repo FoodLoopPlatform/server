@@ -60,4 +60,5 @@
   <data name="LoggedOut"><value>Logged out.</value></data>
   <data name="PasswordReset"><value>Password has been reset.</value></data>
   <data name="ForgotPasswordSent"><value>If that email is registered, a reset link has been sent.</value></data>
+  <data name="ListingDeletedSuccessfully"><value>Product listing deleted successfully.</value></data>
 </root>

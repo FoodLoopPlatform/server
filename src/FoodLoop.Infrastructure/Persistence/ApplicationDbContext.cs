@@ -4,6 +4,8 @@ using FoodLoop.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
+using FoodLoop.Application.Common.Interfaces;
+
 namespace FoodLoop.Infrastructure.Persistence;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace FoodLoop.Infrastructure.Persistence;
 /// Persistence/UnitOfWork.cs and Persistence/Repositories/) rather than this type directly.
 /// </summary>
 public class ApplicationDbContext
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>, IApplicationDbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
