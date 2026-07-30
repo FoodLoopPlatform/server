@@ -108,21 +108,35 @@ public static class IdentitySeeder
         var context = services.GetRequiredService<ApplicationDbContext>();
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeeder");
 
-        if (!context.Categories.Any())
+        var standardCategories = new List<(string Name, string NameAr)>
         {
-            var categories = new List<Category>
-            {
-                new() { Id = Guid.NewGuid(), Name = "Fruits & Vegetables", NameAr = "خضروات وفواكه" },
-                new() { Id = Guid.NewGuid(), Name = "Bakery", NameAr = "مخبوزات" },
-                new() { Id = Guid.NewGuid(), Name = "Dairy & Eggs", NameAr = "ألبان وبيض" },
-                new() { Id = Guid.NewGuid(), Name = "Meals", NameAr = "وجبات جاهزة" },
-                new() { Id = Guid.NewGuid(), Name = "Groceries", NameAr = "مواد غذائية" },
-                new() { Id = Guid.NewGuid(), Name = "Desserts", NameAr = "حلويات" }
-            };
+            ("Fruits & Vegetables", "خضروات وفواكه"),
+            ("Bakery", "مخبوزات"),
+            ("Dairy & Eggs", "ألبان وبيض"),
+            ("Meals", "وجبات جاهزة"),
+            ("Groceries", "مواد غذائية"),
+            ("Desserts", "حلويات")
+        };
 
-            await context.Categories.AddRangeAsync(categories);
+        var addedAny = false;
+        foreach (var std in standardCategories)
+        {
+            if (!context.Categories.Any(c => c.Name == std.Name))
+            {
+                context.Categories.Add(new Category
+                {
+                    Id = Guid.NewGuid(),
+                    Name = std.Name,
+                    NameAr = std.NameAr
+                });
+                addedAny = true;
+            }
+        }
+
+        if (addedAny)
+        {
             await context.SaveChangesAsync();
-            logger.LogInformation("Seeded standard product categories.");
+            logger.LogInformation("Seeded missing standard product categories.");
         }
     }
 }

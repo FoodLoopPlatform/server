@@ -16,9 +16,9 @@
       ],
       "createdAt": "2026-07-30T04:15:57.5312731+00:00"
     },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNzg4ZDdkNy04NGQxLTRhYTYtYjhhMS0wOGRlZWRmMTQxZDMiLCJlbWFpbCI6Im1lcmNoYW50Lm9yZ2FuaWNAZXhhbXBsZS5jb20iLCJqdGkiOiJkM2ViMTZkYy05NDA5LTQ3YTItOTRjYy00ZjU1OTcyODgzM2YiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjA3ODhkN2Q3LTg0ZDEtNGFhNi1iOGExLTA4ZGVlZGYxNDFkMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6Ik1lcmNoYW50IiwiZXhwIjoxNzg1Mzg2NjQ4LCJpc3MiOiJGb29kTG9vcC5BUEkiLCJhdWQiOiJGb29kTG9vcC5DbGllbnRzIn0.E74A2ZtXY9xTLvTj_1slJ3n2trrBd1WXwfvsIicoKfo",
-    "refreshToken": "bShtqstYi2CGxSpWqX2g0agevGzMdIbM+YQMzxsUqCqsSQXcH/5D1M5Wocu+AUWHzDqAvj3pZaf69gfiPdkLmw==",
-    "accessTokenExpiresAt": "2026-07-30T04:44:09.3945395+00:00"
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNzg4ZDdkNy04NGQxLTRhYTYtYjhhMS0wOGRlZWRmMTQxZDMiLCJlbWFpbCI6Im1lcmNoYW50Lm9yZ2FuaWNAZXhhbXBsZS5jb20iLCJqdGkiOiJmMzRlYTBiZC01N2NlLTRjYzctOTIwNS0yZjhmMjMxNGViNmMiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjA3ODhkN2Q3LTg0ZDEtNGFhNi1iOGExLTA4ZGVlZGYxNDFkMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6Ik1lcmNoYW50IiwiZXhwIjoxNzg1Mzg2OTg0LCJpc3MiOiJGb29kTG9vcC5BUEkiLCJhdWQiOiJGb29kTG9vcC5DbGllbnRzIn0.vMJCOYeFh18gC2a2CCo8CI9IXADMwwJF4M4AhyNYveo",
+    "refreshToken": "WqqkfvemqsiH2kcosQ54D05n42jdBX0Cg0fqW8iOHrfnmY/mQOn4JUXfQ0VPh//UhZAj/Kklr2B8c86YAQLEEA==",
+    "accessTokenExpiresAt": "2026-07-30T04:49:44.9695979+00:00"
   },
   "message": null,
   "errors": []
@@ -45,6 +45,78 @@
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNWFjMmE2NS04YmUwLTRjNGYtYjFhNC0wOGRlZWNmNDZjOTMiLCJlbWFpbCI6ImFkbWluQGZvb2Rsb29wLmNvbSIsImp0aSI6IjljYWVjMjY1LWVjN2QtNGY0Yi05N2YzLWJjODM0MjRhMTI2MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYzVhYzJhNjUtOGJlMC00YzRmLWIxYTQtMDhkZWVjZjQ2YzkzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3ODUzODYzODQsImlzcyI6IkZvb2RMb29wLkFQSSIsImF1ZCI6IkZvb2RMb29wLkNsaWVudHMifQ.9ONW1_S-taFIIdupvMvCWrjBiQ6LViXrwKf2x-92TDE",
     "refreshToken": "GjbbZmWdVsfjemVGZ49hkkKANiRtRrrj603ZzCciM6Dwn4hxbOKHuBkMao0UL5U2x9oDqrecBGTnCjLwOm3I/g==",
     "accessTokenExpiresAt": "2026-07-30T04:39:44.1799466+00:00"
+  },
+  "message": null,
+  "errors": []
+}
+
+
+{
+  "success": true,
+  "data": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "Bakery",
+      "nameAr": "مخبوزات",
+      "icon": null
+    }
+  ],
+  "message": null,
+  "errors": []
+}
+
+{
+  "success": true,
+  "data": {
+    "id": "7001c518-e4aa-48b3-8913-9dfd092d6861",
+    "storeId": "6e956a1b-6af4-47a7-a4ad-19cb32b0f267",
+    "categoryId": "11111111-1111-1111-1111-111111111111",
+    "categoryName": "Bakery",
+    "title": "Fresh Sourdough Bread",
+    "titleAr": "خبز ساوردو طازج",
+    "description": "Crispy crust and soft crumb, organic.",
+    "descriptionAr": "مخبوزات عضوية طازجة يومياً.",
+    "originalPrice": 12.5,
+    "discountedPrice": 5,
+    "quantityAvailable": 25,
+    "expirationDate": "2026-08-15",
+    "status": "Active",
+    "images": []
+  },
+  "message": null,
+  "errors": []
+}
+
+
+
+{
+  "success": true,
+  "data": {
+    "id": "7001c518-e4aa-48b3-8913-9dfd092d6861",
+    "storeId": "6e956a1b-6af4-47a7-a4ad-19cb32b0f267",
+    "categoryId": "11111111-1111-1111-1111-111111111111",
+    "categoryName": "Bakery",
+    "title": "Fresh Sourdough Bread",
+    "titleAr": "خبز ساوردو طازج",
+    "description": "Crispy crust and soft crumb, organic.",
+    "descriptionAr": "مخبوزات عضوية طازجة يومياً.",
+    "originalPrice": 12.5,
+    "discountedPrice": 5,
+    "quantityAvailable": 25,
+    "expirationDate": "2026-08-15",
+    "status": "Active",
+    "images": [
+      {
+        "id": "27092d45-3770-48db-b3e9-a6fde74629a2",
+        "imageUrl": "/uploads/listings/7001c518-e4aa-48b3-8913-9dfd092d6861/f88ff90b-e273-40fa-95f4-b38d1c9ea3cc.png",
+        "displayOrder": 0
+      },
+      {
+        "id": "27092d45-3770-48db-b3e9-a6fde74629a2",
+        "imageUrl": "/uploads/listings/7001c518-e4aa-48b3-8913-9dfd092d6861/f88ff90b-e273-40fa-95f4-b38d1c9ea3cc.png",
+        "displayOrder": 0
+      }
+    ]
   },
   "message": null,
   "errors": []
