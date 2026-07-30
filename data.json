@@ -2,23 +2,49 @@
   "success": true,
   "data": {
     "user": {
-      "id": "238e0505-471b-4427-f96a-08deed782fc5",
-      "fullName": "Pure Charity Distribution",
-      "email": "charity.pure@example.com",
+      "id": "0788d7d7-84d1-4aa6-b8a1-08deedf141d3",
+      "fullName": "Organic Shop Owner",
+      "email": "merchant.organic@example.com",
       "phoneNumber": null,
       "profileImage": null,
       "language": "en",
-      "status": "PendingVerification",
+      "status": "Active",
       "orderUpdatesEnabled": true,
       "marketingNotificationsEnabled": false,
       "roles": [
-        "Charity"
+        "Merchant"
       ],
-      "createdAt": "2026-07-29T13:49:18.2393655+00:00"
+      "createdAt": "2026-07-30T04:15:57.5312731+00:00"
     },
-    "accessToken": "",
-    "refreshToken": "",
-    "accessTokenExpiresAt": "0001-01-01T00:00:00+00:00"
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNzg4ZDdkNy04NGQxLTRhYTYtYjhhMS0wOGRlZWRmMTQxZDMiLCJlbWFpbCI6Im1lcmNoYW50Lm9yZ2FuaWNAZXhhbXBsZS5jb20iLCJqdGkiOiIwMjk3YmI3Mi1jZDczLTQ1NmUtYjdmZC1iODAxZGYxZjNkOWMiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjA3ODhkN2Q3LTg0ZDEtNGFhNi1iOGExLTA4ZGVlZGYxNDFkMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6Ik1lcmNoYW50IiwiZXhwIjoxNzg1Mzg2Mjg1LCJpc3MiOiJGb29kTG9vcC5BUEkiLCJhdWQiOiJGb29kTG9vcC5DbGllbnRzIn0.T5dYE9j3anWDBXh-2WMbEBlHU508kkH_TGCGDFMf1T4",
+    "refreshToken": "rkopPBlM6fOv73DQlni0IDJH+FzLkbOKKlLTK0H/914q0HwpmZ7/dzdGsuPn9f76OAN8QChUBBsCae5qnriYsA==",
+    "accessTokenExpiresAt": "2026-07-30T04:38:05.565186+00:00"
+  },
+  "message": null,
+  "errors": []
+}
+
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "c5ac2a65-8be0-4c4f-b1a4-08deecf46c93",
+      "fullName": "System Administrator",
+      "email": "admin@foodloop.com",
+      "phoneNumber": null,
+      "profileImage": null,
+      "language": "en",
+      "status": "Active",
+      "orderUpdatesEnabled": true,
+      "marketingNotificationsEnabled": false,
+      "roles": [
+        "Admin"
+      ],
+      "createdAt": "2026-07-28T22:06:06.7492953+00:00"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNWFjMmE2NS04YmUwLTRjNGYtYjFhNC0wOGRlZWNmNDZjOTMiLCJlbWFpbCI6ImFkbWluQGZvb2Rsb29wLmNvbSIsImp0aSI6IjljYWVjMjY1LWVjN2QtNGY0Yi05N2YzLWJjODM0MjRhMTI2MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYzVhYzJhNjUtOGJlMC00YzRmLWIxYTQtMDhkZWVjZjQ2YzkzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3ODUzODYzODQsImlzcyI6IkZvb2RMb29wLkFQSSIsImF1ZCI6IkZvb2RMb29wLkNsaWVudHMifQ.9ONW1_S-taFIIdupvMvCWrjBiQ6LViXrwKf2x-92TDE",
+    "refreshToken": "GjbbZmWdVsfjemVGZ49hkkKANiRtRrrj603ZzCciM6Dwn4hxbOKHuBkMao0UL5U2x9oDqrecBGTnCjLwOm3I/g==",
+    "accessTokenExpiresAt": "2026-07-30T04:39:44.1799466+00:00"
   },
   "message": null,
   "errors": []
