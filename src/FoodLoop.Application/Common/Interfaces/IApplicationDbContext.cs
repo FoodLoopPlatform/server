@@ -13,7 +13,7 @@ public interface IApplicationDbContext
     DbSet<Store> Stores { get; }
     DbSet<StoreVerification> StoreVerifications { get; }
     DbSet<Category> Categories { get; }
-    DbSet<ProductListing> ProductListings { get; }
+    DbSet<Product> Products { get; }
     DbSet<ProductImage> ProductImages { get; }
     DbSet<Favorite> Favorites { get; }
     DbSet<Order> Orders { get; }

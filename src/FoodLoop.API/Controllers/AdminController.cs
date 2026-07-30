@@ -185,8 +185,8 @@ public class AdminController : ControllerBase
         [FromQuery] Guid? storeId = null,
         CancellationToken cancellationToken = default)
     {
-        var listings = await _mediator.Send(new GetAdminListingsQuery(pageNumber, pageSize, status, storeId), cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<AdminListingDto>>.Ok(listings));
+        var products = await _mediator.Send(new GetAdminProductsQuery(pageNumber, pageSize, status, storeId), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminProductDto>>.Ok(products));
     }
 
     /// <summary>
@@ -195,7 +195,7 @@ public class AdminController : ControllerBase
     [HttpDelete("products/{id:guid}")]
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteListingCommand(id), cancellationToken);
+        await _mediator.Send(new AdminDeleteProductCommand(id), cancellationToken);
         return NoContent();
     }
 

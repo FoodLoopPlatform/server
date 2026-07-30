@@ -42,7 +42,7 @@ public class MerchantProductsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
     {
-        var command = new CreateProductListingCommand(
+        var command = new CreateProductCommand(
             OwnerId,
             request.CategoryId,
             request.Title,
@@ -54,8 +54,8 @@ public class MerchantProductsController : ControllerBase
             request.QuantityAvailable,
             request.ExpirationDate);
 
-        var listing = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
@@ -70,9 +70,9 @@ public class MerchantProductsController : ControllerBase
         [FromQuery] string? searchTerm = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetMyListingsQuery(OwnerId, pageNumber, pageSize, categoryId, status, searchTerm);
-        var listings = await _mediator.Send(query, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ProductListingDto>>.Ok(listings));
+        var query = new GetMyProductsQuery(OwnerId, pageNumber, pageSize, categoryId, status, searchTerm);
+        var products = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ProductDto>>.Ok(products));
     }
 
     /// <summary>
@@ -81,9 +81,9 @@ public class MerchantProductsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetProductDetail(Guid id, CancellationToken cancellationToken)
     {
-        var query = new GetListingDetailQuery(OwnerId, id);
-        var listing = await _mediator.Send(query, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var query = new GetProductDetailQuery(OwnerId, id);
+        var product = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public class MerchantProductsController : ControllerBase
     [HttpPatch("{id:guid}")]
     public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdateProductListingCommand(
+        var command = new UpdateProductCommand(
             OwnerId,
             id,
             request.CategoryId,
@@ -106,8 +106,8 @@ public class MerchantProductsController : ControllerBase
             request.ExpirationDate,
             request.Status);
 
-        var listing = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public class MerchantProductsController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
     {
-        var command = new DeleteProductListingCommand(OwnerId, id);
+        var command = new DeleteProductCommand(OwnerId, id);
         await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse.Ok(_loc["ListingDeletedSuccessfully"]));
     }
@@ -141,9 +141,9 @@ public class MerchantProductsController : ControllerBase
             ContentType = file.ContentType
         };
 
-        var command = new UploadListingImageCommand(OwnerId, id, uploadRequest);
-        var listing = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var command = new UploadProductImageCommand(OwnerId, id, uploadRequest);
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
@@ -166,9 +166,9 @@ public class MerchantProductsController : ControllerBase
             ContentType = file.ContentType
         };
 
-        var command = new BulkUploadListingsCommand(OwnerId, uploadRequest);
-        var listings = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ProductListingDto>>.Ok(listings));
+        var command = new BulkUploadProductsCommand(OwnerId, uploadRequest);
+        var products = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ProductDto>>.Ok(products));
     }
 }
 

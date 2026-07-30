@@ -39,7 +39,7 @@ public class Store : BaseEntity, ISoftDelete
     public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
     public double AverageRating { get; set; }
 
-    public ICollection<ProductListing> ProductListings { get; set; } = new List<ProductListing>();
+    public ICollection<Product> Products { get; set; } = new List<Product>();
     public ICollection<StoreVerification> Verifications { get; set; } = new List<StoreVerification>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
 
