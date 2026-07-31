@@ -5,8 +5,8 @@ using System.Collections.Generic;
 
 namespace FoodLoop.Application.Features.Admin.Queries;
 
-public record GetAdminListingsQuery(
+public record GetAdminProductsQuery(
     int PageNumber = 1,
     int PageSize = 10,
     string? Status = null,
-    Guid? StoreId = null) : IRequest<IReadOnlyList<AdminListingDto>>;
+    Guid? StoreId = null) : IRequest<IReadOnlyList<AdminProductDto>>;

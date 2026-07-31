@@ -19,15 +19,15 @@ using System.Threading.Tasks;
 namespace FoodLoop.API.Controllers;
 
 [ApiController]
-[Route("stores/me/listings")]
+[Route("stores/me/products")]
 [Authorize(Roles = AppRole.Merchant)]
-public class MerchantListingsController : ControllerBase
+public class MerchantProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly ILocalizationService _loc;
 
-    public MerchantListingsController(IMediator mediator, ICurrentUserService currentUser, ILocalizationService loc)
+    public MerchantProductsController(IMediator mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
@@ -37,12 +37,12 @@ public class MerchantListingsController : ControllerBase
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     /// <summary>
-    /// POST /stores/me/listings — create a new product listing.
+    /// POST /stores/me/products — create a new product.
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> CreateListing([FromBody] CreateProductListingRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
     {
-        var command = new CreateProductListingCommand(
+        var command = new CreateProductCommand(
             OwnerId,
             request.CategoryId,
             request.Title,
@@ -54,15 +54,15 @@ public class MerchantListingsController : ControllerBase
             request.QuantityAvailable,
             request.ExpirationDate);
 
-        var listing = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
-    /// GET /stores/me/listings — list all product listings belonging to the caller's store.
+    /// GET /stores/me/products — list all products belonging to the caller's store.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetMyListings(
+    public async Task<IActionResult> GetMyProducts(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] Guid? categoryId = null,
@@ -70,29 +70,29 @@ public class MerchantListingsController : ControllerBase
         [FromQuery] string? searchTerm = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetMyListingsQuery(OwnerId, pageNumber, pageSize, categoryId, status, searchTerm);
-        var listings = await _mediator.Send(query, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ProductListingDto>>.Ok(listings));
+        var query = new GetMyProductsQuery(OwnerId, pageNumber, pageSize, categoryId, status, searchTerm);
+        var products = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ProductDto>>.Ok(products));
     }
 
     /// <summary>
-    /// GET /stores/me/listings/{id} — get details of a single product listing.
+    /// GET /stores/me/products/{id} — get details of a single product.
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetListingDetail(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProductDetail(Guid id, CancellationToken cancellationToken)
     {
-        var query = new GetListingDetailQuery(OwnerId, id);
-        var listing = await _mediator.Send(query, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var query = new GetProductDetailQuery(OwnerId, id);
+        var product = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
-    /// PATCH /stores/me/listings/{id} — update a product listing.
+    /// PATCH /stores/me/products/{id} — update a product.
     /// </summary>
     [HttpPatch("{id:guid}")]
-    public async Task<IActionResult> UpdateListing(Guid id, [FromBody] UpdateProductListingRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdateProductListingCommand(
+        var command = new UpdateProductCommand(
             OwnerId,
             id,
             request.CategoryId,
@@ -106,23 +106,23 @@ public class MerchantListingsController : ControllerBase
             request.ExpirationDate,
             request.Status);
 
-        var listing = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
-    /// DELETE /stores/me/listings/{id} — soft-delete a product listing.
+    /// DELETE /stores/me/products/{id} — soft-delete a product.
     /// </summary>
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteListing(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
     {
-        var command = new DeleteProductListingCommand(OwnerId, id);
+        var command = new DeleteProductCommand(OwnerId, id);
         await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse.Ok(_loc["ListingDeletedSuccessfully"]));
     }
 
     /// <summary>
-    /// POST /stores/me/listings/{id}/images — upload an image for a product listing.
+    /// POST /stores/me/products/{id}/images — upload an image for a product.
     /// </summary>
     [HttpPost("{id:guid}/images")]
     [RequestSizeLimit(10_000_000)]
@@ -141,13 +141,13 @@ public class MerchantListingsController : ControllerBase
             ContentType = file.ContentType
         };
 
-        var command = new UploadListingImageCommand(OwnerId, id, uploadRequest);
-        var listing = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<ProductListingDto>.Ok(listing));
+        var command = new UploadProductImageCommand(OwnerId, id, uploadRequest);
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
     /// <summary>
-    /// POST /stores/me/listings/bulk — upload product listings in bulk via CSV.
+    /// POST /stores/me/products/bulk — upload products in bulk via CSV.
     /// </summary>
     [HttpPost("bulk")]
     [RequestSizeLimit(15_000_000)]
@@ -166,13 +166,13 @@ public class MerchantListingsController : ControllerBase
             ContentType = file.ContentType
         };
 
-        var command = new BulkUploadListingsCommand(OwnerId, uploadRequest);
-        var listings = await _mediator.Send(command, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ProductListingDto>>.Ok(listings));
+        var command = new BulkUploadProductsCommand(OwnerId, uploadRequest);
+        var products = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ProductDto>>.Ok(products));
     }
 }
 
-public class CreateProductListingRequest
+public class CreateProductRequest
 {
     [Required]
     public Guid CategoryId { get; set; }
@@ -197,7 +197,7 @@ public class CreateProductListingRequest
     public DateOnly ExpirationDate { get; set; }
 }
 
-public class UpdateProductListingRequest
+public class UpdateProductRequest
 {
     public Guid? CategoryId { get; set; }
     public string? Title { get; set; }

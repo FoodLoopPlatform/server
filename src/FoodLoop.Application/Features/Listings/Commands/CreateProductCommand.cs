@@ -4,7 +4,7 @@ using System;
 
 namespace FoodLoop.Application.Features.Listings.Commands;
 
-public record CreateProductListingCommand(
+public record CreateProductCommand(
     Guid OwnerId,
     Guid CategoryId,
     string Title,
@@ -14,4 +14,4 @@ public record CreateProductListingCommand(
     decimal OriginalPrice,
     decimal DiscountedPrice,
     int QuantityAvailable,
-    DateOnly ExpirationDate) : IRequest<ProductListingDto>;
+    DateOnly ExpirationDate) : IRequest<ProductDto>;

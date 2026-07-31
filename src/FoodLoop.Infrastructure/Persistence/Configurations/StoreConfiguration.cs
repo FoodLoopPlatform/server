@@ -20,7 +20,7 @@ public class StoreConfiguration : IEntityTypeConfiguration<Store>
         builder.HasIndex(s => s.OwnerId);
         builder.HasIndex(s => s.VerificationStatus);
 
-        builder.HasMany(s => s.ProductListings)
+        builder.HasMany(s => s.Products)
             .WithOne(p => p.Store)
             .HasForeignKey(p => p.StoreId)
             .OnDelete(DeleteBehavior.Restrict);

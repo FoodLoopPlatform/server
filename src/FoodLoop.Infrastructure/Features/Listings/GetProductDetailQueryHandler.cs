@@ -13,25 +13,25 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Listings;
 
-public class GetListingDetailQueryHandler : IRequestHandler<GetListingDetailQuery, ProductListingDto>
+public class GetProductDetailQueryHandler : IRequestHandler<GetProductDetailQuery, ProductDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public GetListingDetailQueryHandler(IUnitOfWork unitOfWork)
+    public GetProductDetailQueryHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ProductListingDto> Handle(GetListingDetailQuery query, CancellationToken cancellationToken)
+    public async Task<ProductDto> Handle(GetProductDetailQuery query, CancellationToken cancellationToken)
     {
         var store = await _unitOfWork.FindByOwnerOrThrowAsync(query.OwnerId, "Store not found.", cancellationToken);
 
-        var listing = await _unitOfWork.Repository<ProductListing>().Query()
+        var product = await _unitOfWork.Repository<Product>().Query()
             .Include(l => l.Category)
             .Include(l => l.Images)
-            .FirstOrDefaultAsync(l => l.Id == query.ListingId && l.StoreId == store.Id && !l.IsDeleted, cancellationToken)
-            ?? throw new NotFoundException("ProductListing", query.ListingId);
+            .FirstOrDefaultAsync(l => l.Id == query.ProductId && l.StoreId == store.Id && !l.IsDeleted, cancellationToken)
+            ?? throw new NotFoundException("Product", query.ProductId);
 
-        return listing.ToDto();
+        return product.ToDto();
     }
 }

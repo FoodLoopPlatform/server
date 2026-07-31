@@ -18,28 +18,28 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Listings;
 
-public class BulkUploadListingsCommandHandler : IRequestHandler<BulkUploadListingsCommand, IReadOnlyList<ProductListingDto>>
+public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProductsCommand, IReadOnlyList<ProductDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public BulkUploadListingsCommandHandler(IUnitOfWork unitOfWork)
+    public BulkUploadProductsCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IReadOnlyList<ProductListingDto>> Handle(BulkUploadListingsCommand command, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ProductDto>> Handle(BulkUploadProductsCommand command, CancellationToken cancellationToken)
     {
         var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Store not found.", cancellationToken);
         if (store.VerificationStatus != VerificationStatus.Verified)
         {
-            throw new ArgumentException("Your store must be verified by an admin before you can manage product listings.");
+            throw new ArgumentException("Your store must be verified by an admin before you can manage products.");
         }
 
         var categories = await _unitOfWork.Repository<Category>().Query()
             .Where(c => !c.IsDeleted)
             .ToListAsync(cancellationToken);
 
-        var resultListings = new List<ProductListing>();
+        var resultProducts = new List<Product>();
 
         using var reader = new StreamReader(command.File.Content, Encoding.UTF8);
         var headerLine = await reader.ReadLineAsync(cancellationToken);
@@ -118,7 +118,7 @@ public class BulkUploadListingsCommandHandler : IRequestHandler<BulkUploadListin
                 (c.NameAr != null && c.NameAr.Equals(categoryName, StringComparison.OrdinalIgnoreCase)))
                 ?? throw new ArgumentException($"Row {rowNum}: Category '{categoryName}' not found.");
 
-            var listing = new ProductListing
+            var product = new Product
             {
                 StoreId = store.Id,
                 CategoryId = category.Id,
@@ -134,18 +134,18 @@ public class BulkUploadListingsCommandHandler : IRequestHandler<BulkUploadListin
                 Status = ListingStatus.Active
             };
 
-            _unitOfWork.Repository<ProductListing>().Add(listing);
-            resultListings.Add(listing);
+            _unitOfWork.Repository<Product>().Add(product);
+            resultProducts.Add(product);
         }
 
-        if (!resultListings.Any())
+        if (!resultProducts.Any())
         {
             throw new ArgumentException("No product rows found in the CSV file.");
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return resultListings.Select(l => l.ToDto()).ToList();
+        return resultProducts.Select(l => l.ToDto()).ToList();
     }
 
     private static string[] ParseCsvLine(string line)

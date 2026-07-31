@@ -1,5 +1,6 @@
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
+using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Persistence;
 using MediatR;
@@ -12,18 +13,18 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Admin;
 
-public class GetAdminListingsQueryHandler : IRequestHandler<GetAdminListingsQuery, IReadOnlyList<AdminListingDto>>
+public class GetAdminProductsQueryHandler : IRequestHandler<GetAdminProductsQuery, IReadOnlyList<AdminProductDto>>
 {
     private readonly ApplicationDbContext _context;
 
-    public GetAdminListingsQueryHandler(ApplicationDbContext context)
+    public GetAdminProductsQueryHandler(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    public async Task<IReadOnlyList<AdminListingDto>> Handle(GetAdminListingsQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AdminProductDto>> Handle(GetAdminProductsQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.ProductListings
+        var query = _context.Products
             .Include(l => l.Store)
             .Include(l => l.Category)
             .Where(l => !l.IsDeleted)
@@ -39,19 +40,19 @@ public class GetAdminListingsQueryHandler : IRequestHandler<GetAdminListingsQuer
             query = query.Where(l => l.StoreId == request.StoreId.Value);
         }
 
-        var listings = await query
+        var products = await query
             .OrderByDescending(l => l.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        return listings.Select(l => new AdminListingDto
+        return products.Select(l => new AdminProductDto
         {
             Id = l.Id,
             StoreId = l.StoreId,
-            StoreName = l.Store?.Name ?? "Unknown Store",
+            StoreName = l.Store?.Name ?? string.Empty,
             CategoryId = l.CategoryId,
-            CategoryName = l.Category?.Name ?? "Unknown Category",
+            CategoryName = l.Category?.Name ?? string.Empty,
             Title = l.Title,
             TitleAr = l.TitleAr,
             OriginalPrice = l.OriginalPrice,

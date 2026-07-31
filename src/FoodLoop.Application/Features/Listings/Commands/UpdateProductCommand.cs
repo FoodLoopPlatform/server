@@ -4,9 +4,9 @@ using System;
 
 namespace FoodLoop.Application.Features.Listings.Commands;
 
-public record UpdateProductListingCommand(
+public record UpdateProductCommand(
     Guid OwnerId,
-    Guid ListingId,
+    Guid ProductId,
     Guid? CategoryId,
     string? Title,
     string? TitleAr,
@@ -16,4 +16,4 @@ public record UpdateProductListingCommand(
     decimal? DiscountedPrice,
     int? QuantityAvailable,
     DateOnly? ExpirationDate,
-    string? Status) : IRequest<ProductListingDto>;
+    string? Status) : IRequest<ProductDto>;

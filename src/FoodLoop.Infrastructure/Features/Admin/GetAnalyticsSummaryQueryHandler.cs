@@ -47,8 +47,8 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         var rejectedStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Rejected)?.Count ?? 0;
         var totalStores = await _context.Stores.CountAsync(cancellationToken);
 
-        // 3. Listing metrics
-        var listingCounts = await _context.ProductListings
+        // 3. Product metrics
+        var listingCounts = await _context.Products
             .Where(l => !l.IsDeleted)
             .GroupBy(l => l.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
@@ -57,7 +57,7 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         var activeListings = listingCounts.FirstOrDefault(l => l.Status == ListingStatus.Active)?.Count ?? 0;
         var soldOutListings = listingCounts.FirstOrDefault(l => l.Status == ListingStatus.SoldOut)?.Count ?? 0;
         var expiredListings = listingCounts.FirstOrDefault(l => l.Status == ListingStatus.Expired)?.Count ?? 0;
-        var totalListings = await _context.ProductListings.CountAsync(l => !l.IsDeleted, cancellationToken);
+        var totalListings = await _context.Products.CountAsync(l => !l.IsDeleted, cancellationToken);
 
         // 4. Order metrics
         var orderCounts = await _context.Orders
@@ -77,7 +77,7 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
 
         var totalFoodSavings = await _context.OrderItems
             .Where(oi => oi.Order!.OrderStatus == OrderStatus.Completed)
-            .SumAsync(oi => oi.Quantity * (oi.Listing!.OriginalPrice - oi.Listing.DiscountedPrice), cancellationToken);
+            .SumAsync(oi => oi.Quantity * (oi.Product!.OriginalPrice - oi.Product.DiscountedPrice), cancellationToken);
 
         return new AnalyticsSummaryDto
         {

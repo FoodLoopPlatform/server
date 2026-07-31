@@ -23,7 +23,7 @@ public class ApplicationDbContext
     public DbSet<Store> Stores => Set<Store>();
     public DbSet<StoreVerification> StoreVerifications => Set<StoreVerification>();
     public DbSet<Category> Categories => Set<Category>();
-    public DbSet<ProductListing> ProductListings => Set<ProductListing>();
+    public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<Order> Orders => Set<Order>();

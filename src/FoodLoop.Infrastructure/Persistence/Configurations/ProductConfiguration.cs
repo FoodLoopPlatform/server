@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FoodLoop.Infrastructure.Persistence.Configurations;
 
-public class ProductListingConfiguration : IEntityTypeConfiguration<ProductListing>
+public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
-    public void Configure(EntityTypeBuilder<ProductListing> builder)
+    public void Configure(EntityTypeBuilder<Product> builder)
     {
+        builder.ToTable("Products");
+
         builder.Property(p => p.Title).HasMaxLength(200).IsRequired();
         builder.Property(p => p.TitleAr).HasMaxLength(200);
         builder.Property(p => p.OriginalPrice).HasPrecision(10, 2);
@@ -22,13 +24,13 @@ public class ProductListingConfiguration : IEntityTypeConfiguration<ProductListi
         builder.HasIndex(p => p.DiscountedPrice);
 
         builder.HasMany(p => p.Images)
-            .WithOne(i => i.Listing)
-            .HasForeignKey(i => i.ListingId)
+            .WithOne(i => i.Product!)
+            .HasForeignKey(i => i.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(p => p.AIRecognitionResult)
-            .WithOne(r => r.Listing)
-            .HasForeignKey<AIRecognitionResult>(r => r.ListingId)
+            .WithOne(r => r.Product!)
+            .HasForeignKey<AIRecognitionResult>(r => r.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

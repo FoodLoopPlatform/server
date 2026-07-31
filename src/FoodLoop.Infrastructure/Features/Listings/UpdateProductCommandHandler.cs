@@ -14,40 +14,40 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Listings;
 
-public class UpdateProductListingCommandHandler : IRequestHandler<UpdateProductListingCommand, ProductListingDto>
+public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, ProductDto>
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateProductListingCommandHandler(IUnitOfWork unitOfWork)
+    public UpdateProductCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ProductListingDto> Handle(UpdateProductListingCommand command, CancellationToken cancellationToken)
+    public async Task<ProductDto> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
     {
         var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Store not found.", cancellationToken);
 
-        var listing = await _unitOfWork.Repository<ProductListing>().Query()
+        var product = await _unitOfWork.Repository<Product>().Query()
             .Include(l => l.Category)
             .Include(l => l.Images)
-            .FirstOrDefaultAsync(l => l.Id == command.ListingId && l.StoreId == store.Id && !l.IsDeleted, cancellationToken)
-            ?? throw new NotFoundException("ProductListing", command.ListingId);
+            .FirstOrDefaultAsync(l => l.Id == command.ProductId && l.StoreId == store.Id && !l.IsDeleted, cancellationToken)
+            ?? throw new NotFoundException("Product", command.ProductId);
 
         if (command.CategoryId.HasValue)
         {
             var category = await _unitOfWork.Repository<Category>().GetByIdAsync(command.CategoryId.Value, cancellationToken)
                 ?? throw new NotFoundException("Category", command.CategoryId.Value);
-            listing.CategoryId = command.CategoryId.Value;
-            listing.Category = category;
+            product.CategoryId = command.CategoryId.Value;
+            product.Category = category;
         }
 
-        if (command.Title != null) listing.Title = command.Title;
-        if (command.TitleAr != null) listing.TitleAr = command.TitleAr;
-        if (command.Description != null) listing.Description = command.Description;
-        if (command.DescriptionAr != null) listing.DescriptionAr = command.DescriptionAr;
+        if (command.Title != null) product.Title = command.Title;
+        if (command.TitleAr != null) product.TitleAr = command.TitleAr;
+        if (command.Description != null) product.Description = command.Description;
+        if (command.DescriptionAr != null) product.DescriptionAr = command.DescriptionAr;
 
-        var origPrice = command.OriginalPrice ?? listing.OriginalPrice;
-        var discPrice = command.DiscountedPrice ?? listing.DiscountedPrice;
+        var origPrice = command.OriginalPrice ?? product.OriginalPrice;
+        var discPrice = command.DiscountedPrice ?? product.DiscountedPrice;
 
         if (origPrice < 0 || discPrice < 0)
         {
@@ -59,8 +59,8 @@ public class UpdateProductListingCommandHandler : IRequestHandler<UpdateProductL
             throw new ArgumentException("Discounted price cannot be greater than original price.");
         }
 
-        listing.OriginalPrice = origPrice;
-        listing.DiscountedPrice = discPrice;
+        product.OriginalPrice = origPrice;
+        product.DiscountedPrice = discPrice;
 
         if (command.QuantityAvailable.HasValue)
         {
@@ -68,19 +68,19 @@ public class UpdateProductListingCommandHandler : IRequestHandler<UpdateProductL
             {
                 throw new ArgumentException("Quantity available cannot be negative.");
             }
-            listing.QuantityAvailable = command.QuantityAvailable.Value;
+            product.QuantityAvailable = command.QuantityAvailable.Value;
         }
 
         if (command.ExpirationDate.HasValue)
         {
-            listing.ExpirationDate = command.ExpirationDate.Value;
+            product.ExpirationDate = command.ExpirationDate.Value;
         }
 
         if (!string.IsNullOrWhiteSpace(command.Status))
         {
             if (Enum.TryParse<ListingStatus>(command.Status, true, out var status))
             {
-                listing.Status = status;
+                product.Status = status;
             }
             else
             {
@@ -88,9 +88,9 @@ public class UpdateProductListingCommandHandler : IRequestHandler<UpdateProductL
             }
         }
 
-        listing.UpdatedAt = DateTimeOffset.UtcNow;
+        product.UpdatedAt = DateTimeOffset.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return listing.ToDto();
+        return product.ToDto();
     }
 }

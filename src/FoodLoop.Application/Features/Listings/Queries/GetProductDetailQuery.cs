@@ -4,4 +4,4 @@ using System;
 
 namespace FoodLoop.Application.Features.Listings.Queries;
 
-public record GetListingDetailQuery(Guid OwnerId, Guid ListingId) : IRequest<ProductListingDto>;
+public record GetProductDetailQuery(Guid OwnerId, Guid ProductId) : IRequest<ProductDto>;
