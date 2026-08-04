@@ -48,16 +48,16 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         var totalStores = await _context.Stores.CountAsync(cancellationToken);
 
         // 3. Product metrics
-        var listingCounts = await _context.Products
-            .Where(l => !l.IsDeleted)
-            .GroupBy(l => l.Status)
+        var productCounts = await _context.Products
+            .Where(p => !p.IsDeleted)
+            .GroupBy(p => p.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var activeListings = listingCounts.FirstOrDefault(l => l.Status == ListingStatus.Active)?.Count ?? 0;
-        var soldOutListings = listingCounts.FirstOrDefault(l => l.Status == ListingStatus.SoldOut)?.Count ?? 0;
-        var expiredListings = listingCounts.FirstOrDefault(l => l.Status == ListingStatus.Expired)?.Count ?? 0;
-        var totalListings = await _context.Products.CountAsync(l => !l.IsDeleted, cancellationToken);
+        var activeProducts = productCounts.FirstOrDefault(p => p.Status == ListingStatus.Active)?.Count ?? 0;
+        var soldOutProducts = productCounts.FirstOrDefault(p => p.Status == ListingStatus.SoldOut)?.Count ?? 0;
+        var expiredProducts = productCounts.FirstOrDefault(p => p.Status == ListingStatus.Expired)?.Count ?? 0;
+        var totalProducts = await _context.Products.CountAsync(p => !p.IsDeleted, cancellationToken);
 
         // 4. Order metrics
         var orderCounts = await _context.Orders
@@ -97,12 +97,12 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
                 Verified = verifiedStores,
                 Rejected = rejectedStores
             },
-            Listings = new ListingMetricsDto
+            Products = new ProductMetricsDto
             {
-                Total = totalListings,
-                Active = activeListings,
-                SoldOut = soldOutListings,
-                Expired = expiredListings
+                Total = totalProducts,
+                Active = activeProducts,
+                SoldOut = soldOutProducts,
+                Expired = expiredProducts
             },
             Orders = new OrderMetricsDto
             {

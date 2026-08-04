@@ -4,7 +4,7 @@ public class AnalyticsSummaryDto
 {
     public UserMetricsDto Users { get; set; } = new();
     public StoreMetricsDto Stores { get; set; } = new();
-    public ListingMetricsDto Listings { get; set; } = new();
+    public ProductMetricsDto Products { get; set; } = new();
     public OrderMetricsDto Orders { get; set; } = new();
     public decimal TotalRevenue { get; set; }
     public decimal TotalFoodSavings { get; set; }
@@ -28,7 +28,7 @@ public class StoreMetricsDto
     public int Rejected { get; set; }
 }
 
-public class ListingMetricsDto
+public class ProductMetricsDto
 {
     public int Total { get; set; }
     public int Active { get; set; }
