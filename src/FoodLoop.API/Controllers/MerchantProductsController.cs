@@ -87,10 +87,11 @@ public class MerchantProductsController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /stores/me/products/{id} — update a product.
+    /// PATCH /stores/me/products/{id} — update a product (Form Data).
     /// </summary>
     [HttpPatch("{id:guid}")]
-    public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UpdateProduct(Guid id, [FromForm] UpdateProductRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateProductCommand(
             OwnerId,
