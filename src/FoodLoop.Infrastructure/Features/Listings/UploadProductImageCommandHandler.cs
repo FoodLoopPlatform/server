@@ -46,7 +46,7 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
             DisplayOrder = displayOrder
         };
 
-        product.Images.Add(productImage);
+        _unitOfWork.Repository<ProductImage>().Add(productImage);
         product.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
