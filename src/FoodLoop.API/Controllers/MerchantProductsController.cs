@@ -133,6 +133,13 @@ public class MerchantProductsController : ControllerBase
             return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
         }
 
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        if (!allowedExtensions.Contains(ext))
+        {
+            return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
+        }
+
         await using var stream = file.OpenReadStream();
         var uploadRequest = new FileUploadRequest
         {
@@ -142,6 +149,17 @@ public class MerchantProductsController : ControllerBase
         };
 
         var command = new UploadProductImageCommand(OwnerId, id, uploadRequest);
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
+    }
+
+    /// <summary>
+    /// DELETE /stores/me/products/{id}/images/{imageId} — delete an image of a product.
+    /// </summary>
+    [HttpDelete("{id:guid}/images/{imageId:guid}")]
+    public async Task<IActionResult> DeleteImage(Guid id, Guid imageId, CancellationToken cancellationToken)
+    {
+        var command = new DeleteProductImageCommand(OwnerId, id, imageId);
         var product = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<ProductDto>.Ok(product));
     }

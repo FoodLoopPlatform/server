@@ -7,6 +7,7 @@ using FoodLoop.Application.Features.Stores.Queries;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -47,11 +48,36 @@ public class StoresController : ControllerBase
         return Ok(ApiResponse<StoreDto>.Ok(store));
     }
 
-    /// <summary>PATCH /stores/me — updates the store's name, description, category, and logo.</summary>
+    /// <summary>PATCH /stores/me — updates the store's name, description, category, and logo (Form Data).</summary>
     [HttpPatch("me")]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateStoreProfileRequest request, CancellationToken cancellationToken)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UpdateProfile([FromForm] UpdateStoreProfileFormRequest request, CancellationToken cancellationToken)
     {
-        var store = await _mediator.Send(new UpdateStoreProfileCommand(OwnerId, request), cancellationToken);
+        FileUploadRequest? logoUpload = null;
+        if (request.Logo != null && request.Logo.Length > 0)
+        {
+            logoUpload = new FileUploadRequest
+            {
+                Content = request.Logo.OpenReadStream(),
+                FileName = request.Logo.FileName,
+                ContentType = request.Logo.ContentType
+            };
+        }
+
+        var appRequest = new UpdateStoreProfileRequest
+        {
+            Name = request.Name,
+            NameAr = request.NameAr,
+            Description = request.Description,
+            DescriptionAr = request.DescriptionAr,
+            BusinessCategory = request.BusinessCategory,
+            LogoFile = logoUpload,
+            Phone = request.Phone,
+            Email = request.Email,
+            OpeningHours = request.OpeningHours
+        };
+
+        var store = await _mediator.Send(new UpdateStoreProfileCommand(OwnerId, appRequest), cancellationToken);
         return Ok(ApiResponse<StoreDto>.Ok(store));
     }
 
@@ -81,6 +107,13 @@ public class StoresController : ControllerBase
             return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
         }
 
+        var ext = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(ext))
+        {
+            return BadRequest(ApiResponse.Fail(_loc["InvalidDocumentFormat"]));
+        }
+
         await using var stream = request.File.OpenReadStream();
         var uploadRequest = new FileUploadRequest
         {
@@ -105,4 +138,29 @@ public class UploadStoreDocumentRequest
 
     [Required]
     public IFormFile File { get; set; } = null!;
+}
+
+public class UpdateStoreProfileFormRequest
+{
+    [MaxLength(150)]
+    public string? Name { get; set; }
+
+    [MaxLength(150)]
+    public string? NameAr { get; set; }
+
+    public string? Description { get; set; }
+
+    public string? DescriptionAr { get; set; }
+
+    public BusinessCategory? BusinessCategory { get; set; }
+
+    public IFormFile? Logo { get; set; }
+
+    [Phone, MaxLength(20)]
+    public string? Phone { get; set; }
+
+    [EmailAddress, MaxLength(256)]
+    public string? Email { get; set; }
+
+    public string? OpeningHours { get; set; }
 }
