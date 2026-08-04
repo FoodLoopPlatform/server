@@ -56,12 +56,31 @@ public class StoresController : ControllerBase
         FileUploadRequest? logoUpload = null;
         if (request.Logo != null && request.Logo.Length > 0)
         {
+            var ext = Path.GetExtension(request.Logo.FileName).ToLowerInvariant();
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            if (!allowedExtensions.Contains(ext))
+            {
+                return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
+            }
+
             logoUpload = new FileUploadRequest
             {
                 Content = request.Logo.OpenReadStream(),
                 FileName = request.Logo.FileName,
                 ContentType = request.Logo.ContentType
             };
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.OpeningHours))
+        {
+            try
+            {
+                System.Text.Json.JsonDocument.Parse(request.OpeningHours);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return BadRequest(ApiResponse.Fail(_loc["InvalidOpeningHoursJson"]));
+            }
         }
 
         var appRequest = new UpdateStoreProfileRequest
