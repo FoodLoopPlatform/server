@@ -47,6 +47,13 @@ public class CharitiesController : ControllerBase
             return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
         }
 
+        var ext = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(ext))
+        {
+            return BadRequest(ApiResponse.Fail(_loc["InvalidDocumentFormat"]));
+        }
+
         await using var stream = request.File.OpenReadStream();
         var uploadRequest = new FileUploadRequest
         {

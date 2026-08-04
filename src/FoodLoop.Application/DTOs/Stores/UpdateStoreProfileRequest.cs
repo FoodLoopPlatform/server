@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Models;
 using System.ComponentModel.DataAnnotations;
 using FoodLoop.Domain.Enums;
 
@@ -20,6 +21,9 @@ public class UpdateStoreProfileRequest
 
     /// <summary>URL of the store logo image.</summary>
     public string? Logo { get; set; }
+
+    /// <summary>Logo file payload for upload.</summary>
+    public FileUploadRequest? LogoFile { get; set; }
 
     [Phone, MaxLength(20)]
     public string? Phone { get; set; }

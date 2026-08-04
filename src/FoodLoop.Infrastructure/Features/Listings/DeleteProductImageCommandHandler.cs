@@ -14,18 +14,16 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Listings;
 
-public class UploadProductImageCommandHandler : IRequestHandler<UploadProductImageCommand, ProductDto>
+public class DeleteProductImageCommandHandler : IRequestHandler<DeleteProductImageCommand, ProductDto>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IFileStorageService _fileStorage;
 
-    public UploadProductImageCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage)
+    public DeleteProductImageCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _fileStorage = fileStorage;
     }
 
-    public async Task<ProductDto> Handle(UploadProductImageCommand command, CancellationToken cancellationToken)
+    public async Task<ProductDto> Handle(DeleteProductImageCommand command, CancellationToken cancellationToken)
     {
         var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Store not found.", cancellationToken);
 
@@ -35,18 +33,11 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
             .FirstOrDefaultAsync(l => l.Id == command.ProductId && l.StoreId == store.Id && !l.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Product", command.ProductId);
 
-        var imageUrl = await _fileStorage.SaveAsync(command.File, $"listings/{product.Id}", cancellationToken);
+        var image = product.Images.FirstOrDefault(i => i.Id == command.ImageId)
+            ?? throw new NotFoundException("ProductImage", command.ImageId);
 
-        var displayOrder = product.Images.Any() ? product.Images.Max(i => i.DisplayOrder) + 1 : 0;
-
-        var productImage = new ProductImage
-        {
-            ProductId = product.Id,
-            ImageUrl = imageUrl,
-            DisplayOrder = displayOrder
-        };
-
-        _unitOfWork.Repository<ProductImage>().Add(productImage);
+        _unitOfWork.Repository<ProductImage>().Remove(image);
+        product.Images.Remove(image);
         product.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
