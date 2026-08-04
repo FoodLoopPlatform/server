@@ -104,7 +104,7 @@ public class MerchantProductsController : ControllerBase
             request.DiscountedPrice,
             request.QuantityAvailable,
             request.ExpirationDate,
-            request.Status);
+            request.Status?.ToString());
 
         var product = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<ProductDto>.Ok(product));
@@ -226,5 +226,5 @@ public class UpdateProductRequest
     public decimal? DiscountedPrice { get; set; }
     public int? QuantityAvailable { get; set; }
     public DateOnly? ExpirationDate { get; set; }
-    public string? Status { get; set; }
+    public ListingStatus? Status { get; set; }
 }
