@@ -93,13 +93,32 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// GET /admin/users/{id}/activity-log — recent events for a user (account created,
-    /// documents verified, orders placed, support tickets).
+    /// GET /admin/users/{id}/activity-log — recent events for a user (account created, orders placed, support tickets).
     /// </summary>
     [HttpGet("users/{id:guid}/activity-log")]
     public async Task<IActionResult> GetUserActivityLog(Guid id, CancellationToken cancellationToken)
     {
         var log = await _mediator.Send(new GetUserActivityLogQuery(id), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
+    }
+
+    /// <summary>
+    /// GET /admin/stores/{id}/activity-log — recent events for a store (uploads, listings, reviews, orders, tickets).
+    /// </summary>
+    [HttpGet("stores/{id:guid}/activity-log")]
+    public async Task<IActionResult> GetStoreActivityLog(Guid id, CancellationToken cancellationToken)
+    {
+        var log = await _mediator.Send(new GetStoreActivityLogQuery(id), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
+    }
+
+    /// <summary>
+    /// GET /admin/charities/{id}/activity-log — recent events for a charity (uploads, verifications, tickets).
+    /// </summary>
+    [HttpGet("charities/{id:guid}/activity-log")]
+    public async Task<IActionResult> GetCharityActivityLog(Guid id, CancellationToken cancellationToken)
+    {
+        var log = await _mediator.Send(new GetCharityActivityLogQuery(id), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
     }
 
