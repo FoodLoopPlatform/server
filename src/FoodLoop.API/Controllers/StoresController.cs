@@ -2,8 +2,11 @@ using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Organizations;
+using FoodLoop.Application.DTOs.Orders;
 using FoodLoop.Application.Features.Organizations.Commands;
 using FoodLoop.Application.Features.Organizations.Queries;
+using FoodLoop.Application.Features.Orders.Commands;
+using FoodLoop.Application.Features.Orders.Queries;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -144,6 +147,33 @@ public class StoresController : ControllerBase
         var organization = await _mediator.Send(new UploadOrganizationDocumentCommand(request.Email, request.Type, uploadRequest), cancellationToken);
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
+
+    /// <summary>
+    /// GET /stores/me/orders — retrieve all orders placed to this store.
+    /// </summary>
+    [HttpGet("me/orders")]
+    public async Task<IActionResult> GetReceivedOrders(CancellationToken cancellationToken)
+    {
+        var query = new GetMerchantOrdersQuery(OwnerId);
+        var orders = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<OrderDto>>.Ok(orders));
+    }
+
+    /// <summary>
+    /// PATCH /stores/me/orders/{id}/status — update order preparation or pickup status.
+    /// </summary>
+    [HttpPatch("me/orders/{id:guid}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
+    {
+        var command = new UpdateOrderStatusCommand(OwnerId, id, request.Status);
+        var result = await _mediator.Send(command, cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to update order status"));
+        }
+
+        return Ok(ApiResponse<OrderDto>.Ok(result.Data!));
+    }
 }
 
 public class UploadStoreDocumentRequest
@@ -182,5 +212,11 @@ public class UpdateStoreProfileFormRequest
     public string? Email { get; set; }
 
     public string? OpeningHours { get; set; }
+}
+
+public class UpdateOrderStatusRequest
+{
+    [Required]
+    public string Status { get; set; } = null!;
 }
 
