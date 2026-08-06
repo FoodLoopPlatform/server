@@ -1,11 +1,12 @@
-using FoodLoop.Application.Common.Models;
+﻿using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Listings;
 using MediatR;
 using System;
 
-namespace FoodLoop.Application.Features.Listings.Commands;
+namespace FoodLoop.Application.Features.Products.Commands;
 
 public record UploadProductImageCommand(
     Guid OwnerId,
     Guid ProductId,
     FileUploadRequest File) : IRequest<ProductDto>;
+

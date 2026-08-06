@@ -1,8 +1,8 @@
-using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Listings;
 using MediatR;
 using System;
 
-namespace FoodLoop.Application.Features.Listings.Commands;
+namespace FoodLoop.Application.Features.Products.Commands;
 
 public record UpdateProductCommand(
     Guid OwnerId,
@@ -17,3 +17,4 @@ public record UpdateProductCommand(
     int? QuantityAvailable,
     DateOnly? ExpirationDate,
     string? Status) : IRequest<ProductDto>;
+

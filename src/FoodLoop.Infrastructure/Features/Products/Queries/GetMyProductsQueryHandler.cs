@@ -1,6 +1,6 @@
 ﻿using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Listings;
-using FoodLoop.Application.Features.Listings.Queries;
+using FoodLoop.Application.Features.Products.Queries;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Organizations;
@@ -13,7 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FoodLoop.Infrastructure.Features.Listings.Queries;
+namespace FoodLoop.Infrastructure.Features.Products.Queries;
 
 public class GetMyProductsQueryHandler : IRequestHandler<GetMyProductsQuery, IReadOnlyList<ProductDto>>
 {
@@ -62,5 +62,6 @@ public class GetMyProductsQueryHandler : IRequestHandler<GetMyProductsQuery, IRe
         return products.Select(l => l.ToDto()).ToList();
     }
 }
+
 
 
