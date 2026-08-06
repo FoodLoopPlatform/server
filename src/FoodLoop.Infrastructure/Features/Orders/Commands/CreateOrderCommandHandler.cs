@@ -20,11 +20,13 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 {
     private readonly ApplicationDbContext _db;
     private readonly IAuditLogService _auditLog;
+    private readonly IRealTimeNotificationService _notification;
 
-    public CreateOrderCommandHandler(ApplicationDbContext db, IAuditLogService auditLog)
+    public CreateOrderCommandHandler(ApplicationDbContext db, IAuditLogService auditLog, IRealTimeNotificationService notification)
     {
         _db = db;
         _auditLog = auditLog;
+        _notification = notification;
     }
 
     public async Task<Result<OrderDto>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -112,7 +114,6 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         _db.Orders.Add(order);
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Audit Logging
         // 1. Consumer side
         await _auditLog.LogAsync(
             request.UserId,
@@ -121,6 +122,13 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             "Order Placed",
             $"Placed order {order.Id} with total amount {totalAmount:C}.",
             request.IpAddress,
+            cancellationToken);
+
+        await _notification.SendNotificationToUserAsync(
+            request.UserId,
+            "Order Placed Successfully",
+            $"Your order #{order.Id.ToString().Substring(0, 8)} has been placed successfully.",
+            "OrderPlaced",
             cancellationToken);
 
         // 2. Merchant side
@@ -134,6 +142,17 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 $"Received new order {order.Id} for pickup.",
                 request.IpAddress,
                 cancellationToken);
+
+            var org = products.FirstOrDefault(p => p.OrganizationId == orgId)?.Organization;
+            if (org != null && org.OwnerId != Guid.Empty)
+            {
+                await _notification.SendNotificationToUserAsync(
+                    org.OwnerId,
+                    "New Order Received",
+                    $"Store '{org.Name}' received order #{order.Id.ToString().Substring(0, 8)} for pickup.",
+                    "OrderReceived",
+                    cancellationToken);
+            }
         }
 
         var responseDto = MapToDto(order, user.FullName);
