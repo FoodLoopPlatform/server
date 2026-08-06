@@ -45,7 +45,19 @@ public class GetUserActivityLogQueryHandler
             OccurredAt = user.CreatedAt,
         });
 
-        // 2. Orders Placed (by this customer)
+        // 2. Profile updated
+        if (user.UpdatedAt.HasValue && user.UpdatedAt.Value != user.CreatedAt)
+        {
+            entries.Add(new ActivityLogEntryDto
+            {
+                EventType = "ProfileUpdated",
+                Title = "Profile Updated",
+                Description = "Updated profile information details.",
+                OccurredAt = user.UpdatedAt.Value,
+            });
+        }
+
+        // 3. Orders Placed (by this customer)
         var orders = await _db.Orders
             .Where(o => o.UserId == request.UserId)
             .OrderByDescending(o => o.CreatedAt)
@@ -63,7 +75,7 @@ public class GetUserActivityLogQueryHandler
             });
         }
 
-        // 3. Support tickets opened
+        // 4. Support tickets opened
         var tickets = await _db.SupportTickets
             .Where(t => t.UserId == request.UserId)
             .OrderByDescending(t => t.CreatedAt)

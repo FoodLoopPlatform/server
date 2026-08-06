@@ -40,7 +40,7 @@ public class GetCharityActivityLogQueryHandler
 
         var entries = new List<ActivityLogEntryDto>();
 
-        // 1. Account created (Charity owner user creation)
+        // 1. Account created
         if (owner != null)
         {
             entries.Add(new ActivityLogEntryDto
@@ -52,7 +52,19 @@ public class GetCharityActivityLogQueryHandler
             });
         }
 
-        // 2. Document Uploads & Reviews
+        // 2. Charity Profile & Location updates
+        if (store.UpdatedAt.HasValue && store.UpdatedAt.Value != store.CreatedAt)
+        {
+            entries.Add(new ActivityLogEntryDto
+            {
+                EventType = "CharityProfileUpdated",
+                Title = "Charity Profile Updated",
+                Description = $"Updated charity settings or location coordinates for '{store.Name}'.",
+                OccurredAt = store.UpdatedAt.Value,
+            });
+        }
+
+        // 3. Document Uploads & Reviews
         var verifications = await _db.StoreVerifications
             .Where(v => v.StoreId == store.Id)
             .OrderByDescending(v => v.CreatedAt)
@@ -81,7 +93,7 @@ public class GetCharityActivityLogQueryHandler
             }
         }
 
-        // 3. Support tickets opened by owner
+        // 4. Support tickets opened by owner
         if (owner != null)
         {
             var tickets = await _db.SupportTickets

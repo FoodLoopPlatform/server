@@ -40,7 +40,7 @@ public class GetStoreActivityLogQueryHandler
 
         var entries = new List<ActivityLogEntryDto>();
 
-        // 1. Account created (Merchant owner user creation)
+        // 1. Account created
         if (owner != null)
         {
             entries.Add(new ActivityLogEntryDto
@@ -52,7 +52,19 @@ public class GetStoreActivityLogQueryHandler
             });
         }
 
-        // 2. Document Uploads & Reviews
+        // 2. Store Profile & Location updates
+        if (store.UpdatedAt.HasValue && store.UpdatedAt.Value != store.CreatedAt)
+        {
+            entries.Add(new ActivityLogEntryDto
+            {
+                EventType = "StoreProfileUpdated",
+                Title = "Store Profile Updated",
+                Description = $"Updated store settings, opening hours, or location coordinates for '{store.Name}'.",
+                OccurredAt = store.UpdatedAt.Value,
+            });
+        }
+
+        // 3. Document Uploads & Reviews
         var verifications = await _db.StoreVerifications
             .Where(v => v.StoreId == store.Id)
             .OrderByDescending(v => v.CreatedAt)
@@ -81,9 +93,10 @@ public class GetStoreActivityLogQueryHandler
             }
         }
 
-        // 3. Product Listings
+        // 4. Product Listings & Updates & Images
         var products = await _db.Products
             .IgnoreQueryFilters()
+            .Include(p => p.Images)
             .Where(p => p.StoreId == store.Id)
             .OrderByDescending(p => p.CreatedAt)
             .Take(10)
@@ -91,6 +104,7 @@ public class GetStoreActivityLogQueryHandler
 
         foreach (var p in products)
         {
+            // Create event
             entries.Add(new ActivityLogEntryDto
             {
                 EventType = "ProductListed",
@@ -99,6 +113,31 @@ public class GetStoreActivityLogQueryHandler
                 OccurredAt = p.CreatedAt,
             });
 
+            // Update event
+            if (p.UpdatedAt.HasValue && p.UpdatedAt.Value != p.CreatedAt)
+            {
+                entries.Add(new ActivityLogEntryDto
+                {
+                    EventType = "ProductUpdated",
+                    Title = "Product Updated",
+                    Description = $"Updated product details for '{p.Title}'.",
+                    OccurredAt = p.UpdatedAt.Value,
+                });
+            }
+
+            // Image Upload event
+            foreach (var img in p.Images)
+            {
+                entries.Add(new ActivityLogEntryDto
+                {
+                    EventType = "ProductImageUploaded",
+                    Title = "Product Image Uploaded",
+                    Description = $"Uploaded image for product '{p.Title}'.",
+                    OccurredAt = img.CreatedAt,
+                });
+            }
+
+            // Delete event
             if (p.IsDeleted && p.DeletedAt.HasValue)
             {
                 entries.Add(new ActivityLogEntryDto
@@ -111,7 +150,7 @@ public class GetStoreActivityLogQueryHandler
             }
         }
 
-        // 4. Orders Received
+        // 5. Orders Received
         var sales = await _db.OrderItems
             .IgnoreQueryFilters()
             .Include(oi => oi.Order)
@@ -138,7 +177,7 @@ public class GetStoreActivityLogQueryHandler
             });
         }
 
-        // 5. Support tickets opened by owner
+        // 6. Support tickets opened by owner
         if (owner != null)
         {
             var tickets = await _db.SupportTickets
