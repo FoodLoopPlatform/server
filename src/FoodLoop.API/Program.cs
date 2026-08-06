@@ -9,6 +9,31 @@ using Microsoft.OpenApi.Models;
 using System.Globalization;
 using Serilog;
 
+// Load environment variables from local .env file if present
+var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+if (File.Exists(envPath))
+{
+    foreach (var line in File.ReadAllLines(envPath))
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+            continue;
+
+        var parts = trimmed.Split('=', 2);
+        if (parts.Length == 2)
+        {
+            var key = parts[0].Trim();
+            var val = parts[1].Trim();
+            if (val.StartsWith("\"") && val.EndsWith("\""))
+                val = val[1..^1];
+            else if (val.StartsWith("'") && val.EndsWith("'"))
+                val = val[1..^1];
+
+            Environment.SetEnvironmentVariable(key, val);
+        }
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
