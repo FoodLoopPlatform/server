@@ -20,8 +20,8 @@ public class ApplicationDbContext
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<Address> Addresses => Set<Address>();
-    public DbSet<Store> Stores => Set<Store>();
-    public DbSet<StoreVerification> StoreVerifications => Set<StoreVerification>();
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<OrganizationVerification> StoreVerifications => Set<OrganizationVerification>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
@@ -35,12 +35,19 @@ public class ApplicationDbContext
     public DbSet<TicketMessage> TicketMessages => Set<TicketMessage>();
     public DbSet<AIRecognitionResult> AIRecognitionResults => Set<AIRecognitionResult>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder); // Identity tables
 
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        builder.Entity<AuditLog>(entity =>
+        {
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.OrganizationId);
+        });
 
         // Rename default Identity tables to a cleaner schema (optional but tidy).
         builder.Entity<ApplicationUser>().ToTable("Users");
@@ -87,3 +94,4 @@ public class ApplicationDbContext
         }
     }
 }
+

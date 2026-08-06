@@ -1,9 +1,12 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
-using FoodLoop.Application.DTOs.Stores;
-using FoodLoop.Application.Features.Stores.Commands;
-using FoodLoop.Application.Features.Stores.Queries;
+using FoodLoop.Application.DTOs.Organizations;
+using FoodLoop.Application.DTOs.Orders;
+using FoodLoop.Application.Features.Organizations.Commands;
+using FoodLoop.Application.Features.Organizations.Queries;
+using FoodLoop.Application.Features.Orders.Commands;
+using FoodLoop.Application.Features.Orders.Queries;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,10 +18,10 @@ namespace FoodLoop.API.Controllers;
 
 /// <summary>
 /// Backs the business onboarding wizard: business_signup_step_1 (registration, see
-/// AuthController) → business_verification_location (step 2 location, below) →
-/// document_upload_step_2 (step 2 documents, below) → verification_pending_step_3
-/// (status, below). Full Store CRUD (browsing, editing a live store, etc.) ships in Sprint 2 —
-/// only the merchant's own draft store is exposed here.
+/// AuthController) â†’ business_verification_location (step 2 location, below) â†’
+/// document_upload_step_2 (step 2 documents, below) â†’ verification_pending_step_3
+/// (status, below). Full Organization CRUD (browsing, editing a live organization, etc.) ships in Sprint 2 â€”
+/// only the merchant's own draft organization is exposed here.
 /// </summary>
 [ApiController]
 [Route("stores")]
@@ -38,17 +41,17 @@ public class StoresController : ControllerBase
 
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-    /// <summary>GET /stores/me — the caller's own store, its location, and uploaded documents.
+    /// <summary>GET /organizations/me â€” the caller's own organization, its location, and uploaded documents.
     /// Used to re-enter the wizard at the right step, and by verification_pending_step_3 to
     /// show current status.</summary>
     [HttpGet("me")]
     public async Task<IActionResult> GetMyStore(CancellationToken cancellationToken)
     {
-        var store = await _mediator.Send(new GetMyStoreQuery(OwnerId), cancellationToken);
-        return Ok(ApiResponse<StoreDto>.Ok(store));
+        var organization = await _mediator.Send(new GetMyOrganizationQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
 
-    /// <summary>PATCH /stores/me — updates the store's name, description, category, and logo (Form Data).</summary>
+    /// <summary>PATCH /organizations/me â€” updates the organization's name, description, category, and logo (Form Data).</summary>
     [HttpPatch("me")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UpdateProfile([FromForm] UpdateStoreProfileFormRequest request, CancellationToken cancellationToken)
@@ -83,7 +86,7 @@ public class StoresController : ControllerBase
             }
         }
 
-        var appRequest = new UpdateStoreProfileRequest
+        var appRequest = new UpdateOrganizationProfileRequest
         {
             Name = request.Name,
             NameAr = request.NameAr,
@@ -96,20 +99,20 @@ public class StoresController : ControllerBase
             OpeningHours = request.OpeningHours
         };
 
-        var store = await _mediator.Send(new UpdateStoreProfileCommand(OwnerId, appRequest), cancellationToken);
-        return Ok(ApiResponse<StoreDto>.Ok(store));
+        var organization = await _mediator.Send(new UpdateOrganizationProfileCommand(OwnerId, appRequest), cancellationToken);
+        return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
 
-    /// <summary>PATCH /stores/me/location — step 2's location fields (business_verification_location).</summary>
+    /// <summary>PATCH /organizations/me/location — step 2's location fields (business_verification_location).</summary>
     [HttpPatch("me/location")]
-    public async Task<IActionResult> UpdateLocation([FromBody] UpdateStoreLocationRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateLocation([FromBody] UpdateOrganizationLocationRequest request, CancellationToken cancellationToken)
     {
-        var store = await _mediator.Send(new UpdateStoreLocationCommand(OwnerId, request), cancellationToken);
-        return Ok(ApiResponse<StoreDto>.Ok(store));
+        var organization = await _mediator.Send(new UpdateOrganizationLocationCommand(OwnerId, request), cancellationToken);
+        return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
 
-    /// <summary>POST /stores/me/documents — step 2's document upload (document_upload_step_2).
-    /// Does not require authentication: the store is identified by the owner's registered email.
+    /// <summary>POST /organizations/me/documents â€” step 2's document upload (document_upload_step_2).
+    /// Does not require authentication: the organization is identified by the owner's registered email.
     /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto.</summary>
     [HttpPost("me/documents")]
     [AllowAnonymous]
@@ -141,8 +144,35 @@ public class StoresController : ControllerBase
             ContentType = request.File.ContentType,
         };
 
-        var store = await _mediator.Send(new UploadStoreDocumentCommand(request.Email, request.Type, uploadRequest), cancellationToken);
-        return Ok(ApiResponse<StoreDto>.Ok(store));
+        var organization = await _mediator.Send(new UploadOrganizationDocumentCommand(request.Email, request.Type, uploadRequest), cancellationToken);
+        return Ok(ApiResponse<OrganizationDto>.Ok(organization));
+    }
+
+    /// <summary>
+    /// GET /stores/me/orders — retrieve all orders placed to this store.
+    /// </summary>
+    [HttpGet("me/orders")]
+    public async Task<IActionResult> GetReceivedOrders(CancellationToken cancellationToken)
+    {
+        var query = new GetMerchantOrdersQuery(OwnerId);
+        var orders = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<OrderDto>>.Ok(orders));
+    }
+
+    /// <summary>
+    /// PATCH /stores/me/orders/{id}/status — update order preparation or pickup status.
+    /// </summary>
+    [HttpPatch("me/orders/{id:guid}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
+    {
+        var command = new UpdateOrderStatusCommand(OwnerId, id, request.Status);
+        var result = await _mediator.Send(command, cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to update order status"));
+        }
+
+        return Ok(ApiResponse<OrderDto>.Ok(result.Data!));
     }
 }
 
@@ -183,3 +213,10 @@ public class UpdateStoreProfileFormRequest
 
     public string? OpeningHours { get; set; }
 }
+
+public class UpdateOrderStatusRequest
+{
+    [Required]
+    public string Status { get; set; } = null!;
+}
+

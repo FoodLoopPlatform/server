@@ -30,7 +30,7 @@ public class AdminController : ControllerBase
     private Guid AdminId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     /// <summary>
-    /// GET /admin/stores/pending — lists all stores awaiting verification review.
+    /// GET /admin/organizations/pending â€” lists all organizations awaiting verification review.
     /// Accessible without auth so the admin frontend can display the queue.
     /// Each entry includes the owner's contact details and all uploaded documents.
     /// </summary>
@@ -38,50 +38,50 @@ public class AdminController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetPendingStores(CancellationToken cancellationToken)
     {
-        var stores = await _mediator.Send(new GetPendingStoresQuery(), cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<AdminStoreDto>>.Ok(stores));
+        var organizations = await _mediator.Send(new GetPendingStoresQuery(), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminOrganizationDto>>.Ok(organizations));
     }
 
     /// <summary>
-    /// GET /admin/stores/{id} — full store detail with all documents for a single review.
+    /// GET /admin/organizations/{id} â€” full organization detail with all documents for a single review.
     /// Accessible without auth so the admin frontend can deep-link to a specific review.
     /// </summary>
     [HttpGet("stores/{id:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetStoreForReview(Guid id, CancellationToken cancellationToken)
     {
-        var store = await _mediator.Send(new GetStoreForReviewQuery(id), cancellationToken);
-        return Ok(ApiResponse<AdminStoreDto>.Ok(store));
+        var organization = await _mediator.Send(new GetStoreForReviewQuery(id), cancellationToken);
+        return Ok(ApiResponse<AdminOrganizationDto>.Ok(organization));
     }
 
     /// <summary>
-    /// PATCH /admin/stores/{id}/verify — approve or reject a store.
+    /// PATCH /admin/organizations/{id}/verify â€” approve or reject a organization.
     /// Action must be "Approved" or "Rejected".
     /// On approval the owner's account is activated; on rejection it stays PendingVerification
     /// so they can correct and re-submit.
     /// </summary>
     [HttpPatch("stores/{id:guid}/verify")]
-    public async Task<IActionResult> VerifyStore(Guid id, [FromBody] VerifyStoreRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> VerifyStore(Guid id, [FromBody] VerifyOrganizationRequest request, CancellationToken cancellationToken)
     {
-        var store = await _mediator.Send(new VerifyStoreCommand(id, AdminId, request), cancellationToken);
-        return Ok(ApiResponse<AdminStoreDto>.Ok(store));
+        var organization = await _mediator.Send(new VerifyOrganizationCommand(id, AdminId, request), cancellationToken);
+        return Ok(ApiResponse<AdminOrganizationDto>.Ok(organization));
     }
 
     /// <summary>
-    /// PATCH /admin/charities/{id}/verify — approve or reject a charity's onboarding verification.
+    /// PATCH /admin/charities/{id}/verify â€” approve or reject a charity's onboarding verification.
     /// Action must be "Approved" or "Rejected".
     /// </summary>
     [HttpPatch("charities/{id:guid}/verify")]
-    public async Task<IActionResult> VerifyCharity(Guid id, [FromBody] VerifyStoreRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> VerifyCharity(Guid id, [FromBody] VerifyOrganizationRequest request, CancellationToken cancellationToken)
     {
-        var store = await _mediator.Send(new VerifyStoreCommand(id, AdminId, request), cancellationToken);
-        return Ok(ApiResponse<AdminStoreDto>.Ok(store));
+        var organization = await _mediator.Send(new VerifyOrganizationCommand(id, AdminId, request), cancellationToken);
+        return Ok(ApiResponse<AdminOrganizationDto>.Ok(organization));
     }
 
-    // ── User management ──────────────────────────────────────────────────────
+    // â”€â”€ User management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// GET /admin/users — lists all users with optional filtering.
+    /// GET /admin/users â€” lists all users with optional filtering.
     /// </summary>
     [HttpGet("users")]
     public async Task<IActionResult> ListUsers(
@@ -97,7 +97,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /admin/users/{id}/status — suspend, ban, or reactivate a user.
+    /// PATCH /admin/users/{id}/status â€” suspend, ban, or reactivate a user.
     /// Body: { "status": "Active" | "Suspended" | "Banned" }
     /// </summary>
     [HttpPatch("users/{id:guid}/status")]
@@ -111,7 +111,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// GET /admin/users/{id}/activity-log — recent events for a user (account created, orders placed, support tickets).
+    /// GET /admin/users/{id}/activity-log â€” recent events for a user (account created, orders placed, support tickets).
     /// </summary>
     [HttpGet("users/{id:guid}/activity-log")]
     public async Task<IActionResult> GetUserActivityLog(Guid id, CancellationToken cancellationToken)
@@ -121,7 +121,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// GET /admin/stores/{id}/activity-log — recent events for a store (uploads, listings, reviews, orders, tickets).
+    /// GET /admin/organizations/{id}/activity-log â€” recent events for a organization (uploads, Products, reviews, orders, tickets).
     /// </summary>
     [HttpGet("stores/{id:guid}/activity-log")]
     public async Task<IActionResult> GetStoreActivityLog(Guid id, CancellationToken cancellationToken)
@@ -131,7 +131,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// GET /admin/charities/{id}/activity-log — recent events for a charity (uploads, verifications, tickets).
+    /// GET /admin/charities/{id}/activity-log â€” recent events for a charity (uploads, verifications, tickets).
     /// </summary>
     [HttpGet("charities/{id:guid}/activity-log")]
     public async Task<IActionResult> GetCharityActivityLog(Guid id, CancellationToken cancellationToken)
@@ -140,10 +140,10 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
     }
 
-    // ── Analytics ─────────────────────────────────────────────────────────────
+    // â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// GET /admin/analytics/summary — high-level metrics for dashboard (total users, stores, sales, savings).
+    /// GET /admin/analytics/summary â€” high-level metrics for dashboard (total users, organizations, sales, savings).
     /// </summary>
     [HttpGet("analytics/summary")]
     public async Task<IActionResult> GetAnalyticsSummary(CancellationToken cancellationToken)
@@ -152,10 +152,10 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<AnalyticsSummaryDto>.Ok(summary));
     }
 
-    // ── Store moderation ──────────────────────────────────────────────────────
+    // â”€â”€ Organization moderation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// GET /admin/stores — list all stores with optional VerificationStatus filter.
+    /// GET /admin/organizations â€” list all organizations with optional VerificationStatus filter.
     /// </summary>
     [HttpGet("stores")]
     public async Task<IActionResult> GetStores(
@@ -164,12 +164,12 @@ public class AdminController : ControllerBase
         [FromQuery] VerificationStatus? status = null,
         CancellationToken cancellationToken = default)
     {
-        var stores = await _mediator.Send(new GetAdminStoresQuery(pageNumber, pageSize, status), cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<AdminStoreDto>>.Ok(stores));
+        var organizations = await _mediator.Send(new GetAdminStoresQuery(pageNumber, pageSize, status), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminOrganizationDto>>.Ok(organizations));
     }
 
     /// <summary>
-    /// GET /admin/charities — list all charities with optional VerificationStatus filter.
+    /// GET /admin/charities â€” list all charities with optional VerificationStatus filter.
     /// </summary>
     [HttpGet("charities")]
     public async Task<IActionResult> GetCharities(
@@ -179,28 +179,28 @@ public class AdminController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var charities = await _mediator.Send(new GetAdminCharitiesQuery(pageNumber, pageSize, status), cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<AdminStoreDto>>.Ok(charities));
+        return Ok(ApiResponse<IReadOnlyList<AdminOrganizationDto>>.Ok(charities));
     }
 
-    // ── Review moderation ─────────────────────────────────────────────────────
+    // â”€â”€ Review moderation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// GET /admin/reviews — list all reviews with optional Rating and StoreId filters.
+    /// GET /admin/reviews â€” list all reviews with optional Rating and OrganizationId filters.
     /// </summary>
     [HttpGet("reviews")]
     public async Task<IActionResult> GetReviews(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] int? rating = null,
-        [FromQuery] Guid? storeId = null,
+        [FromQuery] Guid? organizationId = null,
         CancellationToken cancellationToken = default)
     {
-        var reviews = await _mediator.Send(new GetAdminReviewsQuery(pageNumber, pageSize, rating, storeId), cancellationToken);
+        var reviews = await _mediator.Send(new GetAdminReviewsQuery(pageNumber, pageSize, rating, organizationId), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AdminReviewDto>>.Ok(reviews));
     }
 
     /// <summary>
-    /// DELETE /admin/reviews/{id} — moderate and remove an inappropriate review.
+    /// DELETE /admin/reviews/{id} â€” moderate and remove an inappropriate review.
     /// </summary>
     [HttpDelete("reviews/{id:guid}")]
     public async Task<IActionResult> DeleteReview(Guid id, CancellationToken cancellationToken)
@@ -209,25 +209,25 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
-    // ── Product moderation ───────────────────────────────────────────
+    // â”€â”€ Product moderation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// GET /admin/products — list all products with optional Status and StoreId filters.
+    /// GET /admin/products â€” list all products with optional Status and OrganizationId filters.
     /// </summary>
     [HttpGet("products")]
     public async Task<IActionResult> GetProducts(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? status = null,
-        [FromQuery] Guid? storeId = null,
+        [FromQuery] Guid? organizationId = null,
         CancellationToken cancellationToken = default)
     {
-        var products = await _mediator.Send(new GetAdminProductsQuery(pageNumber, pageSize, status, storeId), cancellationToken);
+        var products = await _mediator.Send(new GetAdminProductsQuery(pageNumber, pageSize, status, organizationId), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AdminProductDto>>.Ok(products));
     }
 
     /// <summary>
-    /// DELETE /admin/products/{id} — suspend and soft-delete a product.
+    /// DELETE /admin/products/{id} â€” suspend and soft-delete a product.
     /// </summary>
     [HttpDelete("products/{id:guid}")]
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
@@ -237,7 +237,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// GET /admin/products/pending-ai — list pending products with low AI confidence score.
+    /// GET /admin/products/pending-ai â€” list pending products with low AI confidence score.
     /// </summary>
     [HttpGet("products/pending-ai")]
     public async Task<IActionResult> GetPendingLowConfProducts(
@@ -251,7 +251,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /admin/products/{id}/approve — approve a product.
+    /// PATCH /admin/products/{id}/approve â€” approve a product.
     /// </summary>
     [HttpPatch("products/{id:guid}/approve")]
     public async Task<IActionResult> ApproveProduct(Guid id, CancellationToken cancellationToken)
@@ -261,7 +261,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /admin/products/{id}/reject — reject a product with a reason note.
+    /// PATCH /admin/products/{id}/reject â€” reject a product with a reason note.
     /// </summary>
     [HttpPatch("products/{id:guid}/reject")]
     public async Task<IActionResult> RejectProduct(Guid id, [FromBody] ProductModerationRequest request, CancellationToken cancellationToken)
@@ -271,7 +271,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /admin/products/{id}/request-changes — request changes for a product with instructions note.
+    /// PATCH /admin/products/{id}/request-changes â€” request changes for a product with instructions note.
     /// </summary>
     [HttpPatch("products/{id:guid}/request-changes")]
     public async Task<IActionResult> RequestChangesProduct(Guid id, [FromBody] ProductModerationRequest request, CancellationToken cancellationToken)
@@ -280,10 +280,10 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<AdminProductDto>.Ok(product));
     }
 
-    // ── Support Tickets ───────────────────────────────────────────────────────
+    // â”€â”€ Support Tickets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// GET /admin/support-tickets — list support tickets with status and priority filters.
+    /// GET /admin/support-tickets â€” list support tickets with status and priority filters.
     /// </summary>
     [HttpGet("support-tickets")]
     public async Task<IActionResult> GetSupportTickets(
@@ -298,7 +298,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// GET /admin/support-tickets/{id} — get a ticket detail with full conversation history.
+    /// GET /admin/support-tickets/{id} â€” get a ticket detail with full conversation history.
     /// </summary>
     [HttpGet("support-tickets/{id:guid}")]
     public async Task<IActionResult> GetSupportTicketDetail(Guid id, CancellationToken cancellationToken)
@@ -308,7 +308,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// POST /admin/support-tickets/{id}/reply — reply to a support ticket.
+    /// POST /admin/support-tickets/{id}/reply â€” reply to a support ticket.
     /// </summary>
     [HttpPost("support-tickets/{id:guid}/reply")]
     public async Task<IActionResult> ReplyToSupportTicket(
@@ -319,7 +319,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /admin/support-tickets/{id}/close — resolve and close a support ticket.
+    /// PATCH /admin/support-tickets/{id}/close â€” resolve and close a support ticket.
     /// </summary>
     [HttpPatch("support-tickets/{id:guid}/close")]
     public async Task<IActionResult> CloseSupportTicket(Guid id, CancellationToken cancellationToken)
@@ -328,3 +328,4 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 }
+

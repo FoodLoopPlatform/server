@@ -10,8 +10,8 @@ namespace FoodLoop.Application.Common.Interfaces;
 public interface IApplicationDbContext
 {
     DbSet<Address> Addresses { get; }
-    DbSet<Store> Stores { get; }
-    DbSet<StoreVerification> StoreVerifications { get; }
+    DbSet<Organization> Organizations { get; }
+    DbSet<OrganizationVerification> StoreVerifications { get; }
     DbSet<Category> Categories { get; }
     DbSet<Product> Products { get; }
     DbSet<ProductImage> ProductImages { get; }
@@ -25,6 +25,8 @@ public interface IApplicationDbContext
     DbSet<TicketMessage> TicketMessages { get; }
     DbSet<AIRecognitionResult> AIRecognitionResults { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
+

@@ -1,4 +1,4 @@
-using FoodLoop.Application.DTOs.Admin;
+﻿using FoodLoop.Application.DTOs.Admin;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -9,4 +9,5 @@ public record GetAdminProductsQuery(
     int PageNumber = 1,
     int PageSize = 10,
     string? Status = null,
-    Guid? StoreId = null) : IRequest<IReadOnlyList<AdminProductDto>>;
+    Guid? OrganizationId = null) : IRequest<IReadOnlyList<AdminProductDto>>;
+

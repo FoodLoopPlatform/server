@@ -173,4 +173,5 @@ Screens/
 # Uploads
 ###############################################################################
 
-src/FoodLoop.API/wwwroot/uploads/
+**/wwwroot/
+

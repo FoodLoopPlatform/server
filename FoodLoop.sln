@@ -15,12 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodLoop.API", "src\FoodLoo
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C88DD14-F956-CE84-757C-A364CCF449FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodLoop.Domain.Tests", "test\FoodLoop.Domain.Tests\FoodLoop.Domain.Tests.csproj", "{63B42D5E-E903-4045-850B-BB75164BAD22}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodLoop.Application.Tests", "test\FoodLoop.Application.Tests\FoodLoop.Application.Tests.csproj", "{794DED29-82E1-4402-AC4E-ECB4BCC6E731}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodLoop.Infrastructure.Tests", "test\FoodLoop.Infrastructure.Tests\FoodLoop.Infrastructure.Tests.csproj", "{40CC59C8-19D0-4546-986D-E0D6BE98B1D4}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -1,11 +1,11 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using FoodLoop.Domain.Common;
 
 namespace FoodLoop.Application.Common.Interfaces;
 
 /// <summary>
 /// Generic data-access abstraction over a single entity type. Covers the common CRUD
-/// shape; entities that need bespoke queries (Address, Store, RefreshToken) get a
+/// shape; entities that need bespoke queries (Address, Organization, RefreshToken) get a
 /// dedicated repository interface that extends this one instead of piling every
 /// possible query onto here.
 ///
@@ -34,3 +34,4 @@ public interface IRepository<TEntity> where TEntity : BaseEntity
     void Update(TEntity entity);
     void Remove(TEntity entity);
 }
+
