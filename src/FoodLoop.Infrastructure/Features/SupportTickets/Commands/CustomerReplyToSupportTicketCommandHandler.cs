@@ -45,7 +45,7 @@ public class CustomerReplyToSupportTicketCommandHandler : IRequestHandler<Custom
             Message = request.Message
         };
 
-        ticket.Messages.Add(message);
+        _db.TicketMessages.Add(message);
         ticket.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
