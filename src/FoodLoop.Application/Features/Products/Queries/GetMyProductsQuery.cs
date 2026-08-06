@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Products;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -12,4 +12,5 @@ public record GetMyProductsQuery(
     Guid? CategoryId = null,
     string? Status = null,
     string? SearchTerm = null) : IRequest<IReadOnlyList<ProductDto>>;
+
 

@@ -1,5 +1,5 @@
 ﻿using FoodLoop.Application.Common.Interfaces;
-using FoodLoop.Application.DTOs.Listings;
+using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Queries;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
@@ -62,6 +62,7 @@ public class GetMyProductsQueryHandler : IRequestHandler<GetMyProductsQuery, IRe
         return products.Select(l => l.ToDto()).ToList();
     }
 }
+
 
 
 

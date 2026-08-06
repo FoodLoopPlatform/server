@@ -1,7 +1,7 @@
 ﻿using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
-using FoodLoop.Application.DTOs.Listings;
+using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Application.Features.Products.Queries;
 using FoodLoop.Domain.Enums;
@@ -229,5 +229,6 @@ public class UpdateProductRequest
     public DateOnly? ExpirationDate { get; set; }
     public ProductStatus? Status { get; set; }
 }
+
 
 
