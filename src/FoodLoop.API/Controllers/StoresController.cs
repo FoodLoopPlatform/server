@@ -86,7 +86,7 @@ public class StoresController : ControllerBase
             }
         }
 
-        var appRequest = new UpdateStoreProfileRequest
+        var appRequest = new UpdateOrganizationProfileRequest
         {
             Name = request.Name,
             NameAr = request.NameAr,
@@ -103,9 +103,9 @@ public class StoresController : ControllerBase
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
 
-    /// <summary>PATCH /organizations/me/location â€” step 2's location fields (business_verification_location).</summary>
+    /// <summary>PATCH /organizations/me/location — step 2's location fields (business_verification_location).</summary>
     [HttpPatch("me/location")]
-    public async Task<IActionResult> UpdateLocation([FromBody] UpdateStoreLocationRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateLocation([FromBody] UpdateOrganizationLocationRequest request, CancellationToken cancellationToken)
     {
         var organization = await _mediator.Send(new UpdateOrganizationLocationCommand(OwnerId, request), cancellationToken);
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
