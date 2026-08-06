@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace FoodLoop.Infrastructure.DependencyInjection;
@@ -104,8 +105,29 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         
+        // Bind SMTP options using the ASP.NET Core Options Pattern
+        services.AddOptions<SmtpOptions>()
+            .Bind(configuration.GetSection(SmtpOptions.SectionName))
+            .Configure(options =>
+            {
+                // Fallback configuration support for flat environment/env-file variables
+                if (string.IsNullOrEmpty(options.Host))
+                {
+                    options.Host = configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? string.Empty;
+                    options.Username = configuration["SMTP_USERNAME"] ?? Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? string.Empty;
+                    options.Password = configuration["SMTP_PASSWORD"] ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? string.Empty;
+                    options.FromEmail = configuration["SMTP_FROM_EMAIL"] ?? Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? string.Empty;
+
+                    var portStr = configuration["SMTP_PORT"] ?? Environment.GetEnvironmentVariable("SMTP_PORT");
+                    if (int.TryParse(portStr, out var port))
+                    {
+                        options.Port = port;
+                    }
+                }
+            });
+
         // Conditional Email Service registration (SMTP vs DevStub)
-        var smtpHost = configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST");
+        var smtpHost = configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? configuration["Smtp:Host"];
         if (!string.IsNullOrEmpty(smtpHost))
         {
             services.AddScoped<IEmailService, SmtpEmailService>();
@@ -115,13 +137,29 @@ public static class InfrastructureServiceRegistration
             services.AddScoped<IEmailService, NullEmailService>();
         }
         
+        // Bind Cloudinary options using the ASP.NET Core Options Pattern
+        services.AddOptions<CloudinaryOptions>()
+            .Bind(configuration.GetSection(CloudinaryOptions.SectionName))
+            .Configure(options =>
+            {
+                // Fallback configuration support for flat environment/env-file variables
+                if (string.IsNullOrEmpty(options.Url))
+                {
+                    options.Url = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL") ?? string.Empty;
+                }
+            });
+
         // Conditional File Storage Service registration (Cloudinary vs Local disk)
-        var cloudinaryUrl = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL");
+        var cloudinaryUrl = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL") ?? configuration["Cloudinary:Url"];
         if (!string.IsNullOrEmpty(cloudinaryUrl))
         {
-            var cloudinary = new Cloudinary(new Account(cloudinaryUrl));
-            cloudinary.Api.Secure = true;
-            services.AddSingleton(cloudinary);
+            services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<CloudinaryOptions>>().Value;
+                var cloudinary = new Cloudinary(new Account(options.Url));
+                cloudinary.Api.Secure = true;
+                return cloudinary;
+            });
             services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
         }
         else

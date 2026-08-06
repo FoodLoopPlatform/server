@@ -1,6 +1,7 @@
 using FoodLoop.Application.Common.Interfaces;
-using Microsoft.Extensions.Configuration;
+using FoodLoop.Infrastructure.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Net;
 using System.Net.Mail;
@@ -11,12 +12,12 @@ namespace FoodLoop.Infrastructure.Services;
 
 public class SmtpEmailService : IEmailService
 {
-    private readonly IConfiguration _configuration;
+    private readonly SmtpOptions _options;
     private readonly ILogger<SmtpEmailService> _logger;
 
-    public SmtpEmailService(IConfiguration configuration, ILogger<SmtpEmailService> logger)
+    public SmtpEmailService(IOptions<SmtpOptions> options, ILogger<SmtpEmailService> logger)
     {
-        _configuration = configuration;
+        _options = options.Value;
         _logger = logger;
     }
 
@@ -38,30 +39,21 @@ public class SmtpEmailService : IEmailService
 
     private async Task SendEmailAsync(string toEmail, string subject, string body)
     {
-        var host = _configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST");
-        var portStr = _configuration["SMTP_PORT"] ?? Environment.GetEnvironmentVariable("SMTP_PORT");
-        var username = _configuration["SMTP_USERNAME"] ?? Environment.GetEnvironmentVariable("SMTP_USERNAME");
-        var password = _configuration["SMTP_PASSWORD"] ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD");
-        var fromEmail = _configuration["SMTP_FROM_EMAIL"] ?? Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? "noreply@foodloop.com";
-
-        if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        if (string.IsNullOrEmpty(_options.Host) || string.IsNullOrEmpty(_options.Username) || string.IsNullOrEmpty(_options.Password))
         {
-            _logger.LogWarning("[SMTP EMAIL BYPASS] SMTP is not fully configured. Email was not sent. Host: {Host}, User: {User}", host, username);
+            _logger.LogWarning("[SMTP EMAIL BYPASS] SMTP is not fully configured. Email was not sent. Host: {Host}, User: {User}", _options.Host, _options.Username);
             return;
         }
 
-        int.TryParse(portStr, out var port);
-        if (port == 0) port = 587;
-
-        using var client = new SmtpClient(host, port)
+        using var client = new SmtpClient(_options.Host, _options.Port)
         {
-            Credentials = new NetworkCredential(username, password),
+            Credentials = new NetworkCredential(_options.Username, _options.Password),
             EnableSsl = true
         };
 
         using var mailMessage = new MailMessage
         {
-            From = new MailAddress(fromEmail, "FoodLoop"),
+            From = new MailAddress(_options.FromEmail, "FoodLoop"),
             Subject = subject,
             Body = body,
             IsBodyHtml = false
