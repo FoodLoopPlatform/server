@@ -1,6 +1,7 @@
 using System.Text;
 using FoodLoop.Application;
 using FoodLoop.Application.Common.Interfaces;
+using CloudinaryDotNet;
 using FoodLoop.Infrastructure.Features.Auth;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Options;
@@ -103,7 +104,19 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IEmailService, NullEmailService>();
-        services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
+        
+        // Conditional File Storage Service registration (Cloudinary vs Local disk)
+        var cloudinaryUrl = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL");
+        if (!string.IsNullOrEmpty(cloudinaryUrl))
+        {
+            services.AddSingleton(new Cloudinary(new Account(cloudinaryUrl)));
+            services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
+        }
+
         services.AddScoped<ILocalizationService, LocalizationService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IRealTimeNotificationService, RealTimeNotificationService>();
