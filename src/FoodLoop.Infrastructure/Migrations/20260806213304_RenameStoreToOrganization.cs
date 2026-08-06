@@ -12,17 +12,40 @@ namespace FoodLoop.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // 1. Drop existing foreign keys
-            migrationBuilder.DropForeignKey(
-                name: "FK_Products_Stores_StoreId",
-                table: "Products");
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.Sql(@"
+                    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Products_Stores_StoreId' AND parent_object_id = OBJECT_ID('Products'))
+                    BEGIN
+                        ALTER TABLE [Products] DROP CONSTRAINT [FK_Products_Stores_StoreId];
+                    END");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_Reviews_Stores_StoreId",
-                table: "Reviews");
+                migrationBuilder.Sql(@"
+                    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Reviews_Stores_StoreId' AND parent_object_id = OBJECT_ID('Reviews'))
+                    BEGIN
+                        ALTER TABLE [Reviews] DROP CONSTRAINT [FK_Reviews_Stores_StoreId];
+                    END");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_StoreVerifications_Stores_StoreId",
-                table: "StoreVerifications");
+                migrationBuilder.Sql(@"
+                    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_StoreVerifications_Stores_StoreId' AND parent_object_id = OBJECT_ID('StoreVerifications'))
+                    BEGIN
+                        ALTER TABLE [StoreVerifications] DROP CONSTRAINT [FK_StoreVerifications_Stores_StoreId];
+                    END");
+            }
+            else
+            {
+                migrationBuilder.DropForeignKey(
+                    name: "FK_Products_Stores_StoreId",
+                    table: "Products");
+
+                migrationBuilder.DropForeignKey(
+                    name: "FK_Reviews_Stores_StoreId",
+                    table: "Reviews");
+
+                migrationBuilder.DropForeignKey(
+                    name: "FK_StoreVerifications_Stores_StoreId",
+                    table: "StoreVerifications");
+            }
 
             // 2. Rename tables
             migrationBuilder.RenameTable(
@@ -110,17 +133,40 @@ namespace FoodLoop.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             // 1. Drop new foreign keys
-            migrationBuilder.DropForeignKey(
-                name: "FK_Products_Organizations_OrganizationId",
-                table: "Products");
+            if (migrationBuilder.ActiveProvider == "Microsoft.EntityFrameworkCore.SqlServer")
+            {
+                migrationBuilder.Sql(@"
+                    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Products_Organizations_OrganizationId' AND parent_object_id = OBJECT_ID('Products'))
+                    BEGIN
+                        ALTER TABLE [Products] DROP CONSTRAINT [FK_Products_Organizations_OrganizationId];
+                    END");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_Reviews_Organizations_OrganizationId",
-                table: "Reviews");
+                migrationBuilder.Sql(@"
+                    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Reviews_Organizations_OrganizationId' AND parent_object_id = OBJECT_ID('Reviews'))
+                    BEGIN
+                        ALTER TABLE [Reviews] DROP CONSTRAINT [FK_Reviews_Organizations_OrganizationId];
+                    END");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_OrganizationVerifications_Organizations_OrganizationId",
-                table: "OrganizationVerifications");
+                migrationBuilder.Sql(@"
+                    IF EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_OrganizationVerifications_Organizations_OrganizationId' AND parent_object_id = OBJECT_ID('OrganizationVerifications'))
+                    BEGIN
+                        ALTER TABLE [OrganizationVerifications] DROP CONSTRAINT [FK_OrganizationVerifications_Organizations_OrganizationId];
+                    END");
+            }
+            else
+            {
+                migrationBuilder.DropForeignKey(
+                    name: "FK_Products_Organizations_OrganizationId",
+                    table: "Products");
+
+                migrationBuilder.DropForeignKey(
+                    name: "FK_Reviews_Organizations_OrganizationId",
+                    table: "Reviews");
+
+                migrationBuilder.DropForeignKey(
+                    name: "FK_OrganizationVerifications_Organizations_OrganizationId",
+                    table: "OrganizationVerifications");
+            }
 
             // 2. Rename columns back
             migrationBuilder.RenameColumn(
