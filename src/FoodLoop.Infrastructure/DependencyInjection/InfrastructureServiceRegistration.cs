@@ -49,14 +49,12 @@ public static class InfrastructureServiceRegistration
         // Admin user options
         services.AddOptions<AdminUserOptions>()
             .Bind(configuration.GetSection(AdminUserOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+            .ValidateDataAnnotations();
 
         // JWT Bearer authentication
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+            .ValidateDataAnnotations();
 
         // AddJwtBearer's options delegate below runs outside DI, so we still need a plain
         // instance here to build TokenValidationParameters; the AddOptions<> above is what
