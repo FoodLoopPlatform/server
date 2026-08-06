@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Organizations;

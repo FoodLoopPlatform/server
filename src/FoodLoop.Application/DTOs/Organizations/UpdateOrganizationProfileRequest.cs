@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Models;
+using FoodLoop.Application.Common.Models;
 using System.ComponentModel.DataAnnotations;
 using FoodLoop.Domain.Enums;
 

@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Models;
+using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Organizations;
 using FoodLoop.Domain.Enums;
 
@@ -20,5 +20,3 @@ public interface IOrganizationService
     /// <summary>POST /organizations/me/documents â€” step 2's document upload (called once per document type).</summary>
     Task<OrganizationDto> UploadDocumentAsync(Guid ownerId, UploadDocumentType verificationType, FileUploadRequest file, CancellationToken cancellationToken = default);
 }
-
-
