@@ -1,9 +1,11 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Admin.Commands;
 using FoodLoop.Application.Features.Admin.Queries;
+using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -77,6 +79,22 @@ public class AdminController : ControllerBase
     }
 
     // ── User management ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/users — lists all users with optional filtering.
+    /// </summary>
+    [HttpGet("users")]
+    public async Task<IActionResult> ListUsers(
+        [FromQuery] string? role,
+        [FromQuery] string? status,
+        [FromQuery] string? searchTerm,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new ListUsersQuery(role, status, searchTerm, page, pageSize), cancellationToken);
+        return Ok(ApiResponse<PagedResult<UserDto>>.Ok(result));
+    }
 
     /// <summary>
     /// PATCH /admin/users/{id}/status — suspend, ban, or reactivate a user.
