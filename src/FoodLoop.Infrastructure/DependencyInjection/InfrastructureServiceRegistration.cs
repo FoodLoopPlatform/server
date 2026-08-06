@@ -103,7 +103,17 @@ public static class InfrastructureServiceRegistration
         // Application service abstractions backed by Infrastructure implementations.
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IEmailService, NullEmailService>();
+        
+        // Conditional Email Service registration (SMTP vs DevStub)
+        var smtpHost = configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST");
+        if (!string.IsNullOrEmpty(smtpHost))
+        {
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        }
+        else
+        {
+            services.AddScoped<IEmailService, NullEmailService>();
+        }
         
         // Conditional File Storage Service registration (Cloudinary vs Local disk)
         var cloudinaryUrl = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL");
