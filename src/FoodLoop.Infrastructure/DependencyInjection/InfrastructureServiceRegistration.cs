@@ -109,7 +109,9 @@ public static class InfrastructureServiceRegistration
         var cloudinaryUrl = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL");
         if (!string.IsNullOrEmpty(cloudinaryUrl))
         {
-            services.AddSingleton(new Cloudinary(new Account(cloudinaryUrl)));
+            var cloudinary = new Cloudinary(new Account(cloudinaryUrl));
+            cloudinary.Api.Secure = true;
+            services.AddSingleton(cloudinary);
             services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
         }
         else
