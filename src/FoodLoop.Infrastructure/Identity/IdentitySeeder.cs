@@ -3,6 +3,7 @@ using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Options;
 using FoodLoop.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -436,5 +437,28 @@ public static class IdentitySeeder
             await context.SaveChangesAsync();
             logger.LogInformation("Seeded pending merchant user & store.");
         }
+
+        // Ensure every single product in the database has an AIRecognitionResult
+        var allProducts = await context.Products
+            .Include(p => p.AIRecognitionResult)
+            .ToListAsync();
+
+        var random = new Random();
+        foreach (var p in allProducts)
+        {
+            if (p.AIRecognitionResult == null)
+            {
+                var score = 0.75 + (random.NextDouble() * 0.23); // Generate score between 0.75 and 0.98
+                context.AIRecognitionResults.Add(new AIRecognitionResult
+                {
+                    ProductId = p.Id,
+                    DetectedProduct = p.Title,
+                    ConfidenceScore = Math.Round(score, 2),
+                    Reviewed = p.Status == ListingStatus.Active
+                });
+            }
+        }
+        await context.SaveChangesAsync();
+        logger.LogInformation("Seeded AIRecognitionResult for all products in database.");
     }
 }
