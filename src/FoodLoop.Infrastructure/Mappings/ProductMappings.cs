@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Domain.Entities;
 using System;
 using System.Linq;
@@ -32,4 +32,5 @@ internal static class ProductMappings
             : Array.Empty<ProductImageDto>()
     };
 }
+
 

@@ -1,5 +1,5 @@
 ﻿using FoodLoop.Application.Common.Models;
-using FoodLoop.Application.DTOs.Listings;
+using FoodLoop.Application.DTOs.Products;
 using MediatR;
 using System;
 
@@ -9,4 +9,5 @@ public record UploadProductImageCommand(
     Guid OwnerId,
     Guid ProductId,
     FileUploadRequest File) : IRequest<ProductDto>;
+
 

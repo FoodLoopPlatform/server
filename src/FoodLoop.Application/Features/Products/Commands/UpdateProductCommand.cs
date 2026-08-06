@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Products;
 using MediatR;
 using System;
 
@@ -17,4 +17,5 @@ public record UpdateProductCommand(
     int? QuantityAvailable,
     DateOnly? ExpirationDate,
     string? Status) : IRequest<ProductDto>;
+
 

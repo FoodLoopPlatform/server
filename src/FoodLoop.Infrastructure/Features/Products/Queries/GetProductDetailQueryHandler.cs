@@ -1,6 +1,6 @@
 ﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
-using FoodLoop.Application.DTOs.Listings;
+using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Queries;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Features.Organizations;
@@ -35,6 +35,7 @@ public class GetProductDetailQueryHandler : IRequestHandler<GetProductDetailQuer
         return product.ToDto();
     }
 }
+
 
 
 

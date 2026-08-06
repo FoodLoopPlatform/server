@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace FoodLoop.Application.DTOs.Listings;
+namespace FoodLoop.Application.DTOs.Products;
 
 public class ProductDto
 {
@@ -27,4 +27,5 @@ public class ProductImageDto
     public string ImageUrl { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
 }
+
 

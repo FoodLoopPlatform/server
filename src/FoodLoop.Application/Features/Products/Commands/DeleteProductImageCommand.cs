@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Products;
 using MediatR;
 using System;
 
@@ -8,4 +8,5 @@ public record DeleteProductImageCommand(
     Guid OwnerId,
     Guid ProductId,
     Guid ImageId) : IRequest<ProductDto>;
+
 
