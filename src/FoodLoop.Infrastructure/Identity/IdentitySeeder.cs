@@ -236,7 +236,64 @@ public static class IdentitySeeder
             }
 
             await context.SaveChangesAsync();
-            logger.LogInformation("Seeded Spinneys merchant and products.");
+
+            // Seed pending products with low AI confidence for moderation testing
+            if (fruitsCategory != null)
+            {
+                var pendingApple = new Product
+                {
+                    StoreId = store.Id,
+                    CategoryId = fruitsCategory.Id,
+                    Title = "Unreviewed Red Apples",
+                    TitleAr = "تفاح أحمر غير مراجع",
+                    Description = "Imported apples requiring moderation review",
+                    OriginalPrice = 30,
+                    DiscountedPrice = 15,
+                    QuantityAvailable = 50,
+                    ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)),
+                    Status = ListingStatus.PendingModeration
+                };
+                context.Products.Add(pendingApple);
+                await context.SaveChangesAsync();
+
+                context.AIRecognitionResults.Add(new AIRecognitionResult
+                {
+                    ProductId = pendingApple.Id,
+                    DetectedProduct = "Apples",
+                    ConfidenceScore = 0.52,
+                    Reviewed = false
+                });
+            }
+
+            if (bakeryCategory != null)
+            {
+                var pendingCroissant = new Product
+                {
+                    StoreId = store.Id,
+                    CategoryId = bakeryCategory.Id,
+                    Title = "Unreviewed Butter Croissant",
+                    TitleAr = "كرواسون زبدة غير مراجع",
+                    Description = "Fresh croissant needing status verification",
+                    OriginalPrice = 12,
+                    DiscountedPrice = 6,
+                    QuantityAvailable = 15,
+                    ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+                    Status = ListingStatus.PendingModeration
+                };
+                context.Products.Add(pendingCroissant);
+                await context.SaveChangesAsync();
+
+                context.AIRecognitionResults.Add(new AIRecognitionResult
+                {
+                    ProductId = pendingCroissant.Id,
+                    DetectedProduct = "Pastry",
+                    ConfidenceScore = 0.65,
+                    Reviewed = false
+                });
+            }
+
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded Spinneys merchant, products, and pending low AI confidence products.");
         }
 
         // Seed Carrefour Merchant

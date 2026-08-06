@@ -236,6 +236,50 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// GET /admin/products/pending-ai — list pending products with low AI confidence score.
+    /// </summary>
+    [HttpGet("products/pending-ai")]
+    public async Task<IActionResult> GetPendingLowConfProducts(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] double confidenceThreshold = 0.8,
+        CancellationToken cancellationToken = default)
+    {
+        var products = await _mediator.Send(new GetPendingLowConfProductsQuery(pageNumber, pageSize, confidenceThreshold), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminProductDto>>.Ok(products));
+    }
+
+    /// <summary>
+    /// PATCH /admin/products/{id}/approve — approve a product.
+    /// </summary>
+    [HttpPatch("products/{id:guid}/approve")]
+    public async Task<IActionResult> ApproveProduct(Guid id, CancellationToken cancellationToken)
+    {
+        var product = await _mediator.Send(new ModerateProductCommand(id, "Approve", null), cancellationToken);
+        return Ok(ApiResponse<AdminProductDto>.Ok(product));
+    }
+
+    /// <summary>
+    /// PATCH /admin/products/{id}/reject — reject a product with a reason note.
+    /// </summary>
+    [HttpPatch("products/{id:guid}/reject")]
+    public async Task<IActionResult> RejectProduct(Guid id, [FromBody] ProductModerationRequest request, CancellationToken cancellationToken)
+    {
+        var product = await _mediator.Send(new ModerateProductCommand(id, "Reject", request.Note), cancellationToken);
+        return Ok(ApiResponse<AdminProductDto>.Ok(product));
+    }
+
+    /// <summary>
+    /// PATCH /admin/products/{id}/request-changes — request changes for a product with instructions note.
+    /// </summary>
+    [HttpPatch("products/{id:guid}/request-changes")]
+    public async Task<IActionResult> RequestChangesProduct(Guid id, [FromBody] ProductModerationRequest request, CancellationToken cancellationToken)
+    {
+        var product = await _mediator.Send(new ModerateProductCommand(id, "RequestChanges", request.Note), cancellationToken);
+        return Ok(ApiResponse<AdminProductDto>.Ok(product));
+    }
+
     // ── Support Tickets ───────────────────────────────────────────────────────
 
     /// <summary>

@@ -16,5 +16,7 @@ public class AdminProductDto
     public int QuantityAvailable { get; set; }
     public DateOnly ExpirationDate { get; set; }
     public string Status { get; set; } = string.Empty;
+    public double? AIConfidenceScore { get; set; }
+    public string? ModerationNote { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }

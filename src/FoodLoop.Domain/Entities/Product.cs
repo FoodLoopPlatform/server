@@ -25,6 +25,7 @@ public class Product : BaseEntity, ISoftDelete
     public DateOnly ExpirationDate { get; set; }
 
     public ListingStatus Status { get; set; } = ListingStatus.Active;
+    public string? ModerationNote { get; set; }
 
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
