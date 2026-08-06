@@ -14,6 +14,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.TitleAr).HasMaxLength(200);
         builder.Property(p => p.OriginalPrice).HasPrecision(10, 2);
         builder.Property(p => p.DiscountedPrice).HasPrecision(10, 2);
+        builder.Property(p => p.ModerationNote).HasMaxLength(1000);
 
         builder.HasQueryFilter(p => !p.IsDeleted);
 
