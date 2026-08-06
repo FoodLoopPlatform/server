@@ -154,14 +154,20 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var dbContext = services.GetRequiredService<ApplicationDbContext>();
-
-    if (app.Environment.IsDevelopment())
+    try
     {
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        Log.Information("Applying database migrations...");
         await dbContext.Database.MigrateAsync();
-    }
 
-    await IdentitySeeder.SeedAsync(services);
+        Log.Information("Seeding database values...");
+        await IdentitySeeder.SeedAsync(services);
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "An error occurred during database migration or seeding.");
+        throw;
+    }
 }
 
 try
