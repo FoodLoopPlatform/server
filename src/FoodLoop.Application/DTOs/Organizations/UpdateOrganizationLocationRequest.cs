@@ -1,10 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace FoodLoop.Application.DTOs.Organizations;
 
 /// <summary>PATCH /organizations/me/location â€” matches the business_verification_location UI screen
 /// (step 2 of the business onboarding wizard).</summary>
-public class UpdateStoreLocationRequest
+public class UpdateOrganizationLocationRequest
 {
     [Required, MaxLength(100)]
     public string Governorate { get; set; } = string.Empty;

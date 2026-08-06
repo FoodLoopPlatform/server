@@ -1,11 +1,11 @@
-﻿using FoodLoop.Application.Common.Models;
+using FoodLoop.Application.Common.Models;
 using System.ComponentModel.DataAnnotations;
 using FoodLoop.Domain.Enums;
 
 namespace FoodLoop.Application.DTOs.Organizations;
 
 /// <summary>PATCH /organizations/me â€” all fields optional; only supplied fields are updated.</summary>
-public class UpdateStoreProfileRequest
+public class UpdateOrganizationProfileRequest
 {
     [MaxLength(150)]
     public string? Name { get; set; }

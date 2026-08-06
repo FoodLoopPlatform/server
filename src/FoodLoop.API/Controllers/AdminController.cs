@@ -121,7 +121,7 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// GET /admin/organizations/{id}/activity-log â€” recent events for a organization (uploads, listings, reviews, orders, tickets).
+    /// GET /admin/organizations/{id}/activity-log â€” recent events for a organization (uploads, Products, reviews, orders, tickets).
     /// </summary>
     [HttpGet("stores/{id:guid}/activity-log")]
     public async Task<IActionResult> GetStoreActivityLog(Guid id, CancellationToken cancellationToken)

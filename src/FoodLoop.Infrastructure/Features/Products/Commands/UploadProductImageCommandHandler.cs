@@ -39,7 +39,7 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
             .FirstOrDefaultAsync(l => l.Id == command.ProductId && l.OrganizationId == organization.Id && !l.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Product", command.ProductId);
 
-        var imageUrl = await _fileStorage.SaveAsync(command.File, $"listings/{product.Id}", cancellationToken);
+        var imageUrl = await _fileStorage.SaveAsync(command.File, $"products/{product.Id}", cancellationToken);
 
         var displayOrder = product.Images.Any() ? product.Images.Max(i => i.DisplayOrder) + 1 : 0;
 

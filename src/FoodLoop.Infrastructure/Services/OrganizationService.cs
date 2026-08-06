@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Organizations;
@@ -11,26 +11,26 @@ using System.Linq;
 
 namespace FoodLoop.Infrastructure.Services;
 
-public class StoreService : IStoreService
+public class OrganizationService : IOrganizationService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public StoreService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
+    public OrganizationService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
         _userManager = userManager;
     }
 
-    public async Task<OrganizationDto> GetMyStoreAsync(Guid ownerId, CancellationToken cancellationToken = default)
+    public async Task<OrganizationDto> GetMyOrganizationAsync(Guid ownerId, CancellationToken cancellationToken = default)
     {
         var organization = await FindStoreOrThrowAsync(ownerId, cancellationToken);
         return ToDto(organization);
     }
 
-    public async Task<OrganizationDto> UpdateLocationAsync(Guid ownerId, UpdateStoreLocationRequest request, CancellationToken cancellationToken = default)
+    public async Task<OrganizationDto> UpdateLocationAsync(Guid ownerId, UpdateOrganizationLocationRequest request, CancellationToken cancellationToken = default)
     {
         var organization = await FindStoreOrThrowAsync(ownerId, cancellationToken);
 
