@@ -6,6 +6,11 @@ using FoodLoop.Infrastructure.Persistence;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Admin;
 
@@ -40,35 +45,11 @@ public class GetUserActivityLogQueryHandler
             OccurredAt = user.CreatedAt,
         });
 
-        // 2. Store documents verified (if merchant/charity)
-        var store = await _db.Stores.FirstOrDefaultAsync(
-            s => s.OwnerId == request.UserId && !s.IsDeleted, cancellationToken);
-
-        if (store != null)
-        {
-            var verifications = await _db.StoreVerifications
-                .Where(v => v.StoreId == store.Id && v.ReviewedAt != null)
-                .OrderByDescending(v => v.ReviewedAt)
-                .Take(5)
-                .ToListAsync(cancellationToken);
-
-            foreach (var v in verifications)
-            {
-                entries.Add(new ActivityLogEntryDto
-                {
-                    EventType = "DocumentVerified",
-                    Title = "Document Reviewed",
-                    Description = $"{v.VerificationType} was marked {v.Status} by admin.",
-                    OccurredAt = v.ReviewedAt!.Value,
-                });
-            }
-        }
-
-        // 3. Recent orders
+        // 2. Orders Placed (by this customer)
         var orders = await _db.Orders
             .Where(o => o.UserId == request.UserId)
             .OrderByDescending(o => o.CreatedAt)
-            .Take(5)
+            .Take(10)
             .ToListAsync(cancellationToken);
 
         foreach (var o in orders)
@@ -82,11 +63,11 @@ public class GetUserActivityLogQueryHandler
             });
         }
 
-        // 4. Support tickets
+        // 3. Support tickets opened
         var tickets = await _db.SupportTickets
             .Where(t => t.UserId == request.UserId)
             .OrderByDescending(t => t.CreatedAt)
-            .Take(3)
+            .Take(5)
             .ToListAsync(cancellationToken);
 
         foreach (var t in tickets)
