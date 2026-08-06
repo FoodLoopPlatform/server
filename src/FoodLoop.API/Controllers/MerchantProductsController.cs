@@ -21,13 +21,13 @@ namespace FoodLoop.API.Controllers;
 [ApiController]
 [Route("stores/me/products")]
 [Authorize(Roles = AppRole.Merchant)]
-public class MerchantProductsController : ControllerBase
+public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly ILocalizationService _loc;
 
-    public MerchantProductsController(IMediator mediator, ICurrentUserService currentUser, ILocalizationService loc)
+    public ProductsController(IMediator mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
@@ -227,5 +227,5 @@ public class UpdateProductRequest
     public decimal? DiscountedPrice { get; set; }
     public int? QuantityAvailable { get; set; }
     public DateOnly? ExpirationDate { get; set; }
-    public ListingStatus? Status { get; set; }
+    public ProductStatus? Status { get; set; }
 }

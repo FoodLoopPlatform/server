@@ -198,7 +198,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 5,
                     QuantityAvailable = 20,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(3)),
-                    Status = ListingStatus.Active
+                    Status = ProductStatus.Active
                 });
             }
 
@@ -215,7 +215,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 8,
                     QuantityAvailable = 10,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2)),
-                    Status = ListingStatus.Active
+                    Status = ProductStatus.Active
                 });
             }
 
@@ -232,7 +232,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 15,
                     QuantityAvailable = 30,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
-                    Status = ListingStatus.Active
+                    Status = ProductStatus.Active
                 });
             }
 
@@ -252,7 +252,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 15,
                     QuantityAvailable = 50,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)),
-                    Status = ListingStatus.PendingModeration
+                    Status = ProductStatus.PendingModeration
                 };
                 context.Products.Add(pendingApple);
                 await context.SaveChangesAsync();
@@ -279,7 +279,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 6,
                     QuantityAvailable = 15,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
-                    Status = ListingStatus.PendingModeration
+                    Status = ProductStatus.PendingModeration
                 };
                 context.Products.Add(pendingCroissant);
                 await context.SaveChangesAsync();
@@ -347,7 +347,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 20,
                     QuantityAvailable = 15,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(6)),
-                    Status = ListingStatus.Active
+                    Status = ProductStatus.Active
                 });
             }
 
@@ -363,7 +363,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 18,
                     QuantityAvailable = 12,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
-                    Status = ListingStatus.Active
+                    Status = ProductStatus.Active
                 });
             }
 
@@ -379,7 +379,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 45,
                     QuantityAvailable = 8,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
-                    Status = ListingStatus.Active
+                    Status = ProductStatus.Active
                 });
             }
 
@@ -395,7 +395,7 @@ public static class IdentitySeeder
                     DiscountedPrice = 60,
                     QuantityAvailable = 5,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
-                    Status = ListingStatus.Active
+                    Status = ProductStatus.Active
                 });
             }
 
@@ -454,7 +454,7 @@ public static class IdentitySeeder
                     ProductId = p.Id,
                     DetectedProduct = p.Title,
                     ConfidenceScore = Math.Round(score, 2),
-                    Reviewed = p.Status == ListingStatus.Active
+                    Reviewed = p.Status == ProductStatus.Active
                 });
             }
         }
