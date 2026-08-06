@@ -1,4 +1,4 @@
-using FoodLoop.Application.Common.Interfaces;
+﻿using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Enums;
@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Queries;
 
-public class GetAdminCharitiesQueryHandler : IRequestHandler<GetAdminCharitiesQuery, IReadOnlyList<AdminStoreDto>>
+public class GetAdminCharitiesQueryHandler : IRequestHandler<GetAdminCharitiesQuery, IReadOnlyList<AdminOrganizationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -25,12 +25,12 @@ public class GetAdminCharitiesQueryHandler : IRequestHandler<GetAdminCharitiesQu
         _userManager = userManager;
     }
 
-    public async Task<IReadOnlyList<AdminStoreDto>> Handle(GetAdminCharitiesQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AdminOrganizationDto>> Handle(GetAdminCharitiesQuery request, CancellationToken cancellationToken)
     {
         var charityUsers = await _userManager.GetUsersInRoleAsync(AppRole.Charity);
         var charityUserIds = charityUsers.Select(u => u.Id).ToList();
 
-        var query = _unitOfWork.Stores.Query()
+        var query = _unitOfWork.Organizations.Query()
             .Include(s => s.Verifications)
             .Where(s => !s.IsDeleted && charityUserIds.Contains(s.OwnerId))
             .AsQueryable();
@@ -40,21 +40,22 @@ public class GetAdminCharitiesQueryHandler : IRequestHandler<GetAdminCharitiesQu
             query = query.Where(s => s.VerificationStatus == request.Status.Value);
         }
 
-        var stores = await query
+        var organizations = await query
             .OrderByDescending(s => s.UpdatedAt ?? s.CreatedAt)
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        var result = new List<AdminStoreDto>();
-        foreach (var store in stores)
+        var result = new List<AdminOrganizationDto>();
+        foreach (var organization in organizations)
         {
-            var owner = charityUsers.FirstOrDefault(u => u.Id == store.OwnerId);
+            var owner = charityUsers.FirstOrDefault(u => u.Id == organization.OwnerId);
             if (owner != null)
-                result.Add(store.ToAdminDto(owner));
+                result.Add(organization.ToAdminDto(owner));
         }
 
         return result;
     }
 }
+
 

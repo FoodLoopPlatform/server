@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using FoodLoop.Domain.Enums;
 
 namespace FoodLoop.Application.DTOs.Auth;
@@ -6,9 +6,9 @@ namespace FoodLoop.Application.DTOs.Auth;
 /// <summary>
 /// Backs a single POST /auth/register call that serves both the plain customer signup and
 /// the first step of the business wizard (business_signup_step_1 / create_account_account_type_selection).
-/// When Role is Merchant or Charity, BusinessName is required and a draft Store is
+/// When Role is Merchant or Charity, BusinessName is required and a draft Organization is
 /// created alongside the user; location + documents (step 2) and status (step 3) are handled
-/// afterwards by /stores/me/* endpoints. Admin accounts cannot be self-registered — see
+/// afterwards by /organizations/me/* endpoints. Admin accounts cannot be self-registered â€” see
 /// UsersController for admin-managed user creation.
 /// </summary>
 public class RegisterRequest
@@ -35,7 +35,8 @@ public class RegisterRequest
     /// <summary>Optional business_type dropdown from business_signup_step_1 (supermarket, restaurant, etc.).</summary>
     public BusinessCategory? BusinessCategory { get; set; }
 
-    /// <summary>Preferred UI language — "en" or "ar". Defaults to "en".</summary>
+    /// <summary>Preferred UI language â€” "en" or "ar". Defaults to "en".</summary>
     [MaxLength(10)]
     public string Language { get; set; } = "en";
 }
+

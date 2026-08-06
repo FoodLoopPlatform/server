@@ -1,10 +1,10 @@
-using FoodLoop.Application.Common.Exceptions;
+﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Listings;
 using FoodLoop.Application.Features.Listings.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
-using FoodLoop.Infrastructure.Features.Stores;
+using FoodLoop.Infrastructure.Features.Organizations;
 using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -29,10 +29,10 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
 
     public async Task<IReadOnlyList<ProductDto>> Handle(BulkUploadProductsCommand command, CancellationToken cancellationToken)
     {
-        var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Store not found.", cancellationToken);
-        if (store.VerificationStatus != VerificationStatus.Verified)
+        var organization = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Organization not found.", cancellationToken);
+        if (organization.VerificationStatus != VerificationStatus.Verified)
         {
-            throw new ArgumentException("Your store must be verified by an admin before you can manage products.");
+            throw new ArgumentException("Your organization must be verified by an admin before you can manage products.");
         }
 
         var categories = await _unitOfWork.Repository<Category>().Query()
@@ -120,7 +120,7 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
 
             var product = new Product
             {
-                StoreId = store.Id,
+                OrganizationId = organization.Id,
                 CategoryId = category.Id,
                 Category = category,
                 Title = title,
@@ -182,4 +182,5 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
         return values[idx];
     }
 }
+
 

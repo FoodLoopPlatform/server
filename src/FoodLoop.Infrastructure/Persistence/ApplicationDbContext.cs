@@ -1,4 +1,4 @@
-using FoodLoop.Domain.Common;
+﻿using FoodLoop.Domain.Common;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -20,8 +20,8 @@ public class ApplicationDbContext
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public DbSet<Address> Addresses => Set<Address>();
-    public DbSet<Store> Stores => Set<Store>();
-    public DbSet<StoreVerification> StoreVerifications => Set<StoreVerification>();
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<OrganizationVerification> StoreVerifications => Set<OrganizationVerification>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
@@ -87,3 +87,4 @@ public class ApplicationDbContext
         }
     }
 }
+

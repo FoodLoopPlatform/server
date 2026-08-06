@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace FoodLoop.Application.DTOs.Listings;
@@ -6,7 +6,7 @@ namespace FoodLoop.Application.DTOs.Listings;
 public class ProductDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
+    public Guid OrganizationId { get; set; }
     public Guid CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -27,3 +27,4 @@ public class ProductImageDto
     public string ImageUrl { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
 }
+

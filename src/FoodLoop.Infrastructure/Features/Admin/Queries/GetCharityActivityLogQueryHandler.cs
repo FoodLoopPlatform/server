@@ -1,4 +1,4 @@
-using FoodLoop.Application.Common.Exceptions;
+﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Entities;
@@ -32,11 +32,11 @@ public class GetCharityActivityLogQueryHandler
     public async Task<IReadOnlyList<ActivityLogEntryDto>> Handle(
         GetCharityActivityLogQuery request, CancellationToken cancellationToken)
     {
-        var store = await _db.Stores.FirstOrDefaultAsync(
-            s => s.Id == request.StoreId && !s.IsDeleted, cancellationToken)
-            ?? throw new NotFoundException(nameof(Store), request.StoreId);
+        var organization = await _db.Organizations.FirstOrDefaultAsync(
+            s => s.Id == request.OrganizationId && !s.IsDeleted, cancellationToken)
+            ?? throw new NotFoundException(nameof(Organization), request.OrganizationId);
 
-        var owner = await _userManager.FindByIdAsync(store.OwnerId.ToString());
+        var owner = await _userManager.FindByIdAsync(organization.OwnerId.ToString());
 
         var entries = new List<ActivityLogEntryDto>();
 
@@ -47,26 +47,26 @@ public class GetCharityActivityLogQueryHandler
             {
                 EventType = "AccountCreated",
                 Title = "Charity Account Created",
-                Description = $"New charity account registered with email {owner.Email} for charity association '{store.Name}'.",
+                Description = $"New charity account registered with email {owner.Email} for charity association '{organization.Name}'.",
                 OccurredAt = owner.CreatedAt,
             });
         }
 
         // 2. Charity Profile & Location updates
-        if (store.UpdatedAt.HasValue && store.UpdatedAt.Value != store.CreatedAt)
+        if (organization.UpdatedAt.HasValue && organization.UpdatedAt.Value != organization.CreatedAt)
         {
             entries.Add(new ActivityLogEntryDto
             {
                 EventType = "CharityProfileUpdated",
                 Title = "Charity Profile Updated",
-                Description = $"Updated charity settings or location coordinates for '{store.Name}'.",
-                OccurredAt = store.UpdatedAt.Value,
+                Description = $"Updated charity settings or location coordinates for '{organization.Name}'.",
+                OccurredAt = organization.UpdatedAt.Value,
             });
         }
 
         // 3. Document Uploads & Reviews
         var verifications = await _db.StoreVerifications
-            .Where(v => v.StoreId == store.Id)
+            .Where(v => v.OrganizationId == organization.Id)
             .OrderByDescending(v => v.CreatedAt)
             .Take(10)
             .ToListAsync(cancellationToken);
@@ -108,7 +108,7 @@ public class GetCharityActivityLogQueryHandler
                 {
                     EventType = "SupportTicket",
                     Title = "Support Ticket Opened",
-                    Description = $"Ticket: {t.Category} — {t.Status}.",
+                    Description = $"Ticket: {t.Category} â€” {t.Status}.",
                     OccurredAt = t.CreatedAt,
                 });
             }
@@ -120,4 +120,5 @@ public class GetCharityActivityLogQueryHandler
             .ToList();
     }
 }
+
 

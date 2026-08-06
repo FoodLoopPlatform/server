@@ -1,4 +1,4 @@
-using FoodLoop.Application.DTOs.Admin;
+﻿using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Identity;
@@ -35,8 +35,8 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         var adminCount = roleCounts.FirstOrDefault(r => r.RoleName == AppRole.Admin)?.Count ?? 0;
         var totalUsers = await _context.Users.CountAsync(cancellationToken);
 
-        // 2. Store metrics
-        var storeCounts = await _context.Stores
+        // 2. Organization metrics
+        var storeCounts = await _context.Organizations
             .GroupBy(s => s.VerificationStatus)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
@@ -45,7 +45,7 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         var pendingStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Pending)?.Count ?? 0;
         var verifiedStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Verified)?.Count ?? 0;
         var rejectedStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Rejected)?.Count ?? 0;
-        var totalStores = await _context.Stores.CountAsync(cancellationToken);
+        var totalStores = await _context.Organizations.CountAsync(cancellationToken);
 
         // 3. Product metrics
         var productCounts = await _context.Products
@@ -89,7 +89,7 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
                 Charities = charityCount,
                 Admins = adminCount
             },
-            Stores = new StoreMetricsDto
+            Organizations = new StoreMetricsDto
             {
                 Total = totalStores,
                 Unverified = unverifiedStores,
@@ -116,4 +116,5 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         };
     }
 }
+
 

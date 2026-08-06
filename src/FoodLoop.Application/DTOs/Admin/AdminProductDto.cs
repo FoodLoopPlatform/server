@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 
 namespace FoodLoop.Application.DTOs.Admin;
 
 public class AdminProductDto
 {
     public Guid Id { get; set; }
-    public Guid StoreId { get; set; }
+    public Guid OrganizationId { get; set; }
     public string StoreName { get; set; } = string.Empty;
     public Guid CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
@@ -20,3 +20,4 @@ public class AdminProductDto
     public string? ModerationNote { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
+

@@ -1,4 +1,4 @@
-using FoodLoop.API.Common;
+﻿using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Listings;
@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 namespace FoodLoop.API.Controllers;
 
 [ApiController]
-[Route("stores/me/products")]
+[Route("organizations/me/products")]
 [Authorize(Roles = AppRole.Merchant)]
 public class ProductsController : ControllerBase
 {
@@ -37,7 +37,7 @@ public class ProductsController : ControllerBase
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     /// <summary>
-    /// POST /stores/me/products — create a new product.
+    /// POST /organizations/me/products â€” create a new product.
     /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
@@ -59,7 +59,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /stores/me/products — list all products belonging to the caller's store.
+    /// GET /organizations/me/products â€” list all products belonging to the caller's organization.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetMyProducts(
@@ -76,7 +76,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /stores/me/products/{id} — get details of a single product.
+    /// GET /organizations/me/products/{id} â€” get details of a single product.
     /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetProductDetail(Guid id, CancellationToken cancellationToken)
@@ -87,7 +87,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// PATCH /stores/me/products/{id} — update a product (Form Data).
+    /// PATCH /organizations/me/products/{id} â€” update a product (Form Data).
     /// </summary>
     [HttpPatch("{id:guid}")]
     [Consumes("multipart/form-data")]
@@ -112,7 +112,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// DELETE /stores/me/products/{id} — soft-delete a product.
+    /// DELETE /organizations/me/products/{id} â€” soft-delete a product.
     /// </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteProduct(Guid id, CancellationToken cancellationToken)
@@ -123,7 +123,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// POST /stores/me/products/{id}/images — upload an image for a product.
+    /// POST /organizations/me/products/{id}/images â€” upload an image for a product.
     /// </summary>
     [HttpPost("{id:guid}/images")]
     [RequestSizeLimit(10_000_000)]
@@ -155,7 +155,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// DELETE /stores/me/products/{id}/images/{imageId} — delete an image of a product.
+    /// DELETE /organizations/me/products/{id}/images/{imageId} â€” delete an image of a product.
     /// </summary>
     [HttpDelete("{id:guid}/images/{imageId:guid}")]
     public async Task<IActionResult> DeleteImage(Guid id, Guid imageId, CancellationToken cancellationToken)
@@ -166,7 +166,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// POST /stores/me/products/bulk — upload products in bulk via CSV.
+    /// POST /organizations/me/products/bulk â€” upload products in bulk via CSV.
     /// </summary>
     [HttpPost("bulk")]
     [RequestSizeLimit(15_000_000)]
@@ -229,3 +229,4 @@ public class UpdateProductRequest
     public DateOnly? ExpirationDate { get; set; }
     public ProductStatus? Status { get; set; }
 }
+

@@ -1,4 +1,4 @@
-using FoodLoop.Application.Common.Interfaces;
+﻿using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
@@ -37,7 +37,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
     {
         var request = command.Request;
 
-        // Admin is never self-registerable — it can only be granted by an existing admin
+        // Admin is never self-registerable â€” it can only be granted by an existing admin
         // via UsersController.
         if (!AppRole.SelfRegisterable.Contains(request.Role))
         {
@@ -45,8 +45,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
                 _loc["InvalidRole", request.Role, string.Join(", ", AppRole.SelfRegisterable)]);
         }
 
-        // Only Merchant accounts hold a physical Store and go through Store Onboarding.
-        // Charity role is treated as a premium customer account without a Store.
+        // Only Merchant accounts hold a physical Organization and go through Organization Onboarding.
+        // Charity role is treated as a premium customer account without a Organization.
         var isBusinessAccount = request.Role == AppRole.Merchant;
         var isCharityAccount = request.Role == AppRole.Charity;
         var isBusinessOrCharityRole = isBusinessAccount || isCharityAccount;
@@ -87,7 +87,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
         };
 
         // User creation goes through UserManager (its own SaveChanges call against the
-        // same DbContext), and the draft Store goes through the Unit of Work — wrapping
+        // same DbContext), and the draft Organization goes through the Unit of Work â€” wrapping
         // both in one transaction means a failure partway through leaves neither behind.
         await _unitOfWork.BeginTransactionAsync(cancellationToken);
         try
@@ -105,7 +105,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
 
             if (isBusinessAccount || isCharityAccount)
             {
-                _unitOfWork.Stores.Add(new Store
+                _unitOfWork.Organizations.Add(new Organization
                 {
                     OwnerId = user.Id,
                     Name = request.BusinessName!.Trim(),
@@ -140,4 +140,5 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
         return Result<AuthResponse>.Ok(authResponse);
     }
 }
+
 

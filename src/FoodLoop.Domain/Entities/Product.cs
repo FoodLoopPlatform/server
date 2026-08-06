@@ -1,4 +1,4 @@
-using FoodLoop.Domain.Common;
+﻿using FoodLoop.Domain.Common;
 using FoodLoop.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -7,8 +7,8 @@ namespace FoodLoop.Domain.Entities;
 
 public class Product : BaseEntity, ISoftDelete
 {
-    public Guid StoreId { get; set; }
-    public Store? Store { get; set; }
+    public Guid OrganizationId { get; set; }
+    public Organization? Organization { get; set; }
 
     public Guid CategoryId { get; set; }
     public Category? Category { get; set; }
@@ -35,3 +35,4 @@ public class Product : BaseEntity, ISoftDelete
     public Guid? DeletedBy { get; set; }
     public bool IsDeleted { get; set; }
 }
+

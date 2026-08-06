@@ -1,4 +1,4 @@
-using FoodLoop.Domain.Entities;
+﻿using FoodLoop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,7 +18,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasQueryFilter(p => !p.IsDeleted);
 
-        builder.HasIndex(p => p.StoreId);
+        builder.HasIndex(p => p.OrganizationId);
         builder.HasIndex(p => p.CategoryId);
         builder.HasIndex(p => p.ExpirationDate);
         builder.HasIndex(p => p.Status);
@@ -35,3 +35,4 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+

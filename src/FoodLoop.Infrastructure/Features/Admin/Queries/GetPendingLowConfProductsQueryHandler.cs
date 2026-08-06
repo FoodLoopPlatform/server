@@ -1,4 +1,4 @@
-using FoodLoop.Application.DTOs.Admin;
+﻿using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Persistence;
@@ -25,7 +25,7 @@ public class GetPendingLowConfProductsQueryHandler
         GetPendingLowConfProductsQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Products
-            .Include(l => l.Store)
+            .Include(l => l.Organization)
             .Include(l => l.Category)
             .Include(l => l.AIRecognitionResult)
             .Where(l => !l.IsDeleted && l.Status == ProductStatus.PendingModeration)
@@ -41,8 +41,8 @@ public class GetPendingLowConfProductsQueryHandler
         return products.Select(l => new AdminProductDto
         {
             Id = l.Id,
-            StoreId = l.StoreId,
-            StoreName = l.Store?.Name ?? string.Empty,
+            OrganizationId = l.OrganizationId,
+            StoreName = l.Organization?.Name ?? string.Empty,
             CategoryId = l.CategoryId,
             CategoryName = l.Category?.Name ?? string.Empty,
             Title = l.Title,
@@ -58,4 +58,5 @@ public class GetPendingLowConfProductsQueryHandler
         }).ToList();
     }
 }
+
 

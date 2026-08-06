@@ -1,4 +1,4 @@
-using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Listings;
 using FoodLoop.Domain.Entities;
 using System;
 using System.Linq;
@@ -10,7 +10,7 @@ internal static class ProductMappings
     public static ProductDto ToDto(this Product product) => new()
     {
         Id = product.Id,
-        StoreId = product.StoreId,
+        OrganizationId = product.OrganizationId,
         CategoryId = product.CategoryId,
         CategoryName = product.Category?.Name ?? "Unknown Category",
         Title = product.Title,
@@ -32,3 +32,4 @@ internal static class ProductMappings
             : Array.Empty<ProductImageDto>()
     };
 }
+
