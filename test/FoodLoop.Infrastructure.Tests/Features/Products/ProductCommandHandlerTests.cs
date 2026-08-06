@@ -3,12 +3,12 @@ using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Listings;
-using FoodLoop.Application.Features.Listings.Commands;
+using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
-using FoodLoop.Infrastructure.Features.Listings;
-using FoodLoop.Infrastructure.Features.Listings.Commands;
-using FoodLoop.Infrastructure.Features.Listings.Queries;
+using FoodLoop.Infrastructure.Features.Products;
+using FoodLoop.Infrastructure.Features.Products.Commands;
+using FoodLoop.Infrastructure.Features.Products.Queries;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Tests.TestSupport;
 using Microsoft.EntityFrameworkCore;
@@ -221,6 +221,7 @@ public class ProductCommandHandlerTests : IDisposable
         deleteResult.Images.Should().BeEmpty();
     }
 }
+
 
 
 
