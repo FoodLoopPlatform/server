@@ -25,6 +25,7 @@ internal static class AdminStoreMappings
         Latitude = store.Latitude,
         Longitude = store.Longitude,
         VerificationStatus = store.VerificationStatus.ToString(),
+        AdminNote = store.AdminNote,
         OwnerId = store.OwnerId,
         OwnerEmail = owner.Email ?? string.Empty,
         OwnerName = owner.FullName,
@@ -37,6 +38,7 @@ internal static class AdminStoreMappings
             VerificationType = v.VerificationType.ToString(),
             DocumentUrl = v.DocumentUrl,
             Status = v.Status.ToString(),
+            ReviewNote = v.ReviewNote,
             ReviewedAt = v.ReviewedAt,
         }).ToArray(),
     };

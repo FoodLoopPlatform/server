@@ -24,6 +24,7 @@ public class AdminStoreDto
     public double? Longitude { get; set; }
 
     public string VerificationStatus { get; set; } = string.Empty;
+    public string? AdminNote { get; set; }
 
     // Owner info — shown to admin for context
     public Guid OwnerId { get; set; }
@@ -43,5 +44,6 @@ public class AdminStoreDocumentDto
     public string VerificationType { get; set; } = string.Empty;
     public string DocumentUrl { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
     public DateTimeOffset? ReviewedAt { get; set; }
 }
