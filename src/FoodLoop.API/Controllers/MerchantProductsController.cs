@@ -1,4 +1,4 @@
-﻿using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Listings;
@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 namespace FoodLoop.API.Controllers;
 
 [ApiController]
-[Route("organizations/me/products")]
+[Route("stores/me/products")]
 [Authorize(Roles = AppRole.Merchant)]
 public class ProductsController : ControllerBase
 {

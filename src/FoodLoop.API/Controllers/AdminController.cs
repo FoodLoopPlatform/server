@@ -1,4 +1,4 @@
-﻿using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Admin;
@@ -34,7 +34,7 @@ public class AdminController : ControllerBase
     /// Accessible without auth so the admin frontend can display the queue.
     /// Each entry includes the owner's contact details and all uploaded documents.
     /// </summary>
-    [HttpGet("organizations/pending")]
+    [HttpGet("stores/pending")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPendingOrganizations(CancellationToken cancellationToken)
     {
@@ -46,7 +46,7 @@ public class AdminController : ControllerBase
     /// GET /admin/organizations/{id} â€” full organization detail with all documents for a single review.
     /// Accessible without auth so the admin frontend can deep-link to a specific review.
     /// </summary>
-    [HttpGet("organizations/{id:guid}")]
+    [HttpGet("stores/{id:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetOrganizationForReview(Guid id, CancellationToken cancellationToken)
     {
@@ -60,8 +60,8 @@ public class AdminController : ControllerBase
     /// On approval the owner's account is activated; on rejection it stays PendingVerification
     /// so they can correct and re-submit.
     /// </summary>
-    [HttpPatch("organizations/{id:guid}/verify")]
-    public async Task<IActionResult> VerifyOrganization(Guid id, [FromBody] VerifyOrganizationRequest request, CancellationToken cancellationToken)
+    [HttpPatch("stores/{id:guid}/verify")]
+    public async Task<IActionResult> VerifyStore(Guid id, [FromBody] VerifyOrganizationRequest request, CancellationToken cancellationToken)
     {
         var organization = await _mediator.Send(new VerifyOrganizationCommand(id, AdminId, request), cancellationToken);
         return Ok(ApiResponse<AdminOrganizationDto>.Ok(organization));
@@ -123,8 +123,8 @@ public class AdminController : ControllerBase
     /// <summary>
     /// GET /admin/organizations/{id}/activity-log â€” recent events for a organization (uploads, listings, reviews, orders, tickets).
     /// </summary>
-    [HttpGet("organizations/{id:guid}/activity-log")]
-    public async Task<IActionResult> GetOrganizationActivityLog(Guid id, CancellationToken cancellationToken)
+    [HttpGet("stores/{id:guid}/activity-log")]
+    public async Task<IActionResult> GetStoreActivityLog(Guid id, CancellationToken cancellationToken)
     {
         var log = await _mediator.Send(new GetOrganizationActivityLogQuery(id), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
@@ -157,8 +157,8 @@ public class AdminController : ControllerBase
     /// <summary>
     /// GET /admin/organizations â€” list all organizations with optional VerificationStatus filter.
     /// </summary>
-    [HttpGet("organizations")]
-    public async Task<IActionResult> GetOrganizations(
+    [HttpGet("stores")]
+    public async Task<IActionResult> GetStores(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] VerificationStatus? status = null,
