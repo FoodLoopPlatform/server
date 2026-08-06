@@ -79,6 +79,21 @@ public static class InfrastructureServiceRegistration
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
                     ClockSkew = TimeSpan.FromSeconds(30),
                 };
+
+                // Add support for SignalR query string tokens
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();
@@ -91,6 +106,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
         services.AddScoped<ILocalizationService, LocalizationService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<IRealTimeNotificationService, RealTimeNotificationService>();
 
         // CQRS: commands/queries live in the Application assembly, handlers live here in
         // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other

@@ -18,11 +18,13 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
 {
     private readonly ApplicationDbContext _db;
     private readonly IAuditLogService _auditLog;
+    private readonly IRealTimeNotificationService _notification;
 
-    public UpdateOrderStatusCommandHandler(ApplicationDbContext db, IAuditLogService auditLog)
+    public UpdateOrderStatusCommandHandler(ApplicationDbContext db, IAuditLogService auditLog, IRealTimeNotificationService notification)
     {
         _db = db;
         _auditLog = auditLog;
+        _notification = notification;
     }
 
     public async Task<Result<OrderDto>> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
@@ -79,6 +81,24 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             "Order Status Updated",
             $"Order {order.Id} status set to {newStatus} by merchant.",
             null,
+            cancellationToken);
+
+        // Send Realtime Notification to Customer
+        var statusMessage = newStatus switch
+        {
+            OrderStatus.Confirmed => "Your order has been confirmed by the merchant.",
+            OrderStatus.Preparing => "Your order is being prepared.",
+            OrderStatus.ReadyForPickup => "Your order is ready for pickup!",
+            OrderStatus.Completed => "Your order has been completed. Thank you!",
+            OrderStatus.Cancelled => "Your order has been cancelled and refunded.",
+            _ => $"Your order status is now: {newStatus}."
+        };
+
+        await _notification.SendNotificationToUserAsync(
+            order.UserId,
+            $"Order {newStatus}",
+            statusMessage,
+            $"Order{newStatus}",
             cancellationToken);
 
         var user = await _db.Users.FindAsync(new object[] { order.UserId }, cancellationToken);

@@ -1,6 +1,7 @@
 using FoodLoop.Infrastructure.DependencyInjection;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Persistence;
+using FoodLoop.Infrastructure.Hubs;
 using FoodLoop.API.Middleware;
 using FoodLoop.API.Options;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,8 @@ builder.Services.AddControllers()
         // ("StoreOwner", not 1) so the request/response bodies match what the UI sends.
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -148,6 +151,7 @@ app.MapGet("/", () =>
 app.MapHealthChecks("/health");
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 // ---- Startup tasks: apply migrations + seed RBAC roles ------------------
 
