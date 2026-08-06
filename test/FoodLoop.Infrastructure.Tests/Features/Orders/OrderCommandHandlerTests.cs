@@ -32,6 +32,7 @@ public class OrderCommandHandlerTests : IDisposable
     private readonly Guid _productId1 = Guid.NewGuid();
     private readonly Guid _productId2 = Guid.NewGuid();
     private readonly Mock<IAuditLogService> _auditLogService = new();
+    private readonly Mock<IRealTimeNotificationService> _notification = new();
 
     public OrderCommandHandlerTests()
     {
@@ -104,7 +105,7 @@ public class OrderCommandHandlerTests : IDisposable
     public async Task CreateOrder_should_deduct_inventory_and_succeed_with_paid_payment()
     {
         // Arrange
-        var handler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object);
+        var handler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object, _notification.Object);
         var command = new CreateOrderCommand(
             UserId: _customerId,
             Items: new List<CheckoutItemRequest>
@@ -157,7 +158,7 @@ public class OrderCommandHandlerTests : IDisposable
     public async Task CreateOrder_should_fail_when_insufficient_stock()
     {
         // Arrange
-        var handler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object);
+        var handler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object, _notification.Object);
         var command = new CreateOrderCommand(
             UserId: _customerId,
             Items: new List<CheckoutItemRequest>
@@ -179,7 +180,7 @@ public class OrderCommandHandlerTests : IDisposable
     public async Task UpdateOrderStatus_to_Cancelled_should_restore_stock_successfully()
     {
         // Arrange
-        var setupHandler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object);
+        var setupHandler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object, _notification.Object);
         var setupCommand = new CreateOrderCommand(
             UserId: _customerId,
             Items: new List<CheckoutItemRequest> { new(_productId1, 2) },
@@ -188,7 +189,7 @@ public class OrderCommandHandlerTests : IDisposable
         var setupResult = await setupHandler.Handle(setupCommand, CancellationToken.None);
         var orderId = setupResult.Data!.Id;
 
-        var handler = new UpdateOrderStatusCommandHandler(_dbContext, _auditLogService.Object);
+        var handler = new UpdateOrderStatusCommandHandler(_dbContext, _auditLogService.Object, _notification.Object);
         var command = new UpdateOrderStatusCommand(_merchantId, orderId, "Cancelled");
 
         // Act
@@ -208,7 +209,7 @@ public class OrderCommandHandlerTests : IDisposable
     public async Task GetOrderDetail_should_reject_unauthorized_user()
     {
         // Arrange
-        var setupHandler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object);
+        var setupHandler = new CreateOrderCommandHandler(_dbContext, _auditLogService.Object, _notification.Object);
         var setupCommand = new CreateOrderCommand(
             UserId: _customerId,
             Items: new List<CheckoutItemRequest> { new(_productId1, 2) },

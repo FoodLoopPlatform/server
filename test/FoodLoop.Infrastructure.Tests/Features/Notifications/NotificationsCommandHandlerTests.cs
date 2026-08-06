@@ -1,4 +1,5 @@
 using FluentAssertions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Notifications;
 using FoodLoop.Application.Features.Notifications.Commands;
@@ -6,8 +7,12 @@ using FoodLoop.Application.Features.Notifications.Queries;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Features.Notifications.Commands;
 using FoodLoop.Infrastructure.Features.Notifications.Queries;
+using FoodLoop.Infrastructure.Hubs;
 using FoodLoop.Infrastructure.Persistence;
+using FoodLoop.Infrastructure.Services;
 using FoodLoop.Infrastructure.Tests.TestSupport;
+using Microsoft.AspNetCore.SignalR;
+using Moq;
 using System;
 using System.Linq;
 using System.Threading;
@@ -97,5 +102,31 @@ public class NotificationsCommandHandlerTests : IDisposable
         result.Success.Should().BeTrue();
         var list = _db.Notifications.Where(n => n.UserId == _userId).ToList();
         list.All(n => n.IsRead).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SendNotification_should_save_to_database_and_push_to_signalr()
+    {
+        // Arrange
+        var mockHubContext = new Mock<IHubContext<NotificationHub, INotificationHubClient>>();
+        var mockClients = new Mock<IHubClients<INotificationHubClient>>();
+        var mockClientProxy = new Mock<INotificationHubClient>();
+
+        mockHubContext.Setup(h => h.Clients).Returns(mockClients.Object);
+        mockClients.Setup(c => c.User(It.IsAny<string>())).Returns(mockClientProxy.Object);
+
+        var service = new RealTimeNotificationService(_db, mockHubContext.Object);
+
+        // Act
+        await service.SendNotificationToUserAsync(_userId, "Realtime Test", "SignalR is working", "OrderPlaced", CancellationToken.None);
+
+        // Assert
+        var inDb = _db.Notifications.Any(n => n.UserId == _userId && n.Title == "Realtime Test");
+        inDb.Should().BeTrue();
+
+        mockClientProxy.Verify(c => c.ReceiveNotification(It.Is<NotificationDto>(dto =>
+            dto.Title == "Realtime Test" &&
+            dto.Body == "SignalR is working" &&
+            dto.Type == "OrderPlaced")), Times.Once);
     }
 }
