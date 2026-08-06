@@ -6,6 +6,8 @@ using FoodLoop.Application.Features.Users.Commands;
 using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Users;
+using FoodLoop.Infrastructure.Features.Users.Commands;
+using FoodLoop.Infrastructure.Features.Users.Queries;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Tests.TestSupport;
@@ -213,3 +215,4 @@ public class AdminUserCommandHandlerTests : IDisposable
         resultStatus.Items.First().FullName.Should().Be("John Doe");
     }
 }
+

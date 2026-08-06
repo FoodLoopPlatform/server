@@ -5,6 +5,7 @@ using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Auth;
+using FoodLoop.Infrastructure.Features.Auth.Commands;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Tests.TestSupport;
 using Microsoft.AspNetCore.Identity;

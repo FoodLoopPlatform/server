@@ -5,6 +5,7 @@ using FoodLoop.Application.Features.Auth.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Auth;
+using FoodLoop.Infrastructure.Features.Auth.Commands;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Tests.TestSupport;

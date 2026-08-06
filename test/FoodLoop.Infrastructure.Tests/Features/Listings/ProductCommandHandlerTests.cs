@@ -7,6 +7,8 @@ using FoodLoop.Application.Features.Listings.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Listings;
+using FoodLoop.Infrastructure.Features.Listings.Commands;
+using FoodLoop.Infrastructure.Features.Listings.Queries;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Tests.TestSupport;
 using Microsoft.EntityFrameworkCore;
@@ -126,7 +128,7 @@ public class ProductCommandHandlerTests : IDisposable
             DiscountedPrice = 10.00m,
             QuantityAvailable = 5,
             ExpirationDate = DateOnly.FromDateTime(DateTime.Today),
-            Status = ListingStatus.Active
+            Status = ProductStatus.Active
         };
         _dbContext.Products.Add(product);
         await _dbContext.SaveChangesAsync();
@@ -219,3 +221,4 @@ public class ProductCommandHandlerTests : IDisposable
         deleteResult.Images.Should().BeEmpty();
     }
 }
+
