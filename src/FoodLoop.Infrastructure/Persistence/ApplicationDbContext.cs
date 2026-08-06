@@ -21,7 +21,7 @@ public class ApplicationDbContext
 
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Organization> Organizations => Set<Organization>();
-    public DbSet<OrganizationVerification> StoreVerifications => Set<OrganizationVerification>();
+    public DbSet<OrganizationVerification> OrganizationVerifications => Set<OrganizationVerification>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
@@ -87,4 +87,5 @@ public class ApplicationDbContext
         }
     }
 }
+
 

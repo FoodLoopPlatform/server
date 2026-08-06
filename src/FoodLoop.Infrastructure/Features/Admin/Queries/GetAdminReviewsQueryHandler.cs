@@ -53,12 +53,13 @@ public class GetAdminReviewsQueryHandler : IRequestHandler<GetAdminReviewsQuery,
             UserId = r.UserId,
             CustomerName = users.TryGetValue(r.UserId, out var name) ? name : "Unknown Customer",
             OrganizationId = r.OrganizationId,
-            StoreName = r.Organization?.Name ?? "Unknown Organization",
+            OrganizationName = r.Organization?.Name ?? "Unknown Organization",
             Rating = r.Rating,
             Comment = r.Comment,
             CreatedAt = r.CreatedAt
         }).ToList();
     }
 }
+
 
 

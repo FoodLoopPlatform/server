@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Organizations.Commands;
 
-public class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateOrganizationProfileCommand, OrganizationDto>
+public class UpdateOrganizationProfileCommandHandler : IRequestHandler<UpdateOrganizationProfileCommand, OrganizationDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
     private readonly ILocalizationService _loc;
 
-    public UpdateStoreProfileCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage, ILocalizationService loc)
+    public UpdateOrganizationProfileCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage, ILocalizationService loc)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
@@ -25,7 +25,7 @@ public class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateOrganizati
     public async Task<OrganizationDto> Handle(UpdateOrganizationProfileCommand command, CancellationToken cancellationToken)
     {
         var organization = await _unitOfWork.FindByOwnerOrThrowAsync(
-            command.OwnerId, _loc["StoreNotFound"], cancellationToken);
+            command.OwnerId, _loc["OrganizationNotFound"], cancellationToken);
 
         var req = command.Request;
 
@@ -55,5 +55,6 @@ public class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateOrganizati
         return organization.ToDto();
     }
 }
+
 
 

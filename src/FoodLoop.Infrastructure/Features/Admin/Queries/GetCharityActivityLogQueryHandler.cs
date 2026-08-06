@@ -65,7 +65,7 @@ public class GetCharityActivityLogQueryHandler
         }
 
         // 3. Document Uploads & Reviews
-        var verifications = await _db.StoreVerifications
+        var verifications = await _db.OrganizationVerifications
             .Where(v => v.OrganizationId == organization.Id)
             .OrderByDescending(v => v.CreatedAt)
             .Take(10)
@@ -120,5 +120,6 @@ public class GetCharityActivityLogQueryHandler
             .ToList();
     }
 }
+
 
 

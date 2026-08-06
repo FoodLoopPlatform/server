@@ -6,7 +6,7 @@ public class AdminProductDto
 {
     public Guid Id { get; set; }
     public Guid OrganizationId { get; set; }
-    public string StoreName { get; set; } = string.Empty;
+    public string OrganizationName { get; set; } = string.Empty;
     public Guid CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
@@ -20,4 +20,5 @@ public class AdminProductDto
     public string? ModerationNote { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }
+
 

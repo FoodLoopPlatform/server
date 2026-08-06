@@ -42,7 +42,7 @@ public class OrganizationsController : ControllerBase
     /// Used to re-enter the wizard at the right step, and by verification_pending_step_3 to
     /// show current status.</summary>
     [HttpGet("me")]
-    public async Task<IActionResult> GetMyStore(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMyOrganization(CancellationToken cancellationToken)
     {
         var organization = await _mediator.Send(new GetMyOrganizationQuery(OwnerId), cancellationToken);
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
@@ -51,7 +51,7 @@ public class OrganizationsController : ControllerBase
     /// <summary>PATCH /organizations/me â€” updates the organization's name, description, category, and logo (Form Data).</summary>
     [HttpPatch("me")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UpdateProfile([FromForm] UpdateStoreProfileFormRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateProfile([FromForm] UpdateOrganizationProfileFormRequest request, CancellationToken cancellationToken)
     {
         FileUploadRequest? logoUpload = null;
         if (request.Logo != null && request.Logo.Length > 0)
@@ -83,7 +83,7 @@ public class OrganizationsController : ControllerBase
             }
         }
 
-        var appRequest = new UpdateStoreProfileRequest
+        var appRequest = new UpdateOrganizationProfileRequest
         {
             Name = request.Name,
             NameAr = request.NameAr,
@@ -102,7 +102,7 @@ public class OrganizationsController : ControllerBase
 
     /// <summary>PATCH /organizations/me/location â€” step 2's location fields (business_verification_location).</summary>
     [HttpPatch("me/location")]
-    public async Task<IActionResult> UpdateLocation([FromBody] UpdateStoreLocationRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateLocation([FromBody] UpdateOrganizationLocationRequest request, CancellationToken cancellationToken)
     {
         var organization = await _mediator.Send(new UpdateOrganizationLocationCommand(OwnerId, request), cancellationToken);
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
@@ -110,11 +110,11 @@ public class OrganizationsController : ControllerBase
 
     /// <summary>POST /organizations/me/documents â€” step 2's document upload (document_upload_step_2).
     /// Does not require authentication: the organization is identified by the owner's registered email.
-    /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto.</summary>
+    /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | OrganizationFacilityPhoto.</summary>
     [HttpPost("me/documents")]
     [AllowAnonymous]
     [RequestSizeLimit(10_000_000)]
-    public async Task<IActionResult> UploadDocument([FromForm] UploadStoreDocumentRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadDocument([FromForm] UploadOrganizationDocumentRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Email))
         {
@@ -146,12 +146,12 @@ public class OrganizationsController : ControllerBase
     }
 }
 
-public class UploadStoreDocumentRequest
+public class UploadOrganizationDocumentRequest
 {
     [Required, EmailAddress]
     public string Email { get; set; } = null!;
 
-    /// <summary>Document type: CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto</summary>
+    /// <summary>Document type: CommercialRegistration | TaxIdCertificate | OrganizationFacilityPhoto</summary>
     [Required]
     public UploadDocumentType Type { get; set; }
 
@@ -159,7 +159,7 @@ public class UploadStoreDocumentRequest
     public IFormFile File { get; set; } = null!;
 }
 
-public class UpdateStoreProfileFormRequest
+public class UpdateOrganizationProfileFormRequest
 {
     [MaxLength(150)]
     public string? Name { get; set; }
@@ -183,4 +183,5 @@ public class UpdateStoreProfileFormRequest
 
     public string? OpeningHours { get; set; }
 }
+
 

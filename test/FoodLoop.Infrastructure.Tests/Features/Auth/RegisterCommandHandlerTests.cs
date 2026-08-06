@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
@@ -113,7 +113,7 @@ public class RegisterCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_should_register_merchant_and_create_draft_store_successfully()
+    public async Task Handle_should_register_merchant_and_create_draft_organization_successfully()
     {
         // Arrange
         _userManager.Setup(m => m.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
@@ -139,10 +139,12 @@ public class RegisterCommandHandlerTests : IDisposable
         // Assert
         result.Success.Should().BeTrue();
 
-        // Verify draft store was inserted into EF InMemory
-        var store = await _dbContext.Stores.FirstOrDefaultAsync();
-        store.Should().NotBeNull();
-        store!.Name.Should().Be("Amina Bakery");
-        store.VerificationStatus.Should().Be(VerificationStatus.Unverified);
+        // Verify draft organization was inserted into EF InMemory
+        var organization = await _dbContext.Organizations.FirstOrDefaultAsync();
+        organization.Should().NotBeNull();
+        organization!.Name.Should().Be("Amina Bakery");
+        organization.VerificationStatus.Should().Be(VerificationStatus.Unverified);
     }
 }
+
+

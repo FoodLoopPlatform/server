@@ -36,9 +36,9 @@ public class AdminController : ControllerBase
     /// </summary>
     [HttpGet("organizations/pending")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetPendingStores(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetPendingOrganizations(CancellationToken cancellationToken)
     {
-        var organizations = await _mediator.Send(new GetPendingStoresQuery(), cancellationToken);
+        var organizations = await _mediator.Send(new GetPendingOrganizationsQuery(), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AdminOrganizationDto>>.Ok(organizations));
     }
 
@@ -48,9 +48,9 @@ public class AdminController : ControllerBase
     /// </summary>
     [HttpGet("organizations/{id:guid}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetStoreForReview(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetOrganizationForReview(Guid id, CancellationToken cancellationToken)
     {
-        var organization = await _mediator.Send(new GetStoreForReviewQuery(id), cancellationToken);
+        var organization = await _mediator.Send(new GetOrganizationForReviewQuery(id), cancellationToken);
         return Ok(ApiResponse<AdminOrganizationDto>.Ok(organization));
     }
 
@@ -61,7 +61,7 @@ public class AdminController : ControllerBase
     /// so they can correct and re-submit.
     /// </summary>
     [HttpPatch("organizations/{id:guid}/verify")]
-    public async Task<IActionResult> VerifyStore(Guid id, [FromBody] VerifyOrganizationRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> VerifyOrganization(Guid id, [FromBody] VerifyOrganizationRequest request, CancellationToken cancellationToken)
     {
         var organization = await _mediator.Send(new VerifyOrganizationCommand(id, AdminId, request), cancellationToken);
         return Ok(ApiResponse<AdminOrganizationDto>.Ok(organization));
@@ -124,9 +124,9 @@ public class AdminController : ControllerBase
     /// GET /admin/organizations/{id}/activity-log â€” recent events for a organization (uploads, listings, reviews, orders, tickets).
     /// </summary>
     [HttpGet("organizations/{id:guid}/activity-log")]
-    public async Task<IActionResult> GetStoreActivityLog(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetOrganizationActivityLog(Guid id, CancellationToken cancellationToken)
     {
-        var log = await _mediator.Send(new GetStoreActivityLogQuery(id), cancellationToken);
+        var log = await _mediator.Send(new GetOrganizationActivityLogQuery(id), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
     }
 
@@ -158,13 +158,13 @@ public class AdminController : ControllerBase
     /// GET /admin/organizations â€” list all organizations with optional VerificationStatus filter.
     /// </summary>
     [HttpGet("organizations")]
-    public async Task<IActionResult> GetStores(
+    public async Task<IActionResult> GetOrganizations(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] VerificationStatus? status = null,
         CancellationToken cancellationToken = default)
     {
-        var organizations = await _mediator.Send(new GetAdminStoresQuery(pageNumber, pageSize, status), cancellationToken);
+        var organizations = await _mediator.Send(new GetAdminOrganizationsQuery(pageNumber, pageSize, status), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AdminOrganizationDto>>.Ok(organizations));
     }
 
@@ -328,4 +328,5 @@ public class AdminController : ControllerBase
         return NoContent();
     }
 }
+
 

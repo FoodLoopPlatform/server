@@ -5,7 +5,7 @@ using FoodLoop.Domain.Enums;
 namespace FoodLoop.Application.DTOs.Organizations;
 
 /// <summary>PATCH /organizations/me â€” all fields optional; only supplied fields are updated.</summary>
-public class UpdateStoreProfileRequest
+public class UpdateOrganizationProfileRequest
 {
     [MaxLength(150)]
     public string? Name { get; set; }
@@ -34,4 +34,5 @@ public class UpdateStoreProfileRequest
     /// <summary>JSON-encoded weekly schedule, e.g. {"Monday":{"open":"09:00","close":"17:00"},...}</summary>
     public string? OpeningHours { get; set; }
 }
+
 

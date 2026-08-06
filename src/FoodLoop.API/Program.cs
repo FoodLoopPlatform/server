@@ -1,4 +1,4 @@
-using FoodLoop.Infrastructure.DependencyInjection;
+﻿using FoodLoop.Infrastructure.DependencyInjection;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.API.Middleware;
@@ -38,7 +38,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("en");
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
-    // Resolution order: Accept-Language header → query string ?culture=ar → default "en"
+    // Resolution order: Accept-Language header â†’ query string ?culture=ar â†’ default "en"
     options.ApplyCurrentCultureToResponseHeaders = true;
 });
 
@@ -47,8 +47,8 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Enums (AddressType, StoreType, VerificationStatus, etc.) go over the wire as strings
-        // ("StoreOwner", not 1) so the request/response bodies match what the UI sends.
+        // Enums (AddressType, OrganizationType, VerificationStatus, etc.) go over the wire as strings
+        // ("OrganizationOwner", not 1) so the request/response bodies match what the UI sends.
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
@@ -101,7 +101,7 @@ builder.Services.AddCors(options =>
         }
         else
         {
-            // No origins configured — fall back to allowing any origin without credentials
+            // No origins configured â€” fall back to allowing any origin without credentials
             // (AllowAnyOrigin + AllowCredentials is rejected by ASP.NET Core and produces
             // no CORS header at all, which is worse than a permissive fallback).
             policy.AllowAnyOrigin()
@@ -196,3 +196,4 @@ finally
 
 // Exposed for WebApplicationFactory-based integration tests.
 public partial class Program { }
+

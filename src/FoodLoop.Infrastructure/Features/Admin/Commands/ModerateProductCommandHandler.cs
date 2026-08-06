@@ -73,7 +73,7 @@ public class ModerateProductCommandHandler
         {
             Id = product.Id,
             OrganizationId = product.OrganizationId,
-            StoreName = product.Organization?.Name ?? string.Empty,
+            OrganizationName = product.Organization?.Name ?? string.Empty,
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.Name ?? string.Empty,
             Title = product.Title,
@@ -89,5 +89,6 @@ public class ModerateProductCommandHandler
         };
     }
 }
+
 
 

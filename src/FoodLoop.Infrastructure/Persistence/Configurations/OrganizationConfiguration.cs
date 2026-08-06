@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FoodLoop.Infrastructure.Persistence.Configurations;
 
-public class StoreConfiguration : IEntityTypeConfiguration<Organization>
+public class OrganizationConfiguration : IEntityTypeConfiguration<Organization>
 {
     public void Configure(EntityTypeBuilder<Organization> builder)
     {
@@ -36,4 +36,5 @@ public class StoreConfiguration : IEntityTypeConfiguration<Organization>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
 

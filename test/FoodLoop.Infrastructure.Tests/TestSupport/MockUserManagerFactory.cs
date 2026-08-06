@@ -1,4 +1,4 @@
-using FoodLoop.Infrastructure.Identity;
+﻿using FoodLoop.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 
@@ -20,9 +20,10 @@ public static class MockUserManagerFactory
 {
     public static Mock<UserManager<ApplicationUser>> Create()
     {
-        var store = new Mock<IUserStore<ApplicationUser>>();
+        var organization = new Mock<IUserStore<ApplicationUser>>();
 
         return new Mock<UserManager<ApplicationUser>>(
-            store.Object, null, null, null, null, null, null, null, null);
+            organization.Object, null, null, null, null, null, null, null, null);
     }
 }
+

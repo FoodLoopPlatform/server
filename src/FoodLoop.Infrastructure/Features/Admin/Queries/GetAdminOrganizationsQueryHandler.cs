@@ -14,18 +14,18 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Queries;
 
-public class GetAdminStoresQueryHandler : IRequestHandler<GetAdminStoresQuery, IReadOnlyList<AdminOrganizationDto>>
+public class GetAdminOrganizationsQueryHandler : IRequestHandler<GetAdminOrganizationsQuery, IReadOnlyList<AdminOrganizationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public GetAdminStoresQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+    public GetAdminOrganizationsQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
     }
 
-    public async Task<IReadOnlyList<AdminOrganizationDto>> Handle(GetAdminStoresQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AdminOrganizationDto>> Handle(GetAdminOrganizationsQuery request, CancellationToken cancellationToken)
     {
         var merchantUsers = await _userManager.GetUsersInRoleAsync(AppRole.Merchant);
         var merchantUserIds = merchantUsers.Select(u => u.Id).ToList();
@@ -57,5 +57,6 @@ public class GetAdminStoresQueryHandler : IRequestHandler<GetAdminStoresQuery, I
         return result;
     }
 }
+
 
 

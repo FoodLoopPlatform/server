@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FoodLoop.Infrastructure.Persistence.Configurations;
 
-public class StoreVerificationConfiguration : IEntityTypeConfiguration<OrganizationVerification>
+public class OrganizationVerificationConfiguration : IEntityTypeConfiguration<OrganizationVerification>
 {
     public void Configure(EntityTypeBuilder<OrganizationVerification> builder)
     {
@@ -15,4 +15,5 @@ public class StoreVerificationConfiguration : IEntityTypeConfiguration<Organizat
         builder.Property(v => v.DocumentUrl).HasMaxLength(500).IsRequired();
     }
 }
+
 

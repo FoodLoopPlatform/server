@@ -6,12 +6,12 @@ using MediatR;
 
 namespace FoodLoop.Infrastructure.Features.Organizations.Queries;
 
-public class GetMyStoreQueryHandler : IRequestHandler<GetMyOrganizationQuery, OrganizationDto>
+public class GetMyOrganizationQueryHandler : IRequestHandler<GetMyOrganizationQuery, OrganizationDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILocalizationService _loc;
 
-    public GetMyStoreQueryHandler(IUnitOfWork unitOfWork, ILocalizationService loc)
+    public GetMyOrganizationQueryHandler(IUnitOfWork unitOfWork, ILocalizationService loc)
     {
         _unitOfWork = unitOfWork;
         _loc = loc;
@@ -19,9 +19,10 @@ public class GetMyStoreQueryHandler : IRequestHandler<GetMyOrganizationQuery, Or
 
     public async Task<OrganizationDto> Handle(GetMyOrganizationQuery query, CancellationToken cancellationToken)
     {
-        var organization = await _unitOfWork.FindByOwnerOrThrowAsync(query.OwnerId, _loc["StoreNotFound"], cancellationToken);
+        var organization = await _unitOfWork.FindByOwnerOrThrowAsync(query.OwnerId, _loc["OrganizationNotFound"], cancellationToken);
         return organization.ToDto();
     }
 }
+
 
 

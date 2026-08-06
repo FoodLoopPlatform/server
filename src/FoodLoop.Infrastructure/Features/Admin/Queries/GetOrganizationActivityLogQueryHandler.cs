@@ -15,13 +15,13 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Queries;
 
-public class GetStoreActivityLogQueryHandler
-    : IRequestHandler<GetStoreActivityLogQuery, IReadOnlyList<ActivityLogEntryDto>>
+public class GetOrganizationActivityLogQueryHandler
+    : IRequestHandler<GetOrganizationActivityLogQuery, IReadOnlyList<ActivityLogEntryDto>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _db;
 
-    public GetStoreActivityLogQueryHandler(
+    public GetOrganizationActivityLogQueryHandler(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext db)
     {
@@ -30,7 +30,7 @@ public class GetStoreActivityLogQueryHandler
     }
 
     public async Task<IReadOnlyList<ActivityLogEntryDto>> Handle(
-        GetStoreActivityLogQuery request, CancellationToken cancellationToken)
+        GetOrganizationActivityLogQuery request, CancellationToken cancellationToken)
     {
         var organization = await _db.Organizations.FirstOrDefaultAsync(
             s => s.Id == request.OrganizationId && !s.IsDeleted, cancellationToken)
@@ -57,7 +57,7 @@ public class GetStoreActivityLogQueryHandler
         {
             entries.Add(new ActivityLogEntryDto
             {
-                EventType = "StoreProfileUpdated",
+                EventType = "OrganizationProfileUpdated",
                 Title = "Organization Profile Updated",
                 Description = $"Updated organization settings, opening hours, or location coordinates for '{organization.Name}'.",
                 OccurredAt = organization.UpdatedAt.Value,
@@ -65,7 +65,7 @@ public class GetStoreActivityLogQueryHandler
         }
 
         // 3. Document Uploads & Reviews
-        var verifications = await _db.StoreVerifications
+        var verifications = await _db.OrganizationVerifications
             .Where(v => v.OrganizationId == organization.Id)
             .OrderByDescending(v => v.CreatedAt)
             .Take(10)
@@ -204,5 +204,6 @@ public class GetStoreActivityLogQueryHandler
             .ToList();
     }
 }
+
 
 

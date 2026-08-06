@@ -23,7 +23,7 @@ public static class IdentitySeeder
         await SeedRolesAsync(services);
         await SeedAdminAsync(services);
         await SeedCategoriesAsync(services);
-        await SeedStoresAndProductsAsync(services);
+        await SeedOrganizationsAndProductsAsync(services);
     }
 
     private static async Task SeedRolesAsync(IServiceProvider services)
@@ -142,7 +142,7 @@ public static class IdentitySeeder
         }
     }
 
-    private static async Task SeedStoresAndProductsAsync(IServiceProvider services)
+    private static async Task SeedOrganizationsAndProductsAsync(IServiceProvider services)
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
@@ -462,3 +462,4 @@ public static class IdentitySeeder
         logger.LogInformation("Seeded AIRecognitionResult for all products in database.");
     }
 }
+

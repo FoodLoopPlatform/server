@@ -9,18 +9,18 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Queries;
 
-public class GetPendingStoresQueryHandler : IRequestHandler<GetPendingStoresQuery, IReadOnlyList<AdminOrganizationDto>>
+public class GetPendingOrganizationsQueryHandler : IRequestHandler<GetPendingOrganizationsQuery, IReadOnlyList<AdminOrganizationDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public GetPendingStoresQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+    public GetPendingOrganizationsQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
     }
 
-    public async Task<IReadOnlyList<AdminOrganizationDto>> Handle(GetPendingStoresQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AdminOrganizationDto>> Handle(GetPendingOrganizationsQuery request, CancellationToken cancellationToken)
     {
         var organizations = await _unitOfWork.Organizations.GetByVerificationStatusAsync(
             VerificationStatus.Pending, cancellationToken);
@@ -36,5 +36,6 @@ public class GetPendingStoresQueryHandler : IRequestHandler<GetPendingStoresQuer
         return result;
     }
 }
+
 
 

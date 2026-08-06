@@ -3,7 +3,7 @@
 public class AnalyticsSummaryDto
 {
     public UserMetricsDto Users { get; set; } = new();
-    public StoreMetricsDto Organizations { get; set; } = new();
+    public OrganizationMetricsDto Organizations { get; set; } = new();
     public ProductMetricsDto Products { get; set; } = new();
     public OrderMetricsDto Orders { get; set; } = new();
     public decimal TotalRevenue { get; set; }
@@ -19,7 +19,7 @@ public class UserMetricsDto
     public int Admins { get; set; }
 }
 
-public class StoreMetricsDto
+public class OrganizationMetricsDto
 {
     public int Total { get; set; }
     public int Unverified { get; set; }
@@ -43,4 +43,5 @@ public class OrderMetricsDto
     public int Completed { get; set; }
     public int Cancelled { get; set; }
 }
+
 

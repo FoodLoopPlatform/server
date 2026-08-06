@@ -6,7 +6,7 @@ namespace FoodLoop.Application.Common.Interfaces;
 public interface IOrganizationRepository : IRepository<Organization>
 {
     /// <summary>The merchant's own organization, with its verification documents loaded â€”
-    /// what StoreService needs for every onboarding-wizard step.</summary>
+    /// what OrganizationService needs for every onboarding-wizard step.</summary>
     Task<Organization?> GetByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken = default);
 
     /// <summary>Looks up a organization by the owner's email address. Used when the caller
@@ -20,4 +20,5 @@ public interface IOrganizationRepository : IRepository<Organization>
     /// <summary>A single organization by its own id, with verifications loaded â€” for admin review.</summary>
     Task<Organization?> GetByIdWithVerificationsAsync(Guid organizationId, CancellationToken cancellationToken = default);
 }
+
 

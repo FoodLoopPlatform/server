@@ -9,18 +9,18 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Queries;
 
-public class GetStoreForReviewQueryHandler : IRequestHandler<GetStoreForReviewQuery, AdminOrganizationDto>
+public class GetOrganizationForReviewQueryHandler : IRequestHandler<GetOrganizationForReviewQuery, AdminOrganizationDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public GetStoreForReviewQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+    public GetOrganizationForReviewQueryHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
     }
 
-    public async Task<AdminOrganizationDto> Handle(GetStoreForReviewQuery request, CancellationToken cancellationToken)
+    public async Task<AdminOrganizationDto> Handle(GetOrganizationForReviewQuery request, CancellationToken cancellationToken)
     {
         var organization = await _unitOfWork.Organizations.GetByIdWithVerificationsAsync(request.OrganizationId, cancellationToken)
             ?? throw new NotFoundException("Organization", request.OrganizationId);
@@ -31,5 +31,6 @@ public class GetStoreForReviewQueryHandler : IRequestHandler<GetStoreForReviewQu
         return organization.ToAdminDto(owner);
     }
 }
+
 
 

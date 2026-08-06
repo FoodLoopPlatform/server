@@ -4,5 +4,6 @@ using MediatR;
 namespace FoodLoop.Application.Features.Admin.Queries;
 
 /// <summary>GET /admin/organizations/{id} â€” a single organization with all its documents for admin review.</summary>
-public record GetStoreForReviewQuery(Guid OrganizationId) : IRequest<AdminOrganizationDto>;
+public record GetOrganizationForReviewQuery(Guid OrganizationId) : IRequest<AdminOrganizationDto>;
+
 

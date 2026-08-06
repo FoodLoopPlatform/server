@@ -4,7 +4,7 @@ using FoodLoop.Infrastructure.Identity;
 
 namespace FoodLoop.Infrastructure.Mappings;
 
-internal static class AdminStoreMappings
+internal static class AdminOrganizationMappings
 {
     public static AdminOrganizationDto ToAdminDto(this Organization organization, ApplicationUser owner) => new()
     {
@@ -43,4 +43,5 @@ internal static class AdminStoreMappings
         }).ToArray(),
     };
 }
+
 

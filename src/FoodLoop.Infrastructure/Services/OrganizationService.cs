@@ -11,28 +11,28 @@ using System.Linq;
 
 namespace FoodLoop.Infrastructure.Services;
 
-public class StoreService : IStoreService
+public class OrganizationService : IOrganizationService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public StoreService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
+    public OrganizationService(IUnitOfWork unitOfWork, IFileStorageService fileStorage, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
         _userManager = userManager;
     }
 
-    public async Task<OrganizationDto> GetMyStoreAsync(Guid ownerId, CancellationToken cancellationToken = default)
+    public async Task<OrganizationDto> GetMyOrganizationAsync(Guid ownerId, CancellationToken cancellationToken = default)
     {
-        var organization = await FindStoreOrThrowAsync(ownerId, cancellationToken);
+        var organization = await FindOrganizationOrThrowAsync(ownerId, cancellationToken);
         return ToDto(organization);
     }
 
-    public async Task<OrganizationDto> UpdateLocationAsync(Guid ownerId, UpdateStoreLocationRequest request, CancellationToken cancellationToken = default)
+    public async Task<OrganizationDto> UpdateLocationAsync(Guid ownerId, UpdateOrganizationLocationRequest request, CancellationToken cancellationToken = default)
     {
-        var organization = await FindStoreOrThrowAsync(ownerId, cancellationToken);
+        var organization = await FindOrganizationOrThrowAsync(ownerId, cancellationToken);
 
         organization.Governorate = request.Governorate;
         organization.City = request.City;
@@ -48,7 +48,7 @@ public class StoreService : IStoreService
 
     public async Task<OrganizationDto> UploadDocumentAsync(Guid ownerId, UploadDocumentType verificationType, FileUploadRequest file, CancellationToken cancellationToken = default)
     {
-        var organization = await FindStoreOrThrowAsync(ownerId, cancellationToken);
+        var organization = await FindOrganizationOrThrowAsync(ownerId, cancellationToken);
 
         var owner = await _userManager.FindByIdAsync(organization.OwnerId.ToString());
         if (owner == null)
@@ -69,10 +69,10 @@ public class StoreService : IStoreService
         }
         else
         {
-            var allowedMerchantTypes = new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.StoreFacilityPhoto };
+            var allowedMerchantTypes = new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.OrganizationFacilityPhoto };
             if (!allowedMerchantTypes.Contains(verificationType))
             {
-                throw new ArgumentException("Organizations can only upload CommercialRegistration, TaxIdCertificate, or StoreFacilityPhoto.");
+                throw new ArgumentException("Organizations can only upload CommercialRegistration, TaxIdCertificate, or OrganizationFacilityPhoto.");
             }
         }
 
@@ -106,7 +106,7 @@ public class StoreService : IStoreService
         // Determine required document types
         var requiredTypes = isCharity
             ? new[] { UploadDocumentType.AssociationCertificate, UploadDocumentType.CharityBylaws, UploadDocumentType.BoardOfDirectorsList }
-            : new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.StoreFacilityPhoto };
+            : new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.OrganizationFacilityPhoto };
 
         if (requiredTypes.All(t => organization.Verifications.Any(v => v.VerificationType == t)))
         {
@@ -119,7 +119,7 @@ public class StoreService : IStoreService
         return ToDto(organization);
     }
 
-    private async Task<Organization> FindStoreOrThrowAsync(Guid ownerId, CancellationToken cancellationToken)
+    private async Task<Organization> FindOrganizationOrThrowAsync(Guid ownerId, CancellationToken cancellationToken)
     {
         var organization = await _unitOfWork.Organizations.GetByOwnerIdAsync(ownerId, cancellationToken);
 
@@ -148,4 +148,5 @@ public class StoreService : IStoreService
         }).ToArray(),
     };
 }
+
 

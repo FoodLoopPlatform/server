@@ -9,7 +9,7 @@ namespace FoodLoop.Domain.Entities;
 /// A draft Organization (Name + BusinessCategory only, no location yet) is created by
 /// RegisterCommandHandler when the signup's Role is Merchant â€” matching
 /// business_signup_step_1. Location and documents are filled in afterwards via
-/// StoreOnboardingController, matching business_verification_location (step 2) and
+/// OrganizationOnboardingController, matching business_verification_location (step 2) and
 /// verification_pending_step_3 (step 3).</summary>
 public class Organization : BaseEntity, ISoftDelete
 {
@@ -48,4 +48,5 @@ public class Organization : BaseEntity, ISoftDelete
     public Guid? DeletedBy { get; set; }
     public bool IsDeleted { get; set; }
 }
+
 

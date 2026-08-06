@@ -4,7 +4,7 @@ namespace FoodLoop.Application.DTOs.Organizations;
 
 /// <summary>PATCH /organizations/me/location â€” matches the business_verification_location UI screen
 /// (step 2 of the business onboarding wizard).</summary>
-public class UpdateStoreLocationRequest
+public class UpdateOrganizationLocationRequest
 {
     [Required, MaxLength(100)]
     public string Governorate { get; set; } = string.Empty;
@@ -27,4 +27,5 @@ public class UpdateStoreLocationRequest
     [Range(-180, 180)]
     public double? Longitude { get; set; }
 }
+
 

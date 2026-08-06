@@ -10,12 +10,12 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Commands;
 
-public class VerifyStoreCommandHandler : IRequestHandler<VerifyOrganizationCommand, AdminOrganizationDto>
+public class VerifyOrganizationCommandHandler : IRequestHandler<VerifyOrganizationCommand, AdminOrganizationDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public VerifyStoreCommandHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+    public VerifyOrganizationCommandHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
@@ -64,5 +64,6 @@ public class VerifyStoreCommandHandler : IRequestHandler<VerifyOrganizationComma
         return organization.ToAdminDto(owner);
     }
 }
+
 
 

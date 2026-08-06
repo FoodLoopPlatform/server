@@ -3,7 +3,7 @@ using FoodLoop.Domain.Entities;
 
 namespace FoodLoop.Infrastructure.Mappings;
 
-internal static class StoreMappings
+internal static class OrganizationMappings
 {
     public static OrganizationDto ToDto(this Organization organization) => new()
     {
@@ -36,4 +36,5 @@ internal static class StoreMappings
         }).ToArray(),
     };
 }
+
 

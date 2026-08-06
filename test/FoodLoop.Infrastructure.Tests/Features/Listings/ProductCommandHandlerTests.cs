@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
@@ -27,22 +27,22 @@ public class ProductCommandHandlerTests : IDisposable
     private readonly ApplicationDbContext _dbContext = ApplicationDbContextFactory.Create();
     private readonly UnitOfWork _unitOfWork;
     private readonly Guid _ownerId = Guid.NewGuid();
-    private readonly Guid _storeId = Guid.NewGuid();
+    private readonly Guid _organizationId = Guid.NewGuid();
     private readonly Guid _categoryId = Guid.NewGuid();
 
     public ProductCommandHandlerTests()
     {
         _unitOfWork = new UnitOfWork(_dbContext);
 
-        // Seed initial store & category
-        var store = new Store
+        // Seed initial organization & category
+        var organization = new Organization
         {
-            Id = _storeId,
+            Id = _organizationId,
             OwnerId = _ownerId,
-            Name = "Test Store",
+            Name = "Test Organization",
             VerificationStatus = VerificationStatus.Verified
         };
-        _dbContext.Stores.Add(store);
+        _dbContext.Organizations.Add(organization);
 
         var category = new Category
         {
@@ -67,9 +67,9 @@ public class ProductCommandHandlerTests : IDisposable
             OwnerId: _ownerId,
             CategoryId: _categoryId,
             Title: "Fresh Apples",
-            TitleAr: "تفاح طازج",
+            TitleAr: "ØªÙØ§Ø­ Ø·Ø§Ø²Ø¬",
             Description: "Crispy apples",
-            DescriptionAr: "تفاح مقرمش طازج",
+            DescriptionAr: "ØªÙØ§Ø­ Ù…Ù‚Ø±Ù…Ø´ Ø·Ø§Ø²Ø¬",
             OriginalPrice: 10.00m,
             DiscountedPrice: 5.00m,
             QuantityAvailable: 10,
@@ -99,9 +99,9 @@ public class ProductCommandHandlerTests : IDisposable
             OwnerId: _ownerId,
             CategoryId: _categoryId,
             Title: "Fresh Apples",
-            TitleAr: "تفاح طازج",
+            TitleAr: "ØªÙØ§Ø­ Ø·Ø§Ø²Ø¬",
             Description: "Crispy apples",
-            DescriptionAr: "تفاح مقرمش طازج",
+            DescriptionAr: "ØªÙØ§Ø­ Ù…Ù‚Ø±Ù…Ø´ Ø·Ø§Ø²Ø¬",
             OriginalPrice: 10.00m,
             DiscountedPrice: 15.00m, // Invalid
             QuantityAvailable: 10,
@@ -121,7 +121,7 @@ public class ProductCommandHandlerTests : IDisposable
         var product = new Product
         {
             Id = Guid.NewGuid(),
-            StoreId = _storeId,
+            OrganizationId = _organizationId,
             CategoryId = _categoryId,
             Title = "Old Title",
             OriginalPrice = 20.00m,
@@ -170,7 +170,7 @@ public class ProductCommandHandlerTests : IDisposable
         var product = new Product
         {
             Id = Guid.NewGuid(),
-            StoreId = _storeId,
+            OrganizationId = _organizationId,
             CategoryId = _categoryId,
             Title = "Apple Pack",
             OriginalPrice = 10.00m,
@@ -221,4 +221,6 @@ public class ProductCommandHandlerTests : IDisposable
         deleteResult.Images.Should().BeEmpty();
     }
 }
+
+
 

@@ -5,7 +5,7 @@ using FoodLoop.Domain.Entities;
 namespace FoodLoop.Infrastructure.Features.Organizations;
 
 /// <summary>Shared by every Organizations handler that needs "the calling merchant's own organization".</summary>
-internal static class StoreLookup
+internal static class OrganizationLookup
 {
     public static async Task<Organization> FindByOwnerOrThrowAsync(
         this IUnitOfWork unitOfWork,
@@ -27,4 +27,5 @@ internal static class StoreLookup
         return organization ?? throw new NotFoundException(notFoundMessage);
     }
 }
+
 

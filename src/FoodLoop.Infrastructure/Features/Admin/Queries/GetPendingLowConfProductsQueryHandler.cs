@@ -42,7 +42,7 @@ public class GetPendingLowConfProductsQueryHandler
         {
             Id = l.Id,
             OrganizationId = l.OrganizationId,
-            StoreName = l.Organization?.Name ?? string.Empty,
+            OrganizationName = l.Organization?.Name ?? string.Empty,
             CategoryId = l.CategoryId,
             CategoryName = l.Category?.Name ?? string.Empty,
             Title = l.Title,
@@ -58,5 +58,6 @@ public class GetPendingLowConfProductsQueryHandler
         }).ToList();
     }
 }
+
 
 

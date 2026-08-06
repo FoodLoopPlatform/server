@@ -14,14 +14,14 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Organizations.Commands;
 
-public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadOrganizationDocumentCommand, OrganizationDto>
+public class UploadOrganizationDocumentCommandHandler : IRequestHandler<UploadOrganizationDocumentCommand, OrganizationDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
     private readonly ILocalizationService _loc;
     private readonly UserManager<ApplicationUser> _userManager;
 
-    public UploadStoreDocumentCommandHandler(
+    public UploadOrganizationDocumentCommandHandler(
         IUnitOfWork unitOfWork,
         IFileStorageService fileStorage,
         ILocalizationService loc,
@@ -37,7 +37,7 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadOrganizat
     {
         var organization = await _unitOfWork.FindByOwnerEmailOrThrowAsync(
             command.OwnerEmail,
-            _loc["StoreNotFoundByEmail"],
+            _loc["OrganizationNotFoundByEmail"],
             cancellationToken);
 
         var owner = await _userManager.FindByIdAsync(organization.OwnerId.ToString());
@@ -59,10 +59,10 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadOrganizat
         }
         else
         {
-            var allowedMerchantTypes = new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.StoreFacilityPhoto };
+            var allowedMerchantTypes = new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.OrganizationFacilityPhoto };
             if (!allowedMerchantTypes.Contains(command.VerificationType))
             {
-                throw new ArgumentException(_loc["InvalidStoreDocumentType"] ?? "Organizations can only upload CommercialRegistration, TaxIdCertificate, or StoreFacilityPhoto.");
+                throw new ArgumentException(_loc["InvalidOrganizationDocumentType"] ?? "Organizations can only upload CommercialRegistration, TaxIdCertificate, or OrganizationFacilityPhoto.");
             }
         }
 
@@ -96,7 +96,7 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadOrganizat
         // Determine required document types
         var requiredTypes = isCharity
             ? new[] { UploadDocumentType.AssociationCertificate, UploadDocumentType.CharityBylaws, UploadDocumentType.BoardOfDirectorsList }
-            : new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.StoreFacilityPhoto };
+            : new[] { UploadDocumentType.CommercialRegistration, UploadDocumentType.TaxIdCertificate, UploadDocumentType.OrganizationFacilityPhoto };
 
         if (requiredTypes.All(t => organization.Verifications.Any(v => v.VerificationType == t)))
         {
@@ -109,5 +109,6 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadOrganizat
         return organization.ToDto();
     }
 }
+
 
 

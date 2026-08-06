@@ -28,7 +28,7 @@ public class RegisterRequest
     /// <summary>Customer / Merchant / Charity, matching the account type dropdown at signup. Defaults to Customer.</summary>
     public string Role { get; set; } = AppRole.Customer;
 
-    /// <summary>Required when Role is Merchant or Charity (store_name on business_signup_step_1).</summary>
+    /// <summary>Required when Role is Merchant or Charity (organization_name on business_signup_step_1).</summary>
     [MaxLength(150)]
     public string? BusinessName { get; set; }
 
@@ -39,4 +39,5 @@ public class RegisterRequest
     [MaxLength(10)]
     public string Language { get; set; } = "en";
 }
+
 

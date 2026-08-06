@@ -36,16 +36,16 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         var totalUsers = await _context.Users.CountAsync(cancellationToken);
 
         // 2. Organization metrics
-        var storeCounts = await _context.Organizations
+        var organizationCounts = await _context.Organizations
             .GroupBy(s => s.VerificationStatus)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var unverifiedStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Unverified)?.Count ?? 0;
-        var pendingStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Pending)?.Count ?? 0;
-        var verifiedStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Verified)?.Count ?? 0;
-        var rejectedStores = storeCounts.FirstOrDefault(s => s.Status == VerificationStatus.Rejected)?.Count ?? 0;
-        var totalStores = await _context.Organizations.CountAsync(cancellationToken);
+        var unverifiedOrganizations = organizationCounts.FirstOrDefault(s => s.Status == VerificationStatus.Unverified)?.Count ?? 0;
+        var pendingOrganizations = organizationCounts.FirstOrDefault(s => s.Status == VerificationStatus.Pending)?.Count ?? 0;
+        var verifiedOrganizations = organizationCounts.FirstOrDefault(s => s.Status == VerificationStatus.Verified)?.Count ?? 0;
+        var rejectedOrganizations = organizationCounts.FirstOrDefault(s => s.Status == VerificationStatus.Rejected)?.Count ?? 0;
+        var totalOrganizations = await _context.Organizations.CountAsync(cancellationToken);
 
         // 3. Product metrics
         var productCounts = await _context.Products
@@ -89,13 +89,13 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
                 Charities = charityCount,
                 Admins = adminCount
             },
-            Organizations = new StoreMetricsDto
+            Organizations = new OrganizationMetricsDto
             {
-                Total = totalStores,
-                Unverified = unverifiedStores,
-                Pending = pendingStores,
-                Verified = verifiedStores,
-                Rejected = rejectedStores
+                Total = totalOrganizations,
+                Unverified = unverifiedOrganizations,
+                Pending = pendingOrganizations,
+                Verified = verifiedOrganizations,
+                Rejected = rejectedOrganizations
             },
             Products = new ProductMetricsDto
             {
@@ -116,5 +116,6 @@ public class GetAnalyticsSummaryQueryHandler : IRequestHandler<GetAnalyticsSumma
         };
     }
 }
+
 
 
