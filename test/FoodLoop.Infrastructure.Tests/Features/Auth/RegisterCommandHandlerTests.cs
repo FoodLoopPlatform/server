@@ -20,7 +20,6 @@ public class RegisterCommandHandlerTests : IDisposable
 {
     private readonly Mock<UserManager<ApplicationUser>> _userManager = MockUserManagerFactory.Create();
     private readonly Mock<IEmailService> _emailService = new();
-    private readonly Mock<IAuthTokenIssuer> _tokenIssuer = new();
     private readonly ApplicationDbContext _dbContext = ApplicationDbContextFactory.Create();
 
     private readonly Mock<ILocalizationService> _loc = MockLocalizationServiceFactory.Create();
@@ -35,7 +34,6 @@ public class RegisterCommandHandlerTests : IDisposable
             _userManager.Object,
             unitOfWork,
             _emailService.Object,
-            _tokenIssuer.Object,
             _loc.Object,
             _auditLogService.Object);
     }
@@ -96,8 +94,7 @@ public class RegisterCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Customer))
             .ReturnsAsync(IdentityResult.Success);
 
-        _tokenIssuer.Setup(t => t.IssueTokensAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync(new AuthResponse { AccessToken = "access", RefreshToken = "refresh" });
+
 
         var handler = CreateHandler();
         var request = ConsumerRegisterRequest();
@@ -109,7 +106,8 @@ public class RegisterCommandHandlerTests : IDisposable
         // Assert
         result.Success.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data!.AccessToken.Should().Be("access");
+        result.Data!.AccessToken.Should().BeEmpty();
+        result.Data!.RefreshToken.Should().BeEmpty();
 
         _emailService.Verify(e => e.SendWelcomeEmailAsync("amina@example.com", "Amina Test", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -124,8 +122,7 @@ public class RegisterCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Merchant))
             .ReturnsAsync(IdentityResult.Success);
 
-        _tokenIssuer.Setup(t => t.IssueTokensAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>(), null))
-            .ReturnsAsync(new AuthResponse { AccessToken = "access", RefreshToken = "refresh" });
+
 
         var handler = CreateHandler();
         var request = ConsumerRegisterRequest();
