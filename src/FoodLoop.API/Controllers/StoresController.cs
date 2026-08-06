@@ -1,4 +1,4 @@
-﻿using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Organizations;
@@ -21,15 +21,15 @@ namespace FoodLoop.API.Controllers;
 /// only the merchant's own draft organization is exposed here.
 /// </summary>
 [ApiController]
-[Route("organizations")]
+[Route("stores")]
 [Authorize(Roles = AppRole.Merchant)]
-public class OrganizationsController : ControllerBase
+public class StoresController : ControllerBase
 {
     private readonly ISender _mediator;
     private readonly ICurrentUserService _currentUser;
     private readonly ILocalizationService _loc;
 
-    public OrganizationsController(ISender mediator, ICurrentUserService currentUser, ILocalizationService loc)
+    public StoresController(ISender mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
