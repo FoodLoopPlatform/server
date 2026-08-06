@@ -15,13 +15,13 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Queries;
 
-public class GetStoreActivityLogQueryHandler
-    : IRequestHandler<GetStoreActivityLogQuery, IReadOnlyList<ActivityLogEntryDto>>
+public class GetOrganizationActivityLogQueryHandler
+    : IRequestHandler<GetOrganizationActivityLogQuery, IReadOnlyList<ActivityLogEntryDto>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ApplicationDbContext _db;
 
-    public GetStoreActivityLogQueryHandler(
+    public GetOrganizationActivityLogQueryHandler(
         UserManager<ApplicationUser> userManager,
         ApplicationDbContext db)
     {
@@ -30,7 +30,7 @@ public class GetStoreActivityLogQueryHandler
     }
 
     public async Task<IReadOnlyList<ActivityLogEntryDto>> Handle(
-        GetStoreActivityLogQuery request, CancellationToken cancellationToken)
+        GetOrganizationActivityLogQuery request, CancellationToken cancellationToken)
     {
         var organization = await _db.Organizations.FirstOrDefaultAsync(
             s => s.Id == request.OrganizationId && !s.IsDeleted, cancellationToken)

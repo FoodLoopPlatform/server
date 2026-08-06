@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
@@ -24,6 +24,7 @@ public class RegisterCommandHandlerTests : IDisposable
     private readonly ApplicationDbContext _dbContext = ApplicationDbContextFactory.Create();
 
     private readonly Mock<ILocalizationService> _loc = MockLocalizationServiceFactory.Create();
+    private readonly Mock<IAuditLogService> _auditLogService = new();
 
     public void Dispose() => _dbContext.Dispose();
 
@@ -35,7 +36,8 @@ public class RegisterCommandHandlerTests : IDisposable
             unitOfWork,
             _emailService.Object,
             _tokenIssuer.Object,
-            _loc.Object);
+            _loc.Object,
+            _auditLogService.Object);
     }
 
     private static RegisterRequest ConsumerRegisterRequest() => new()

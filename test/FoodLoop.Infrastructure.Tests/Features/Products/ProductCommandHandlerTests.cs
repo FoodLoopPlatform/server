@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
@@ -29,6 +29,7 @@ public class ProductCommandHandlerTests : IDisposable
     private readonly Guid _ownerId = Guid.NewGuid();
     private readonly Guid _organizationId = Guid.NewGuid();
     private readonly Guid _categoryId = Guid.NewGuid();
+    private readonly Mock<IAuditLogService> _auditLogService = new();
 
     public ProductCommandHandlerTests()
     {
@@ -62,7 +63,7 @@ public class ProductCommandHandlerTests : IDisposable
     public async Task CreateProduct_should_create_product_successfully()
     {
         // Arrange
-        var handler = new CreateProductCommandHandler(_unitOfWork);
+        var handler = new CreateProductCommandHandler(_unitOfWork, _auditLogService.Object);
         var command = new CreateProductCommand(
             OwnerId: _ownerId,
             CategoryId: _categoryId,
@@ -94,7 +95,7 @@ public class ProductCommandHandlerTests : IDisposable
     public async Task CreateProduct_should_fail_when_discounted_price_greater_than_original()
     {
         // Arrange
-        var handler = new CreateProductCommandHandler(_unitOfWork);
+        var handler = new CreateProductCommandHandler(_unitOfWork, _auditLogService.Object);
         var command = new CreateProductCommand(
             OwnerId: _ownerId,
             CategoryId: _categoryId,
@@ -133,7 +134,7 @@ public class ProductCommandHandlerTests : IDisposable
         _dbContext.Products.Add(product);
         await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateProductCommandHandler(_unitOfWork);
+        var handler = new UpdateProductCommandHandler(_unitOfWork, _auditLogService.Object);
         var command = new UpdateProductCommand(
             OwnerId: _ownerId,
             ProductId: product.Id,
@@ -185,7 +186,7 @@ public class ProductCommandHandlerTests : IDisposable
         mockFileStorage.Setup(fs => fs.SaveAsync(It.IsAny<FileUploadRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("https://example.com/uploads/product.png");
 
-        var uploadHandler = new UploadProductImageCommandHandler(_unitOfWork, mockFileStorage.Object);
+        var uploadHandler = new UploadProductImageCommandHandler(_unitOfWork, mockFileStorage.Object, _auditLogService.Object);
         var uploadCommand = new UploadProductImageCommand(
             OwnerId: _ownerId,
             ProductId: product.Id,
@@ -208,7 +209,7 @@ public class ProductCommandHandlerTests : IDisposable
         var imageId = uploadResult.Images[0].Id;
 
         // Act - Delete
-        var deleteHandler = new DeleteProductImageCommandHandler(_unitOfWork);
+        var deleteHandler = new DeleteProductImageCommandHandler(_unitOfWork, _auditLogService.Object);
         var deleteCommand = new DeleteProductImageCommand(
             OwnerId: _ownerId,
             ProductId: product.Id,
