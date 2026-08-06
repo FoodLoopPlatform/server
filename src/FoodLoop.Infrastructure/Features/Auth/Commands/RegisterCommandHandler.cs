@@ -16,7 +16,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
-    private readonly IAuthTokenIssuer _tokenIssuer;
     private readonly ILocalizationService _loc;
     private readonly IAuditLogService _auditLogService;
 
@@ -24,14 +23,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
         IEmailService emailService,
-        IAuthTokenIssuer tokenIssuer,
         ILocalizationService loc,
         IAuditLogService auditLogService)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
-        _tokenIssuer = tokenIssuer;
         _loc = loc;
         _auditLogService = auditLogService;
     }
@@ -152,20 +149,13 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
 
         await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName, cancellationToken);
 
-        // If the account is unverified, do not return access and refresh tokens
-        if (user.Status == UserStatus.PendingVerification)
+        return Result<AuthResponse>.Ok(new AuthResponse
         {
-            return Result<AuthResponse>.Ok(new AuthResponse
-            {
-                User = user.ToDto(new[] { request.Role }),
-                AccessToken = string.Empty,
-                RefreshToken = string.Empty,
-                AccessTokenExpiresAt = DateTimeOffset.MinValue
-            });
-        }
-
-        var authResponse = await _tokenIssuer.IssueTokensAsync(user, command.IpAddress, cancellationToken);
-        return Result<AuthResponse>.Ok(authResponse);
+            User = user.ToDto(new[] { request.Role }),
+            AccessToken = string.Empty,
+            RefreshToken = string.Empty,
+            AccessTokenExpiresAt = DateTimeOffset.MinValue
+        });
     }
 }
 
