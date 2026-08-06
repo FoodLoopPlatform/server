@@ -154,19 +154,29 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    
+    // 1. Critical: Apply Database Migrations
     try
     {
         var dbContext = services.GetRequiredService<ApplicationDbContext>();
         Log.Information("Applying database migrations...");
         await dbContext.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "An error occurred during database migration. Host will terminate.");
+        throw;
+    }
 
+    // 2. Non-Critical: Run Seeder
+    try
+    {
         Log.Information("Seeding database values...");
         await IdentitySeeder.SeedAsync(services);
     }
     catch (Exception ex)
     {
-        Log.Fatal(ex, "An error occurred during database migration or seeding.");
-        throw;
+        Log.Error(ex, "An error occurred during database seeding. Host will continue running.");
     }
 }
 
