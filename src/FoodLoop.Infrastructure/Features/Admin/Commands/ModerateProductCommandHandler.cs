@@ -1,4 +1,5 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Commands;
 using FoodLoop.Domain.Entities;
@@ -16,10 +17,17 @@ public class ModerateProductCommandHandler
     : IRequestHandler<ModerateProductCommand, AdminProductDto>
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditLogService _auditLogService;
 
-    public ModerateProductCommandHandler(ApplicationDbContext context)
+    public ModerateProductCommandHandler(
+        ApplicationDbContext context,
+        ICurrentUserService currentUserService,
+        IAuditLogService auditLogService)
     {
         _context = context;
+        _currentUserService = currentUserService;
+        _auditLogService = auditLogService;
     }
 
     public async Task<AdminProductDto> Handle(
@@ -68,6 +76,16 @@ public class ModerateProductCommandHandler
 
         product.UpdatedAt = DateTimeOffset.UtcNow;
         await _context.SaveChangesAsync(cancellationToken);
+
+        var adminId = _currentUserService.UserId;
+        await _auditLogService.LogAsync(
+            adminId,
+            product.OrganizationId,
+            "ProductModerated",
+            "Product Moderated",
+            $"Product '{product.Title}' status set to {product.Status} by admin.",
+            null,
+            cancellationToken);
 
         return new AdminProductDto
         {

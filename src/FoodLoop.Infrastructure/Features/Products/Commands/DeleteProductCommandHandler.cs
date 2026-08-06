@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Domain.Entities;
@@ -14,10 +14,12 @@ namespace FoodLoop.Infrastructure.Features.Products.Commands;
 public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
 
-    public DeleteProductCommandHandler(IUnitOfWork unitOfWork)
+    public DeleteProductCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
     }
 
     public async Task Handle(DeleteProductCommand command, CancellationToken cancellationToken)
@@ -30,6 +32,15 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand>
 
         _unitOfWork.Repository<Product>().Remove(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            command.OwnerId,
+            organization.Id,
+            "ProductDeleted",
+            "Product Removed",
+            $"Removed product '{product.Title}'.",
+            null,
+            cancellationToken);
     }
 }
 

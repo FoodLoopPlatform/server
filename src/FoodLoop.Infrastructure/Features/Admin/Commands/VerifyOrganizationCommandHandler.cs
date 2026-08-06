@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Commands;
@@ -10,15 +10,20 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FoodLoop.Infrastructure.Features.Admin.Commands;
 
-public class VerifyOrganizationCommandHandler : IRequestHandler<VerifyOrganizationCommand, AdminOrganizationDto>
+public class VerifyStoreCommandHandler : IRequestHandler<VerifyOrganizationCommand, AdminOrganizationDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAuditLogService _auditLogService;
 
-    public VerifyOrganizationCommandHandler(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+    public VerifyStoreCommandHandler(
+        IUnitOfWork unitOfWork,
+        UserManager<ApplicationUser> userManager,
+        IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
+        _auditLogService = auditLogService;
     }
 
     public async Task<AdminOrganizationDto> Handle(VerifyOrganizationCommand command, CancellationToken cancellationToken)
@@ -34,13 +39,16 @@ public class VerifyOrganizationCommandHandler : IRequestHandler<VerifyOrganizati
         organization.AdminNote = command.Request.Note;
         organization.UpdatedAt = DateTimeOffset.UtcNow;
 
+        var now = DateTimeOffset.UtcNow;
+        var pendingDocs = organization.Verifications.Where(v => v.Status == VerificationStatus.Pending).ToList();
+
         // Stamp each pending document with the review decision.
-        foreach (var doc in organization.Verifications.Where(v => v.Status == VerificationStatus.Pending))
+        foreach (var doc in pendingDocs)
         {
             doc.Status = newStatus;
             doc.ReviewNote = command.Request.Note;
             doc.ReviewedBy = command.AdminId;
-            doc.ReviewedAt = DateTimeOffset.UtcNow;
+            doc.ReviewedAt = now;
         }
 
         // Activate or deactivate the owner account based on the decision.
@@ -61,9 +69,21 @@ public class VerifyOrganizationCommandHandler : IRequestHandler<VerifyOrganizati
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Log document reviews
+        foreach (var doc in pendingDocs)
+        {
+            await _auditLogService.LogAsync(
+                command.AdminId,
+                organization.Id,
+                "DocumentVerified",
+                "Document Reviewed",
+                $"{doc.VerificationType} was marked {doc.Status} by admin.",
+                null,
+                cancellationToken);
+        }
+
         return organization.ToAdminDto(owner);
     }
 }
-
 
 

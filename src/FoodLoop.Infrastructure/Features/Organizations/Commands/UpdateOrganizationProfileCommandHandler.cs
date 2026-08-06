@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Organizations;
 using FoodLoop.Application.Features.Organizations.Commands;
 using FoodLoop.Infrastructure.Mappings;
@@ -9,23 +9,29 @@ using System.Threading.Tasks;
 
 namespace FoodLoop.Infrastructure.Features.Organizations.Commands;
 
-public class UpdateOrganizationProfileCommandHandler : IRequestHandler<UpdateOrganizationProfileCommand, OrganizationDto>
+public class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateOrganizationProfileCommand, OrganizationDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
     private readonly ILocalizationService _loc;
+    private readonly IAuditLogService _auditLogService;
 
-    public UpdateOrganizationProfileCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage, ILocalizationService loc)
+    public UpdateStoreProfileCommandHandler(
+        IUnitOfWork unitOfWork,
+        IFileStorageService fileStorage,
+        ILocalizationService loc,
+        IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
         _loc = loc;
+        _auditLogService = auditLogService;
     }
 
     public async Task<OrganizationDto> Handle(UpdateOrganizationProfileCommand command, CancellationToken cancellationToken)
     {
         var organization = await _unitOfWork.FindByOwnerOrThrowAsync(
-            command.OwnerId, _loc["OrganizationNotFound"], cancellationToken);
+            command.OwnerId, _loc["StoreNotFound"], cancellationToken);
 
         var req = command.Request;
 
@@ -52,9 +58,17 @@ public class UpdateOrganizationProfileCommandHandler : IRequestHandler<UpdateOrg
         organization.UpdatedAt = DateTimeOffset.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        await _auditLogService.LogAsync(
+            command.OwnerId,
+            organization.Id,
+            "StoreProfileUpdated",
+            "Organization Profile Updated",
+            $"Updated organization settings, opening hours, or location coordinates for '{organization.Name}'.",
+            null,
+            cancellationToken);
+
         return organization.ToDto();
     }
 }
-
 
 

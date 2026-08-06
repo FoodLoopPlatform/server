@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Commands;
@@ -17,10 +17,12 @@ namespace FoodLoop.Infrastructure.Features.Products.Commands;
 public class DeleteProductImageCommandHandler : IRequestHandler<DeleteProductImageCommand, ProductDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
 
-    public DeleteProductImageCommandHandler(IUnitOfWork unitOfWork)
+    public DeleteProductImageCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ProductDto> Handle(DeleteProductImageCommand command, CancellationToken cancellationToken)
@@ -41,6 +43,15 @@ public class DeleteProductImageCommandHandler : IRequestHandler<DeleteProductIma
         product.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            command.OwnerId,
+            organization.Id,
+            "ProductImageDeleted",
+            "Product Image Removed",
+            $"Removed image for product '{product.Title}'.",
+            null,
+            cancellationToken);
 
         return product.ToDto();
     }

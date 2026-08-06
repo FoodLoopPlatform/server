@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Auth;
 using FoodLoop.Application.Features.Auth.Commands;
@@ -18,19 +18,22 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
     private readonly IEmailService _emailService;
     private readonly IAuthTokenIssuer _tokenIssuer;
     private readonly ILocalizationService _loc;
+    private readonly IAuditLogService _auditLogService;
 
     public RegisterCommandHandler(
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
         IEmailService emailService,
         IAuthTokenIssuer tokenIssuer,
-        ILocalizationService loc)
+        ILocalizationService loc,
+        IAuditLogService auditLogService)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
         _tokenIssuer = tokenIssuer;
         _loc = loc;
+        _auditLogService = auditLogService;
     }
 
     public async Task<Result<AuthResponse>> Handle(RegisterCommand command, CancellationToken cancellationToken)
@@ -103,18 +106,43 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
 
             await _userManager.AddToRoleAsync(user, request.Role);
 
+            Organization? org = null;
             if (isBusinessAccount || isCharityAccount)
             {
-                _unitOfWork.Organizations.Add(new Organization
+                org = new Organization
                 {
                     OwnerId = user.Id,
                     Name = request.BusinessName!.Trim(),
                     BusinessCategory = request.BusinessCategory,
                     VerificationStatus = VerificationStatus.Unverified,
-                });
+                };
+                _unitOfWork.Organizations.Add(org);
             }
 
             await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+            if (isBusinessAccount || isCharityAccount)
+            {
+                await _auditLogService.LogAsync(
+                    user.Id,
+                    org?.Id,
+                    "AccountCreated",
+                    request.Role == AppRole.Merchant ? "Merchant Account Created" : "Charity Account Created",
+                    $"New {(request.Role == AppRole.Merchant ? "merchant" : "charity")} account registered with email {user.Email} for organization '{request.BusinessName!.Trim()}'.",
+                    command.IpAddress,
+                    cancellationToken);
+            }
+            else
+            {
+                await _auditLogService.LogAsync(
+                    user.Id,
+                    null,
+                    "AccountCreated",
+                    "Account Created",
+                    $"New account registered with email {user.Email}.",
+                    command.IpAddress,
+                    cancellationToken);
+            }
         }
         catch
         {
