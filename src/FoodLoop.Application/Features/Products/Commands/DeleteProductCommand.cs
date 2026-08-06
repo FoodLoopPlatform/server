@@ -1,6 +1,7 @@
-using MediatR;
+﻿using MediatR;
 using System;
 
-namespace FoodLoop.Application.Features.Listings.Commands;
+namespace FoodLoop.Application.Features.Products.Commands;
 
 public record DeleteProductCommand(Guid OwnerId, Guid ProductId) : IRequest;
+

@@ -1,9 +1,9 @@
-using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Listings;
 using MediatR;
 using System;
 using System.Collections.Generic;
 
-namespace FoodLoop.Application.Features.Listings.Queries;
+namespace FoodLoop.Application.Features.Products.Queries;
 
 public record GetMyProductsQuery(
     Guid OwnerId,
@@ -12,3 +12,4 @@ public record GetMyProductsQuery(
     Guid? CategoryId = null,
     string? Status = null,
     string? SearchTerm = null) : IRequest<IReadOnlyList<ProductDto>>;
+

@@ -1,7 +1,7 @@
 ﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Listings;
-using FoodLoop.Application.Features.Listings.Commands;
+using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Organizations;
@@ -13,7 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FoodLoop.Infrastructure.Features.Listings.Commands;
+namespace FoodLoop.Infrastructure.Features.Products.Commands;
 
 public class UploadProductImageCommandHandler : IRequestHandler<UploadProductImageCommand, ProductDto>
 {
@@ -86,5 +86,6 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
         return product.ToDto();
     }
 }
+
 
 

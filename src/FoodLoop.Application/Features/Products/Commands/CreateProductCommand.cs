@@ -1,8 +1,8 @@
-using FoodLoop.Application.DTOs.Listings;
+﻿using FoodLoop.Application.DTOs.Listings;
 using MediatR;
 using System;
 
-namespace FoodLoop.Application.Features.Listings.Commands;
+namespace FoodLoop.Application.Features.Products.Commands;
 
 public record CreateProductCommand(
     Guid OwnerId,
@@ -15,3 +15,4 @@ public record CreateProductCommand(
     decimal DiscountedPrice,
     int QuantityAvailable,
     DateOnly ExpirationDate) : IRequest<ProductDto>;
+

@@ -1,7 +1,7 @@
 ﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Listings;
-using FoodLoop.Application.Features.Listings.Commands;
+using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Organizations;
@@ -16,7 +16,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FoodLoop.Infrastructure.Features.Listings.Commands;
+namespace FoodLoop.Infrastructure.Features.Products.Commands;
 
 public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProductsCommand, IReadOnlyList<ProductDto>>
 {
@@ -182,5 +182,6 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
         return values[idx];
     }
 }
+
 
 
