@@ -83,6 +83,7 @@ public class GetStoreActivityLogQueryHandler
 
         // 3. Product Listings
         var products = await _db.Products
+            .IgnoreQueryFilters()
             .Where(p => p.StoreId == store.Id)
             .OrderByDescending(p => p.CreatedAt)
             .Take(10)
@@ -112,6 +113,7 @@ public class GetStoreActivityLogQueryHandler
 
         // 4. Orders Received
         var sales = await _db.OrderItems
+            .IgnoreQueryFilters()
             .Include(oi => oi.Order)
             .Include(oi => oi.Product)
             .Where(oi => oi.Product!.StoreId == store.Id)
