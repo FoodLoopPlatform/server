@@ -1,4 +1,5 @@
 using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.SupportTickets.Commands;
 using FoodLoop.Domain.Entities;
@@ -17,10 +18,12 @@ public class CreateSupportTicketCommandHandler
     : IRequestHandler<CreateSupportTicketCommand, SupportTicketDto>
 {
     private readonly ApplicationDbContext _db;
+    private readonly IAuditLogService _auditLogService;
 
-    public CreateSupportTicketCommandHandler(ApplicationDbContext db)
+    public CreateSupportTicketCommandHandler(ApplicationDbContext db, IAuditLogService auditLogService)
     {
         _db = db;
+        _auditLogService = auditLogService;
     }
 
     public async Task<SupportTicketDto> Handle(CreateSupportTicketCommand request, CancellationToken cancellationToken)
@@ -48,6 +51,16 @@ public class CreateSupportTicketCommandHandler
 
         _db.SupportTickets.Add(ticket);
         await _db.SaveChangesAsync(cancellationToken);
+
+        var org = await _db.Organizations.FirstOrDefaultAsync(o => o.OwnerId == request.UserId && !o.IsDeleted, cancellationToken);
+        await _auditLogService.LogAsync(
+            request.UserId,
+            org?.Id,
+            "SupportTicket",
+            "Support Ticket Opened",
+            $"Ticket: {ticket.Category} — {ticket.Status}.",
+            null,
+            cancellationToken);
 
         return new SupportTicketDto
         {

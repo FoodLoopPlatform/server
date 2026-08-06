@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Commands;
@@ -19,11 +19,13 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
+    private readonly IAuditLogService _auditLogService;
 
-    public UploadProductImageCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage)
+    public UploadProductImageCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ProductDto> Handle(UploadProductImageCommand command, CancellationToken cancellationToken)
@@ -82,6 +84,15 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
         product.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            command.OwnerId,
+            organization.Id,
+            "ProductImageUploaded",
+            "Product Image Uploaded",
+            $"Uploaded image for product '{product.Title}'.",
+            null,
+            cancellationToken);
 
         return product.ToDto();
     }

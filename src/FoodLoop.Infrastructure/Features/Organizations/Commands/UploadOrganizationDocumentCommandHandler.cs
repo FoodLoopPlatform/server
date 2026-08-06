@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Organizations;
 using FoodLoop.Application.Features.Organizations.Commands;
 using FoodLoop.Domain.Entities;
@@ -20,17 +20,20 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadOrganizat
     private readonly IFileStorageService _fileStorage;
     private readonly ILocalizationService _loc;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAuditLogService _auditLogService;
 
     public UploadStoreDocumentCommandHandler(
         IUnitOfWork unitOfWork,
         IFileStorageService fileStorage,
         ILocalizationService loc,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
         _loc = loc;
         _userManager = userManager;
+        _auditLogService = auditLogService;
     }
 
     public async Task<OrganizationDto> Handle(UploadOrganizationDocumentCommand command, CancellationToken cancellationToken)
@@ -105,6 +108,15 @@ public class UploadStoreDocumentCommandHandler : IRequestHandler<UploadOrganizat
 
         organization.UpdatedAt = DateTimeOffset.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            organization.OwnerId,
+            organization.Id,
+            "DocumentUploaded",
+            "Document Uploaded",
+            $"Uploaded {command.VerificationType} document.",
+            null,
+            cancellationToken);
 
         return organization.ToDto();
     }

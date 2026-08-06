@@ -1,4 +1,4 @@
-﻿using FoodLoop.Domain.Common;
+using FoodLoop.Domain.Common;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -35,12 +35,19 @@ public class ApplicationDbContext
     public DbSet<TicketMessage> TicketMessages => Set<TicketMessage>();
     public DbSet<AIRecognitionResult> AIRecognitionResults => Set<AIRecognitionResult>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder); // Identity tables
 
         builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        builder.Entity<AuditLog>(entity =>
+        {
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.OrganizationId);
+        });
 
         // Rename default Identity tables to a cleaner schema (optional but tidy).
         builder.Entity<ApplicationUser>().ToTable("Users");

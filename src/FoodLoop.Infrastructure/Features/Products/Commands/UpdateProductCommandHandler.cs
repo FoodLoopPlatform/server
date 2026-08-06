@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Commands;
@@ -17,10 +17,12 @@ namespace FoodLoop.Infrastructure.Features.Products.Commands;
 public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, ProductDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
 
-    public UpdateProductCommandHandler(IUnitOfWork unitOfWork)
+    public UpdateProductCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
     }
 
     public async Task<ProductDto> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
@@ -90,6 +92,15 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
         product.UpdatedAt = DateTimeOffset.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            command.OwnerId,
+            organization.Id,
+            "ProductUpdated",
+            "Product Updated",
+            $"Updated product details for '{product.Title}'.",
+            null,
+            cancellationToken);
 
         return product.ToDto();
     }

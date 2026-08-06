@@ -1,4 +1,4 @@
-﻿using FoodLoop.Domain.Entities;
+using FoodLoop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FoodLoop.Application.Common.Interfaces;
@@ -25,6 +25,7 @@ public interface IApplicationDbContext
     DbSet<TicketMessage> TicketMessages { get; }
     DbSet<AIRecognitionResult> AIRecognitionResults { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
+    DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
