@@ -25,6 +25,7 @@ public class StoreDto
     public double? Longitude { get; set; }
 
     public string VerificationStatus { get; set; } = string.Empty;
+    public string? AdminNote { get; set; }
     public string? OpeningHours { get; set; }
     public IReadOnlyList<StoreDocumentDto> Documents { get; set; } = Array.Empty<StoreDocumentDto>();
 }
@@ -35,4 +36,5 @@ public class StoreDocumentDto
     public string VerificationType { get; set; } = string.Empty;
     public string DocumentUrl { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? ReviewNote { get; set; }
 }

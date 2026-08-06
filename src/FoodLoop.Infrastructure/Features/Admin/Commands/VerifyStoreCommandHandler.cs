@@ -31,12 +31,14 @@ public class VerifyStoreCommandHandler : IRequestHandler<VerifyStoreCommand, Adm
             : VerificationStatus.Rejected;
 
         store.VerificationStatus = newStatus;
+        store.AdminNote = command.Request.Note;
         store.UpdatedAt = DateTimeOffset.UtcNow;
 
         // Stamp each pending document with the review decision.
         foreach (var doc in store.Verifications.Where(v => v.Status == VerificationStatus.Pending))
         {
             doc.Status = newStatus;
+            doc.ReviewNote = command.Request.Note;
             doc.ReviewedBy = command.AdminId;
             doc.ReviewedAt = DateTimeOffset.UtcNow;
         }

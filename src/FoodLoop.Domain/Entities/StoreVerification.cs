@@ -15,6 +15,7 @@ public class StoreVerification : BaseEntity
     public string DocumentUrl { get; set; } = string.Empty;
 
     public VerificationStatus Status { get; set; } = VerificationStatus.Pending;
+    public string? ReviewNote { get; set; }
     public Guid? ReviewedBy { get; set; }
     public DateTimeOffset? ReviewedAt { get; set; }
 }

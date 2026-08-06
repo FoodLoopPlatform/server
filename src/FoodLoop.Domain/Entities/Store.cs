@@ -37,6 +37,7 @@ public class Store : BaseEntity, ISoftDelete
     public string? OpeningHours { get; set; } // JSON-encoded schedule
 
     public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Unverified;
+    public string? AdminNote { get; set; }
     public double AverageRating { get; set; }
 
     public ICollection<Product> Products { get; set; } = new List<Product>();

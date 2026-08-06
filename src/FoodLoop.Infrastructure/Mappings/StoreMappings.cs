@@ -24,6 +24,7 @@ internal static class StoreMappings
         Latitude = store.Latitude,
         Longitude = store.Longitude,
         VerificationStatus = store.VerificationStatus.ToString(),
+        AdminNote = store.AdminNote,
         OpeningHours = store.OpeningHours,
         Documents = store.Verifications.Select(v => new StoreDocumentDto
         {
@@ -31,6 +32,7 @@ internal static class StoreMappings
             VerificationType = v.VerificationType.ToString(),
             DocumentUrl = v.DocumentUrl,
             Status = v.Status.ToString(),
+            ReviewNote = v.ReviewNote,
         }).ToArray(),
     };
 }
