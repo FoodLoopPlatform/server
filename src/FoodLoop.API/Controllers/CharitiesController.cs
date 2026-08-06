@@ -1,8 +1,8 @@
-using FoodLoop.API.Common;
+﻿using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
-using FoodLoop.Application.DTOs.Stores;
-using FoodLoop.Application.Features.Stores.Commands;
+using FoodLoop.Application.DTOs.Organizations;
+using FoodLoop.Application.Features.Organizations.Commands;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +29,7 @@ public class CharitiesController : ControllerBase
         _loc = loc;
     }
 
-    /// <summary>POST /charities/me/documents — step 2's document upload for Charities.
+    /// <summary>POST /charities/me/documents â€” step 2's document upload for Charities.
     /// Does not require authentication: the charity is identified by the owner's registered email.
     /// Call once per slot with type = AssociationCertificate | CharityBylaws | BoardOfDirectorsList.</summary>
     [HttpPost("me/documents")]
@@ -62,8 +62,8 @@ public class CharitiesController : ControllerBase
             ContentType = request.File.ContentType,
         };
 
-        var store = await _mediator.Send(new UploadStoreDocumentCommand(request.Email, request.Type, uploadRequest), cancellationToken);
-        return Ok(ApiResponse<StoreDto>.Ok(store));
+        var organization = await _mediator.Send(new UploadOrganizationDocumentCommand(request.Email, request.Type, uploadRequest), cancellationToken);
+        return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
 }
 
@@ -79,3 +79,4 @@ public class UploadCharityDocumentRequest
     [Required]
     public IFormFile File { get; set; } = null!;
 }
+

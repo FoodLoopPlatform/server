@@ -1,9 +1,9 @@
-namespace FoodLoop.Application.DTOs.Admin;
+﻿namespace FoodLoop.Application.DTOs.Admin;
 
 public class AnalyticsSummaryDto
 {
     public UserMetricsDto Users { get; set; } = new();
-    public StoreMetricsDto Stores { get; set; } = new();
+    public StoreMetricsDto Organizations { get; set; } = new();
     public ProductMetricsDto Products { get; set; } = new();
     public OrderMetricsDto Orders { get; set; } = new();
     public decimal TotalRevenue { get; set; }
@@ -43,3 +43,4 @@ public class OrderMetricsDto
     public int Completed { get; set; }
     public int Cancelled { get; set; }
 }
+

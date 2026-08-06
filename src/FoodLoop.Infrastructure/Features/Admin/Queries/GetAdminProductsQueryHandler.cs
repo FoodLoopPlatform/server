@@ -1,4 +1,4 @@
-using FoodLoop.Application.DTOs.Admin;
+﻿using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
@@ -25,7 +25,7 @@ public class GetAdminProductsQueryHandler : IRequestHandler<GetAdminProductsQuer
     public async Task<IReadOnlyList<AdminProductDto>> Handle(GetAdminProductsQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Products
-            .Include(l => l.Store)
+            .Include(l => l.Organization)
             .Include(l => l.Category)
             .Include(l => l.AIRecognitionResult)
             .Where(l => !l.IsDeleted)
@@ -36,9 +36,9 @@ public class GetAdminProductsQueryHandler : IRequestHandler<GetAdminProductsQuer
             query = query.Where(l => l.Status == status);
         }
 
-        if (request.StoreId.HasValue)
+        if (request.OrganizationId.HasValue)
         {
-            query = query.Where(l => l.StoreId == request.StoreId.Value);
+            query = query.Where(l => l.OrganizationId == request.OrganizationId.Value);
         }
 
         var products = await query
@@ -50,8 +50,8 @@ public class GetAdminProductsQueryHandler : IRequestHandler<GetAdminProductsQuer
         return products.Select(l => new AdminProductDto
         {
             Id = l.Id,
-            StoreId = l.StoreId,
-            StoreName = l.Store?.Name ?? string.Empty,
+            OrganizationId = l.OrganizationId,
+            StoreName = l.Organization?.Name ?? string.Empty,
             CategoryId = l.CategoryId,
             CategoryName = l.Category?.Name ?? string.Empty,
             Title = l.Title,
@@ -67,4 +67,5 @@ public class GetAdminProductsQueryHandler : IRequestHandler<GetAdminProductsQuer
         }).ToList();
     }
 }
+
 

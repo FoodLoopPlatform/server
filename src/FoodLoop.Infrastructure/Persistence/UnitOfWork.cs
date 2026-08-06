@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Domain.Common;
 using FoodLoop.Infrastructure.Persistence.Repositories;
@@ -13,7 +13,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     private IDbContextTransaction? _transaction;
 
     private IAddressRepository? _addresses;
-    private IStoreRepository? _stores;
+    private IOrganizationRepository? _stores;
     private IRefreshTokenRepository? _refreshTokens;
 
     public UnitOfWork(ApplicationDbContext context)
@@ -22,7 +22,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     }
 
     public IAddressRepository Addresses => _addresses ??= new AddressRepository(_context);
-    public IStoreRepository Stores => _stores ??= new StoreRepository(_context);
+    public IOrganizationRepository Organizations => _stores ??= new OrganizationRepository(_context);
     public IRefreshTokenRepository RefreshTokens => _refreshTokens ??= new RefreshTokenRepository(_context);
 
     public IRepository<TEntity> Repository<TEntity>() where TEntity : BaseEntity
@@ -77,3 +77,4 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         GC.SuppressFinalize(this);
     }
 }
+

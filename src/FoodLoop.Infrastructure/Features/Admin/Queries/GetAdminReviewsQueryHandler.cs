@@ -1,4 +1,4 @@
-using FoodLoop.Application.DTOs.Admin;
+﻿using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Infrastructure.Persistence;
 using MediatR;
@@ -22,7 +22,7 @@ public class GetAdminReviewsQueryHandler : IRequestHandler<GetAdminReviewsQuery,
     public async Task<IReadOnlyList<AdminReviewDto>> Handle(GetAdminReviewsQuery request, CancellationToken cancellationToken)
     {
         var query = _context.Reviews
-            .Include(r => r.Store)
+            .Include(r => r.Organization)
             .AsQueryable();
 
         if (request.Rating.HasValue)
@@ -30,9 +30,9 @@ public class GetAdminReviewsQueryHandler : IRequestHandler<GetAdminReviewsQuery,
             query = query.Where(r => r.Rating == request.Rating.Value);
         }
 
-        if (request.StoreId.HasValue)
+        if (request.OrganizationId.HasValue)
         {
-            query = query.Where(r => r.StoreId == request.StoreId.Value);
+            query = query.Where(r => r.OrganizationId == request.OrganizationId.Value);
         }
 
         var reviews = await query
@@ -52,12 +52,13 @@ public class GetAdminReviewsQueryHandler : IRequestHandler<GetAdminReviewsQuery,
             OrderId = r.OrderId,
             UserId = r.UserId,
             CustomerName = users.TryGetValue(r.UserId, out var name) ? name : "Unknown Customer",
-            StoreId = r.StoreId,
-            StoreName = r.Store?.Name ?? "Unknown Store",
+            OrganizationId = r.OrganizationId,
+            StoreName = r.Organization?.Name ?? "Unknown Organization",
             Rating = r.Rating,
             Comment = r.Comment,
             CreatedAt = r.CreatedAt
         }).ToList();
     }
 }
+
 

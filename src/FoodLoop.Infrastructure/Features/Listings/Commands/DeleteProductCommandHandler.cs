@@ -1,8 +1,8 @@
-using FoodLoop.Application.Common.Exceptions;
+﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Features.Listings.Commands;
 using FoodLoop.Domain.Entities;
-using FoodLoop.Infrastructure.Features.Stores;
+using FoodLoop.Infrastructure.Features.Organizations;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -22,14 +22,15 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand>
 
     public async Task Handle(DeleteProductCommand command, CancellationToken cancellationToken)
     {
-        var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Store not found.", cancellationToken);
+        var organization = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Organization not found.", cancellationToken);
 
         var product = await _unitOfWork.Repository<Product>().Query()
-            .FirstOrDefaultAsync(l => l.Id == command.ProductId && l.StoreId == store.Id && !l.IsDeleted, cancellationToken)
+            .FirstOrDefaultAsync(l => l.Id == command.ProductId && l.OrganizationId == organization.Id && !l.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Product", command.ProductId);
 
         _unitOfWork.Repository<Product>().Remove(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
+
 

@@ -1,4 +1,4 @@
-using FoodLoop.Domain.Entities;
+﻿using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Options;
 using FoodLoop.Infrastructure.Persistence;
@@ -112,12 +112,12 @@ public static class IdentitySeeder
 
         var standardCategories = new List<(string Name, string NameAr)>
         {
-            ("Fruits & Vegetables", "خضروات وفواكه"),
-            ("Bakery", "مخبوزات"),
-            ("Dairy & Eggs", "ألبان وبيض"),
-            ("Meals", "وجبات جاهزة"),
-            ("Groceries", "مواد غذائية"),
-            ("Desserts", "حلويات")
+            ("Fruits & Vegetables", "Ø®Ø¶Ø±ÙˆØ§Øª ÙˆÙÙˆØ§ÙƒÙ‡"),
+            ("Bakery", "Ù…Ø®Ø¨ÙˆØ²Ø§Øª"),
+            ("Dairy & Eggs", "Ø£Ù„Ø¨Ø§Ù† ÙˆØ¨ÙŠØ¶"),
+            ("Meals", "ÙˆØ¬Ø¨Ø§Øª Ø¬Ø§Ù‡Ø²Ø©"),
+            ("Groceries", "Ù…ÙˆØ§Ø¯ ØºØ°Ø§Ø¦ÙŠØ©"),
+            ("Desserts", "Ø­Ù„ÙˆÙŠØ§Øª")
         };
 
         var addedAny = false;
@@ -164,7 +164,7 @@ public static class IdentitySeeder
             await userManager.CreateAsync(spinneysUser, "Password@123");
             await userManager.AddToRoleAsync(spinneysUser, AppRole.Merchant);
 
-            var store = new Store
+            var organization = new Organization
             {
                 Id = Guid.NewGuid(),
                 OwnerId = spinneysUser.Id,
@@ -178,7 +178,7 @@ public static class IdentitySeeder
                 BuildingNo = "24",
                 AverageRating = 4.5
             };
-            context.Stores.Add(store);
+            context.Organizations.Add(organization);
             await context.SaveChangesAsync();
 
             var fruitsCategory = context.Categories.FirstOrDefault(c => c.Name == "Fruits & Vegetables");
@@ -189,10 +189,10 @@ public static class IdentitySeeder
             {
                 context.Products.Add(new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = fruitsCategory.Id,
                     Title = "Organic Bananas",
-                    TitleAr = "موز عضوي",
+                    TitleAr = "Ù…ÙˆØ² Ø¹Ø¶ÙˆÙŠ",
                     Description = "Sweet import organic bananas",
                     OriginalPrice = 10,
                     DiscountedPrice = 5,
@@ -206,10 +206,10 @@ public static class IdentitySeeder
             {
                 context.Products.Add(new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = bakeryCategory.Id,
                     Title = "Fresh Whole Wheat Toast",
-                    TitleAr = "توست بني طازج",
+                    TitleAr = "ØªÙˆØ³Øª Ø¨Ù†ÙŠ Ø·Ø§Ø²Ø¬",
                     Description = "Soft bakery toast slices",
                     OriginalPrice = 15,
                     DiscountedPrice = 8,
@@ -223,10 +223,10 @@ public static class IdentitySeeder
             {
                 context.Products.Add(new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = dairyCategory.Id,
                     Title = "Greek Yogurt",
-                    TitleAr = "زبادي يوناني",
+                    TitleAr = "Ø²Ø¨Ø§Ø¯ÙŠ ÙŠÙˆÙ†Ø§Ù†ÙŠ",
                     Description = "Thick high-protein yogurt",
                     OriginalPrice = 25,
                     DiscountedPrice = 15,
@@ -243,10 +243,10 @@ public static class IdentitySeeder
             {
                 var pendingApple = new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = fruitsCategory.Id,
                     Title = "Unreviewed Red Apples",
-                    TitleAr = "تفاح أحمر غير مراجع",
+                    TitleAr = "ØªÙØ§Ø­ Ø£Ø­Ù…Ø± ØºÙŠØ± Ù…Ø±Ø§Ø¬Ø¹",
                     Description = "Imported apples requiring moderation review",
                     OriginalPrice = 30,
                     DiscountedPrice = 15,
@@ -270,10 +270,10 @@ public static class IdentitySeeder
             {
                 var pendingCroissant = new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = bakeryCategory.Id,
                     Title = "Unreviewed Butter Croissant",
-                    TitleAr = "كرواسون زبدة غير مراجع",
+                    TitleAr = "ÙƒØ±ÙˆØ§Ø³ÙˆÙ† Ø²Ø¨Ø¯Ø© ØºÙŠØ± Ù…Ø±Ø§Ø¬Ø¹",
                     Description = "Fresh croissant needing status verification",
                     OriginalPrice = 12,
                     DiscountedPrice = 6,
@@ -313,7 +313,7 @@ public static class IdentitySeeder
             await userManager.CreateAsync(carrefourUser, "Password@123");
             await userManager.AddToRoleAsync(carrefourUser, AppRole.Merchant);
 
-            var store = new Store
+            var organization = new Organization
             {
                 Id = Guid.NewGuid(),
                 OwnerId = carrefourUser.Id,
@@ -327,7 +327,7 @@ public static class IdentitySeeder
                 BuildingNo = "100",
                 AverageRating = 4.2
             };
-            context.Stores.Add(store);
+            context.Organizations.Add(organization);
             await context.SaveChangesAsync();
 
             var fruitsCategory = context.Categories.FirstOrDefault(c => c.Name == "Fruits & Vegetables");
@@ -339,10 +339,10 @@ public static class IdentitySeeder
             {
                 context.Products.Add(new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = fruitsCategory.Id,
                     Title = "Red Apple Bag",
-                    TitleAr = "كيس تفاح أحمر",
+                    TitleAr = "ÙƒÙŠØ³ ØªÙØ§Ø­ Ø£Ø­Ù…Ø±",
                     OriginalPrice = 40,
                     DiscountedPrice = 20,
                     QuantityAvailable = 15,
@@ -355,10 +355,10 @@ public static class IdentitySeeder
             {
                 context.Products.Add(new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = bakeryCategory.Id,
                     Title = "Croissant Box",
-                    TitleAr = "علبة كرواسون",
+                    TitleAr = "Ø¹Ù„Ø¨Ø© ÙƒØ±ÙˆØ§Ø³ÙˆÙ†",
                     OriginalPrice = 30,
                     DiscountedPrice = 18,
                     QuantityAvailable = 12,
@@ -371,10 +371,10 @@ public static class IdentitySeeder
             {
                 context.Products.Add(new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = dairyCategory.Id,
                     Title = "Cheddar Cheese Block",
-                    TitleAr = "قالب جبن شيدر",
+                    TitleAr = "Ù‚Ø§Ù„Ø¨ Ø¬Ø¨Ù† Ø´ÙŠØ¯Ø±",
                     OriginalPrice = 80,
                     DiscountedPrice = 45,
                     QuantityAvailable = 8,
@@ -387,10 +387,10 @@ public static class IdentitySeeder
             {
                 context.Products.Add(new Product
                 {
-                    StoreId = store.Id,
+                    OrganizationId = organization.Id,
                     CategoryId = mealsCategory.Id,
                     Title = "Beef Lasagna Ready Meal",
-                    TitleAr = "وجبة لازانيا لحم جاهزة",
+                    TitleAr = "ÙˆØ¬Ø¨Ø© Ù„Ø§Ø²Ø§Ù†ÙŠØ§ Ù„Ø­Ù… Ø¬Ø§Ù‡Ø²Ø©",
                     OriginalPrice = 120,
                     DiscountedPrice = 60,
                     QuantityAvailable = 5,
@@ -403,7 +403,7 @@ public static class IdentitySeeder
             logger.LogInformation("Seeded Carrefour merchant and products.");
         }
 
-        // Seed a pending store
+        // Seed a pending organization
         var pendingEmail = "merchant.pending@example.com";
         var pendingUser = await userManager.FindByEmailAsync(pendingEmail);
         if (pendingUser == null)
@@ -419,7 +419,7 @@ public static class IdentitySeeder
             await userManager.CreateAsync(pendingUser, "Password@123");
             await userManager.AddToRoleAsync(pendingUser, AppRole.Merchant);
 
-            var store = new Store
+            var organization = new Organization
             {
                 Id = Guid.NewGuid(),
                 OwnerId = pendingUser.Id,
@@ -433,9 +433,9 @@ public static class IdentitySeeder
                 BuildingNo = "12",
                 AverageRating = 0.0
             };
-            context.Stores.Add(store);
+            context.Organizations.Add(organization);
             await context.SaveChangesAsync();
-            logger.LogInformation("Seeded pending merchant user & store.");
+            logger.LogInformation("Seeded pending merchant user & organization.");
         }
 
         // Ensure every single product in the database has an AIRecognitionResult

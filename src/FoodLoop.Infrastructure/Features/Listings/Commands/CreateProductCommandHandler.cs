@@ -1,10 +1,10 @@
-using FoodLoop.Application.Common.Exceptions;
+﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Listings;
 using FoodLoop.Application.Features.Listings.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
-using FoodLoop.Infrastructure.Features.Stores;
+using FoodLoop.Infrastructure.Features.Organizations;
 using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using System;
@@ -24,10 +24,10 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
     public async Task<ProductDto> Handle(CreateProductCommand command, CancellationToken cancellationToken)
     {
-        var store = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Store not found.", cancellationToken);
-        if (store.VerificationStatus != VerificationStatus.Verified)
+        var organization = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Organization not found.", cancellationToken);
+        if (organization.VerificationStatus != VerificationStatus.Verified)
         {
-            throw new ArgumentException("Your store must be verified by an admin before you can manage products.");
+            throw new ArgumentException("Your organization must be verified by an admin before you can manage products.");
         }
 
         var category = await _unitOfWork.Repository<Category>().GetByIdAsync(command.CategoryId, cancellationToken)
@@ -50,7 +50,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
         var product = new Product
         {
-            StoreId = store.Id,
+            OrganizationId = organization.Id,
             CategoryId = command.CategoryId,
             Title = command.Title,
             TitleAr = command.TitleAr,
@@ -72,4 +72,5 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         return product.ToDto();
     }
 }
+
 

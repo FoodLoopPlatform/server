@@ -1,4 +1,4 @@
-using FoodLoop.Domain.Entities;
+﻿using FoodLoop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,7 +10,8 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
     {
         builder.Property(r => r.Comment).HasMaxLength(1000);
 
-        builder.HasIndex(r => r.StoreId);
+        builder.HasIndex(r => r.OrganizationId);
         builder.HasIndex(r => r.Rating);
     }
 }
+

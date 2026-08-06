@@ -1,9 +1,9 @@
-using FoodLoop.Application.Common.Interfaces;
+﻿using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Listings;
 using FoodLoop.Application.Features.Listings.Queries;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
-using FoodLoop.Infrastructure.Features.Stores;
+using FoodLoop.Infrastructure.Features.Organizations;
 using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -26,12 +26,12 @@ public class GetMyProductsQueryHandler : IRequestHandler<GetMyProductsQuery, IRe
 
     public async Task<IReadOnlyList<ProductDto>> Handle(GetMyProductsQuery query, CancellationToken cancellationToken)
     {
-        var store = await _unitOfWork.FindByOwnerOrThrowAsync(query.OwnerId, "Store not found.", cancellationToken);
+        var organization = await _unitOfWork.FindByOwnerOrThrowAsync(query.OwnerId, "Organization not found.", cancellationToken);
 
         var dbQuery = _unitOfWork.Repository<Product>().Query()
             .Include(l => l.Category)
             .Include(l => l.Images)
-            .Where(l => l.StoreId == store.Id && !l.IsDeleted)
+            .Where(l => l.OrganizationId == organization.Id && !l.IsDeleted)
             .AsQueryable();
 
         if (query.CategoryId.HasValue)
@@ -62,4 +62,5 @@ public class GetMyProductsQueryHandler : IRequestHandler<GetMyProductsQuery, IRe
         return products.Select(l => l.ToDto()).ToList();
     }
 }
+
 

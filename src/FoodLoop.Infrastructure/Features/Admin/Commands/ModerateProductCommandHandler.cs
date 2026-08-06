@@ -1,4 +1,4 @@
-using FoodLoop.Application.Common.Exceptions;
+﻿using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Commands;
 using FoodLoop.Domain.Entities;
@@ -26,7 +26,7 @@ public class ModerateProductCommandHandler
         ModerateProductCommand request, CancellationToken cancellationToken)
     {
         var product = await _context.Products
-            .Include(p => p.Store)
+            .Include(p => p.Organization)
             .Include(p => p.Category)
             .Include(p => p.AIRecognitionResult)
             .FirstOrDefaultAsync(p => p.Id == request.ProductId && !p.IsDeleted, cancellationToken)
@@ -72,8 +72,8 @@ public class ModerateProductCommandHandler
         return new AdminProductDto
         {
             Id = product.Id,
-            StoreId = product.StoreId,
-            StoreName = product.Store?.Name ?? string.Empty,
+            OrganizationId = product.OrganizationId,
+            StoreName = product.Organization?.Name ?? string.Empty,
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.Name ?? string.Empty,
             Title = product.Title,
@@ -89,4 +89,5 @@ public class ModerateProductCommandHandler
         };
     }
 }
+
 
