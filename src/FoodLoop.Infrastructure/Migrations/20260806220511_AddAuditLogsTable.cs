@@ -60,9 +60,9 @@ namespace FoodLoop.Infrastructure.Migrations
                         ELSE CONCAT('New account registered with email ', u.Email, '.')
                     END,
                     u.CreatedAt
-                FROM AspNetUsers u
-                LEFT JOIN AspNetUserRoles ur ON u.Id = ur.UserId
-                LEFT JOIN AspNetRoles r ON ur.RoleId = r.Id
+                FROM Users u
+                LEFT JOIN UserRoles ur ON u.Id = ur.UserId
+                LEFT JOIN Roles r ON ur.RoleId = r.Id
                 LEFT JOIN Organizations o ON u.Id = o.OwnerId;
             ");
 
@@ -92,7 +92,7 @@ namespace FoodLoop.Infrastructure.Migrations
                     'Document Uploaded', 
                     CONCAT('Uploaded ', v.VerificationType, ' document.'), 
                     v.CreatedAt
-                FROM StoreVerifications v
+                FROM OrganizationVerifications v
                 JOIN Organizations o ON v.OrganizationId = o.Id;
             ");
 
@@ -107,7 +107,7 @@ namespace FoodLoop.Infrastructure.Migrations
                     'Document Reviewed', 
                     CONCAT(v.VerificationType, ' was marked ', v.Status, ' by admin.'), 
                     v.ReviewedAt
-                FROM StoreVerifications v
+                FROM OrganizationVerifications v
                 WHERE v.ReviewedAt IS NOT NULL;
             ");
 
