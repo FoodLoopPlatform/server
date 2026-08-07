@@ -4,11 +4,45 @@
 
 set -e
 
-# Cleanup temporary files automatically on exit
-cleanup() {
+# Teardown / Cleanup Section for created entities
+teardown() {
+    # Don't let errors in cleanup abort the script exit
+    set +e
+    echo -e "\n--- Executing Self-Cleanup Teardown ---"
+
+    # 1. Delete review if created
+    if [ -n "$REVIEW_ID" ] && [ -n "$ADMIN_TOKEN" ]; then
+        echo "[CLEANUP] Deleting Review ID: $REVIEW_ID"
+        send_request "DELETE" "/admin/reviews/$REVIEW_ID" "" "$ADMIN_TOKEN" >/dev/null || true
+    fi
+
+    # 2. Delete product if created
+    if [ -n "$PRODUCT_ID" ]; then
+        echo "[CLEANUP] Deleting Product ID: $PRODUCT_ID"
+        if [ -n "$ADMIN_TOKEN" ]; then
+            send_request "DELETE" "/admin/products/$PRODUCT_ID" "" "$ADMIN_TOKEN" >/dev/null || true
+        elif [ -n "$MERCHANT_TOKEN" ]; then
+            send_request "DELETE" "/stores/me/products/$PRODUCT_ID" "" "$MERCHANT_TOKEN" >/dev/null || true
+        fi
+    fi
+
+    # 3. Delete address if created
+    if [ -n "$ADDRESS_ID" ] && [ -n "$CUSTOMER_TOKEN" ]; then
+        echo "[CLEANUP] Deleting Address ID: $ADDRESS_ID"
+        send_request "DELETE" "/users/me/addresses/$ADDRESS_ID" "" "$CUSTOMER_TOKEN" >/dev/null || true
+    fi
+
+    # 4. Delete admin created user if created
+    if [ -n "$ADM_USER_ID" ] && [ -n "$ADMIN_TOKEN" ]; then
+        echo "[CLEANUP] Deleting User ID: $ADM_USER_ID"
+        send_request "DELETE" "/users/$ADM_USER_ID" "" "$ADMIN_TOKEN" >/dev/null || true
+    fi
+
+    # Remove temporary files
     rm -f temp_payload.json mock_cr.pdf mock_charity_cr.pdf mock_img.png bulk_prd.csv test.pdf
 }
-trap cleanup EXIT INT TERM
+trap teardown EXIT INT TERM
+
 
 
 # --- Configuration & Environment Setup ---
@@ -37,6 +71,9 @@ REVIEW_ID=""
 SUPPORT_TICKET_ID=""
 NOTIFICATION_ID=""
 IMAGE_ID=""
+ADM_USER_ID=""
+ADDRESS_ID=""
+
 
 # Helper function to extract a value from JSON using simple grep/regex
 get_json_value() {
@@ -117,13 +154,6 @@ assert_status() {
 # ==============================================================================
 echo -e "\n--- Testing Health & Root Routes ---"
 
-# Scenario 0.0: Reset database state
-res=$(send_request "POST" "/test/reset-db")
-status=${res%%|*}
-body=${res#*|}
-assert_status "0.0: Reset database state" "$status" "200" "$body"
-
-
 # Scenario 0.1: GET / (Root Welcome Page)
 res=$(send_request "GET" "/")
 status=${res%%|*}
@@ -142,9 +172,10 @@ assert_status "0.2: GET Health Check" "$status" "200" "$body"
 echo -e "\n--- Testing Authentication Endpoints ---"
 
 # Scenario 1.1: Register (Happy Path)
-RANDOM_VAL=$((10000 + RANDOM % 90000))
+RANDOM_VAL="$(date +%s)_$((10000 + RANDOM % 90000))"
 MERCHANT_EMAIL="merchant.test${RANDOM_VAL}@example.com"
-REGISTER_PAYLOAD="{\"name\":\"Test Merchant\",\"email\":\"$MERCHANT_EMAIL\",\"password\":\"Password@123\",\"role\":\"Merchant\",\"businessName\":\"Test Organic Shop\"}"
+REGISTER_PAYLOAD="{\"name\":\"Test Merchant $RANDOM_VAL\",\"email\":\"$MERCHANT_EMAIL\",\"password\":\"Password@123\",\"role\":\"Merchant\",\"businessName\":\"Test Organic Shop $RANDOM_VAL\"}"
+
 
 res=$(send_request "POST" "/auth/register" "$REGISTER_PAYLOAD")
 status=${res%%|*}
@@ -234,7 +265,7 @@ fi
 
 # Log In / Register Customer
 CUSTOMER_EMAIL="customer.test${RANDOM_VAL}@example.com"
-CUSTOMER_REG_PAYLOAD="{\"name\":\"Test Customer\",\"email\":\"$CUSTOMER_EMAIL\",\"password\":\"Password@123\",\"role\":\"Customer\"}"
+CUSTOMER_REG_PAYLOAD="{\"name\":\"Test Customer $RANDOM_VAL\",\"email\":\"$CUSTOMER_EMAIL\",\"password\":\"Password@123\",\"role\":\"Customer\"}"
 res=$(send_request "POST" "/auth/register" "$CUSTOMER_REG_PAYLOAD")
 status=${res%%|*}
 body=${res#*|}
@@ -251,7 +282,7 @@ fi
 
 # Log In / Register Charity
 CHARITY_EMAIL="charity.test${RANDOM_VAL}@example.com"
-CHARITY_REG_PAYLOAD="{\"name\":\"Test Charity\",\"email\":\"$CHARITY_EMAIL\",\"password\":\"Password@123\",\"role\":\"Charity\",\"businessName\":\"Test Charity Org\"}"
+CHARITY_REG_PAYLOAD="{\"name\":\"Test Charity $RANDOM_VAL\",\"email\":\"$CHARITY_EMAIL\",\"password\":\"Password@123\",\"role\":\"Charity\",\"businessName\":\"Test Charity Org $RANDOM_VAL\"}"
 res=$(send_request "POST" "/auth/register" "$CHARITY_REG_PAYLOAD")
 
 res=$(send_request "POST" "/auth/login" "{\"email\":\"$CHARITY_EMAIL\",\"password\":\"Password@123\"}")
@@ -280,7 +311,8 @@ body=${res#*|}
 assert_status "2.2: Get Profile Without Bearer Token" "$status" "401" "$body"
 
 # Scenario 2.3: Update Profile (Happy Path)
-UPDATE_PROFILE_PAYLOAD="{\"fullName\":\"Updated Customer Name\",\"language\":\"ar\",\"phoneNumber\":\"01012345678\"}"
+C_PHONE="010$((10000000 + RANDOM % 90000000))"
+UPDATE_PROFILE_PAYLOAD="{\"fullName\":\"Updated Customer Name $RANDOM_VAL\",\"language\":\"ar\",\"phoneNumber\":\"$C_PHONE\"}"
 res=$(send_request "PATCH" "/users/me" "$UPDATE_PROFILE_PAYLOAD" "$CUSTOMER_TOKEN")
 status=${res%%|*}
 body=${res#*|}
@@ -391,7 +423,7 @@ assert_status "3.4: Upload Charity Association Certificate" "$status" "200" "$bo
 # Scenario 3.5: Update Store Profile multipart (Happy Path)
 res=$(curl.exe -s -k -w "\n%{http_code}" -X PATCH \
   -H "Authorization: Bearer $MERCHANT_TOKEN" \
-  -F "Name=Spinneys Supermarket Updated" \
+  -F "Name=Spinneys Supermarket Updated $RANDOM_VAL" \
   -F "BusinessCategory=Supermarket" \
   "$BASE_URL/stores/me")
 status=$(echo "$res" | tail -n 1)
@@ -417,7 +449,7 @@ CATEGORY_ID=$(get_json_value "$body" "id")
 echo "[INFO] Loaded Dynamic Category ID: $CATEGORY_ID"
 
 # Scenario 4.1: Add Product (Happy Path)
-PRD_PAYLOAD="{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"Artisan Sourdough Loaf\",\"titleAr\":\"خبز ساوردو يدوي\",\"description\":\"Crispy sourdough bread.\",\"descriptionAr\":\"خبز مخبوز طازج.\",\"originalPrice\":15.00,\"discountedPrice\":7.50,\"quantityAvailable\":10,\"expirationDate\":\"2026-08-15\"}"
+PRD_PAYLOAD="{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"Artisan Sourdough Loaf $RANDOM_VAL\",\"titleAr\":\"خبز ساوردو يدوي $RANDOM_VAL\",\"description\":\"Crispy sourdough bread.\",\"descriptionAr\":\"خبز مخبوز طازج.\",\"originalPrice\":15.00,\"discountedPrice\":7.50,\"quantityAvailable\":10,\"expirationDate\":\"2026-08-15\"}"
 res=$(send_request "POST" "/stores/me/products" "$PRD_PAYLOAD" "$MERCHANT_TOKEN")
 status=${res%%|*}
 body=${res#*|}
@@ -483,7 +515,7 @@ fi
 
 # Scenario 4.9: Bulk Upload Products CSV (Happy Path)
 echo "title,originalprice,discountedprice,quantityavailable,expirationdate,categoryname" > bulk_prd.csv
-echo "Bulk Artisan Bread,20.00,10.00,15,2026-08-25,Bakery" >> bulk_prd.csv
+echo "Bulk Artisan Bread $RANDOM_VAL,20.00,10.00,15,2026-08-25,Bakery" >> bulk_prd.csv
 res=$(curl.exe -s -k -w "\n%{http_code}" -X POST \
   -H "Authorization: Bearer $MERCHANT_TOKEN" \
   -F "File=@bulk_prd.csv" \
@@ -573,7 +605,7 @@ assert_status "6.5: Transition Order to Completed" "$status" "200" "$body"
 echo -e "\n--- Testing Store Reviews ---"
 
 # Scenario 7.1: Leave Review (Happy Path)
-REVIEW_PAYLOAD="{\"orderId\":\"$ORDER_ID\",\"organizationId\":\"$ORGANIZATION_ID\",\"rating\":5,\"comment\":\"Exceptional service and sourdough!\"}"
+REVIEW_PAYLOAD="{\"orderId\":\"$ORDER_ID\",\"organizationId\":\"$ORGANIZATION_ID\",\"rating\":5,\"comment\":\"Exceptional service and sourdough! $RANDOM_VAL\"}"
 res=$(send_request "POST" "/reviews" "$REVIEW_PAYLOAD" "$CUSTOMER_TOKEN")
 status=${res%%|*}
 body=${res#*|}
@@ -625,7 +657,7 @@ assert_status "8.3: Mark All User Notifications As Read" "$status" "204" "$body"
 echo -e "\n--- Testing Customer Support Tickets ---"
 
 # Scenario 9.1: Create Support Ticket (Happy Path)
-TICKET_PAYLOAD="{\"category\":\"Refund\",\"message\":\"Refund delay query.\",\"priority\":\"High\"}"
+TICKET_PAYLOAD="{\"category\":\"Refund\",\"message\":\"Refund delay query $RANDOM_VAL.\",\"priority\":\"High\"}"
 res=$(send_request "POST" "/support-tickets" "$TICKET_PAYLOAD" "$CUSTOMER_TOKEN")
 status=${res%%|*}
 body=${res#*|}
@@ -829,7 +861,7 @@ if [ -n "$ADMIN_TOKEN" ]; then
     assert_status "10.22: Soft Delete Product Listing via Admin" "$status" "204" "$body"
 
     # Scenario 10.23: Get Admin created user details (Users direct Admin controller CRUD check)
-    ADMIN_CREATE_USER="{\"fullName\":\"Admin Direct User\",\"email\":\"admdirect${RANDOM_VAL}@example.com\",\"password\":\"Password@123\",\"role\":\"Customer\"}"
+    ADMIN_CREATE_USER="{\"fullName\":\"Admin Direct User $RANDOM_VAL\",\"email\":\"admdirect_${RANDOM_VAL}@example.com\",\"password\":\"Password@123\",\"role\":\"Customer\"}"
     res=$(send_request "POST" "/users" "$ADMIN_CREATE_USER" "$ADMIN_TOKEN")
     status=${res%%|*}
     body=${res#*|}
