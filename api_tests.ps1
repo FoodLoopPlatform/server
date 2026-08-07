@@ -116,10 +116,17 @@ function Assert-Status {
     }
 }
 
+try {
+
 # ==============================================================================
 # SECTION 0: ROOT & HEALTH CHECK ENDPOINTS
 # ==============================================================================
 Write-Host "`n--- Testing Health & Root Routes ---" -ForegroundColor Yellow
+
+# Scenario 0.0: Reset database state
+$res = Send-Request -Method "POST" -Route "/test/reset-db"
+Assert-Status -Scenario "0.0: Reset database state" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.RawContent
+
 
 # Scenario 0.1: GET /
 $res = Send-Request -Method "GET" -Route "/"
@@ -806,19 +813,24 @@ if ($AdminToken) {
     # Scenario 10.26: Admin delete user directly
     $res = Send-Request -Method "DELETE" -Route "/users/$AdmUserId" -Token $AdminToken
     Assert-Status -Scenario "10.26: Admin Delete User Account Directly" -ActualCode $res.StatusCode -ExpectedCode 204 -Data $res.Data
+
+    # ==============================================================================
+    # TEST RUN SUMMARY
+    # ==============================================================================
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "FoodLoop Automated Integration Test Suite Completed" -ForegroundColor Cyan
+    Write-Host "TOTAL PASSED ASSERTIONS: $PassCount" -ForegroundColor Green
+    Write-Host "TOTAL FAILED ASSERTIONS: $FailCount" -ForegroundColor (If ($FailCount -eq 0) { "Green" } Else { "Red" })
+    Write-Host "==========================================================" -ForegroundColor Cyan
+
+    if ($FailCount -eq 0) {
+        exit 0
+    } else {
+        exit 1
+    }
+}
+finally {
+    Write-Host "Cleaning up temporary files..."
+    Remove-Item -Path "temp_payload.json", "mock_cr.pdf", "mock_charity_cr.pdf", "mock_img.png", "bulk_prd.csv" -ErrorAction SilentlyContinue
 }
 
-# ==============================================================================
-# TEST RUN SUMMARY
-# ==============================================================================
-Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "FoodLoop Automated Integration Test Suite Completed" -ForegroundColor Cyan
-Write-Host "TOTAL PASSED ASSERTIONS: $PassCount" -ForegroundColor Green
-Write-Host "TOTAL FAILED ASSERTIONS: $FailCount" -ForegroundColor (If ($FailCount -eq 0) { "Green" } Else { "Red" })
-Write-Host "==========================================================" -ForegroundColor Cyan
-
-if ($FailCount -eq 0) {
-    exit 0
-} else {
-    exit 1
-}

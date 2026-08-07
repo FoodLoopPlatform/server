@@ -4,6 +4,13 @@
 
 set -e
 
+# Cleanup temporary files automatically on exit
+cleanup() {
+    rm -f temp_payload.json mock_cr.pdf mock_charity_cr.pdf mock_img.png bulk_prd.csv test.pdf
+}
+trap cleanup EXIT INT TERM
+
+
 # --- Configuration & Environment Setup ---
 BASE_URL="http://127.0.0.1:5267" # Default local HTTP port from launchSettings.json
 echo "=========================================================="
@@ -109,6 +116,13 @@ assert_status() {
 # SECTION 0: ROOT & HEALTH CHECK ENDPOINTS
 # ==============================================================================
 echo -e "\n--- Testing Health & Root Routes ---"
+
+# Scenario 0.0: Reset database state
+res=$(send_request "POST" "/test/reset-db")
+status=${res%%|*}
+body=${res#*|}
+assert_status "0.0: Reset database state" "$status" "200" "$body"
+
 
 # Scenario 0.1: GET / (Root Welcome Page)
 res=$(send_request "GET" "/")
