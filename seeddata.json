@@ -1,0 +1,1067 @@
+{
+  "Roles": [
+    {
+      "Id": "role-admin-guid-0000-0000-000000000001",
+      "Name": "Admin",
+      "NormalizedName": "ADMIN",
+      "ConcurrencyStamp": "stamp-admin-role-concurrency"
+    },
+    {
+      "Id": "role-merchant-guid-0000-0000-000000000002",
+      "Name": "Merchant",
+      "NormalizedName": "MERCHANT",
+      "ConcurrencyStamp": "stamp-merchant-role-concurrency"
+    },
+    {
+      "Id": "role-customer-guid-0000-0000-000000000003",
+      "Name": "Customer",
+      "NormalizedName": "CUSTOMER",
+      "ConcurrencyStamp": "stamp-customer-role-concurrency"
+    },
+    {
+      "Id": "role-charity-guid-0000-0000-000000000004",
+      "Name": "Charity",
+      "NormalizedName": "CHARITY",
+      "ConcurrencyStamp": "stamp-charity-role-concurrency"
+    }
+  ],
+  "Users": [
+    {
+      "Id": "usr-admin-guid-0000-0000-000000000001",
+      "UserName": "admin@foodloop.com",
+      "NormalizedUserName": "ADMIN@FOODLOOP.COM",
+      "Email": "admin@foodloop.com",
+      "NormalizedEmail": "ADMIN@FOODLOOP.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-admin",
+      "ConcurrencyStamp": "concurrency-stamp-admin",
+      "PhoneNumber": "+201011111111",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "System Administrator",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": false,
+      "CreatedAt": "2026-07-28T22:06:06.7492953+00:00"
+    },
+    {
+      "Id": "usr-spinneys-guid-0000-0000-000000000002",
+      "UserName": "merchant.spinneys@example.com",
+      "NormalizedUserName": "MERCHANT.SPINNEYS@EXAMPLE.COM",
+      "Email": "merchant.spinneys@example.com",
+      "NormalizedEmail": "MERCHANT.SPINNEYS@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-spinneys",
+      "ConcurrencyStamp": "concurrency-stamp-spinneys",
+      "PhoneNumber": "+201022222222",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Spinneys Manager",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": true,
+      "CreatedAt": "2026-07-28T22:30:00.0000000+00:00"
+    },
+    {
+      "Id": "usr-carrefour-guid-0000-0000-000000000003",
+      "UserName": "merchant.carrefour@example.com",
+      "NormalizedUserName": "MERCHANT.CARREFOUR@EXAMPLE.COM",
+      "Email": "merchant.carrefour@example.com",
+      "NormalizedEmail": "MERCHANT.CARREFOUR@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-carrefour",
+      "ConcurrencyStamp": "concurrency-stamp-carrefour",
+      "PhoneNumber": "+201033333333",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Carrefour Manager",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": false,
+      "CreatedAt": "2026-07-28T22:35:00.0000000+00:00"
+    },
+    {
+      "Id": "usr-metro-guid-0000-0000-000000000004",
+      "UserName": "merchant.metro@example.com",
+      "NormalizedUserName": "MERCHANT.METRO@EXAMPLE.COM",
+      "Email": "merchant.metro@example.com",
+      "NormalizedEmail": "MERCHANT.METRO@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-metro",
+      "ConcurrencyStamp": "concurrency-stamp-metro",
+      "PhoneNumber": "+201077777777",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Metro Markets Admin",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": false,
+      "CreatedAt": "2026-07-29T08:00:00Z"
+    },
+    {
+      "Id": "usr-seoudi-guid-0000-0000-000000000005",
+      "UserName": "merchant.seoudi@example.com",
+      "NormalizedUserName": "MERCHANT.SEOUDI@EXAMPLE.COM",
+      "Email": "merchant.seoudi@example.com",
+      "NormalizedEmail": "MERCHANT.SEOUDI@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-seoudi",
+      "ConcurrencyStamp": "concurrency-stamp-seoudi",
+      "PhoneNumber": "+201088888888",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Seoudi Supermarkets Owner",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": true,
+      "CreatedAt": "2026-07-29T09:00:00Z"
+    },
+    {
+      "Id": "usr-customer1-guid-0000-0000-000000000006",
+      "UserName": "customer.test@example.com",
+      "NormalizedUserName": "CUSTOMER.TEST@EXAMPLE.COM",
+      "Email": "customer.test@example.com",
+      "NormalizedEmail": "CUSTOMER.TEST@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-customer",
+      "ConcurrencyStamp": "concurrency-stamp-customer",
+      "PhoneNumber": "+201044444444",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Customer Test",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": false,
+      "CreatedAt": "2026-07-29T10:00:00Z"
+    },
+    {
+      "Id": "usr-customer2-guid-0000-0000-000000000007",
+      "UserName": "customer2.test@example.com",
+      "NormalizedUserName": "CUSTOMER2.TEST@EXAMPLE.COM",
+      "Email": "customer2.test@example.com",
+      "NormalizedEmail": "CUSTOMER2.TEST@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-customer2",
+      "ConcurrencyStamp": "concurrency-stamp-customer2",
+      "PhoneNumber": "+201055555555",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Sara Smith",
+      "Language": "ar",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": true,
+      "CreatedAt": "2026-07-29T11:00:00Z"
+    },
+    {
+      "Id": "usr-customer3-guid-0000-0000-000000000008",
+      "UserName": "alex.green@example.com",
+      "NormalizedUserName": "ALEX.GREEN@EXAMPLE.COM",
+      "Email": "alex.green@example.com",
+      "NormalizedEmail": "ALEX.GREEN@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-customer3",
+      "ConcurrencyStamp": "concurrency-stamp-customer3",
+      "PhoneNumber": "+201099999999",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Alex Green",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": false,
+      "CreatedAt": "2026-07-29T15:00:00Z"
+    },
+    {
+      "Id": "usr-customer4-guid-0000-0000-000000000009",
+      "UserName": "mariam.fahmy@example.com",
+      "NormalizedUserName": "MARIAM.FAHMY@EXAMPLE.COM",
+      "Email": "mariam.fahmy@example.com",
+      "NormalizedEmail": "MARIAM.FAHMY@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-customer4",
+      "ConcurrencyStamp": "concurrency-stamp-customer4",
+      "PhoneNumber": "+201000000001",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Mariam Fahmy",
+      "Language": "ar",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": true,
+      "CreatedAt": "2026-07-29T16:00:00Z"
+    },
+    {
+      "Id": "usr-charity1-guid-0000-0000-000000000010",
+      "UserName": "charity.helphand@example.com",
+      "NormalizedUserName": "CHARITY.HELPHAND@EXAMPLE.COM",
+      "Email": "charity.helphand@example.com",
+      "NormalizedEmail": "CHARITY.HELPHAND@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-charity1",
+      "ConcurrencyStamp": "concurrency-stamp-charity1",
+      "PhoneNumber": "+201066666666",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Helphand Rep",
+      "Language": "en",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": false,
+      "CreatedAt": "2026-07-29T12:00:00Z"
+    },
+    {
+      "Id": "usr-charity2-guid-0000-0000-000000000011",
+      "UserName": "charity.foodbank@example.com",
+      "NormalizedUserName": "CHARITY.FOODBANK@EXAMPLE.COM",
+      "Email": "charity.foodbank@example.com",
+      "NormalizedEmail": "CHARITY.FOODBANK@EXAMPLE.COM",
+      "EmailConfirmed": true,
+      "PasswordHash": "AQAAAAEAACcQAAAAEFH...",
+      "SecurityStamp": "security-stamp-charity2",
+      "ConcurrencyStamp": "concurrency-stamp-charity2",
+      "PhoneNumber": "+201000000002",
+      "PhoneNumberConfirmed": true,
+      "TwoFactorEnabled": false,
+      "LockoutEnabled": true,
+      "AccessFailedCount": 0,
+      "FullName": "Egyptian Food Bank Rep",
+      "Language": "ar",
+      "Status": 0,
+      "OrderUpdatesEnabled": true,
+      "MarketingNotificationsEnabled": false,
+      "CreatedAt": "2026-07-29T13:00:00Z"
+    }
+  ],
+  "UserRoles": [
+    {
+      "UserId": "usr-admin-guid-0000-0000-000000000001",
+      "RoleId": "role-admin-guid-0000-0000-000000000001"
+    },
+    {
+      "UserId": "usr-spinneys-guid-0000-0000-000000000002",
+      "RoleId": "role-merchant-guid-0000-0000-000000000002"
+    },
+    {
+      "UserId": "usr-carrefour-guid-0000-0000-000000000003",
+      "RoleId": "role-merchant-guid-0000-0000-000000000002"
+    },
+    {
+      "UserId": "usr-metro-guid-0000-0000-000000000004",
+      "RoleId": "role-merchant-guid-0000-0000-000000000002"
+    },
+    {
+      "UserId": "usr-seoudi-guid-0000-0000-000000000005",
+      "RoleId": "role-merchant-guid-0000-0000-000000000002"
+    },
+    {
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "RoleId": "role-customer-guid-0000-0000-000000000003"
+    },
+    {
+      "UserId": "usr-customer2-guid-0000-0000-000000000007",
+      "RoleId": "role-customer-guid-0000-0000-000000000003"
+    },
+    {
+      "UserId": "usr-customer3-guid-0000-0000-000000000008",
+      "RoleId": "role-customer-guid-0000-0000-000000000003"
+    },
+    {
+      "UserId": "usr-customer4-guid-0000-0000-000000000009",
+      "RoleId": "role-customer-guid-0000-0000-000000000003"
+    },
+    {
+      "UserId": "usr-charity1-guid-0000-0000-000000000010",
+      "RoleId": "role-charity-guid-0000-0000-000000000004"
+    },
+    {
+      "UserId": "usr-charity2-guid-0000-0000-000000000011",
+      "RoleId": "role-charity-guid-0000-0000-000000000004"
+    }
+  ],
+  "Addresses": [
+    {
+      "Id": "add-customer1-guid-0000-0000-00000001",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "Label": "Home",
+      "City": "Cairo",
+      "District": "Maadi",
+      "Street": "El-Nasr Road",
+      "BuildingNo": "23",
+      "Floor": 4,
+      "ApartmentNo": "12",
+      "Latitude": 30.0444,
+      "Longitude": 31.2357,
+      "IsDefault": true,
+      "CreatedAt": "2026-07-29T10:05:00Z",
+      "UpdatedAt": null
+    },
+    {
+      "Id": "add-customer2-guid-0000-0000-00000002",
+      "UserId": "usr-customer2-guid-0000-0000-000000000007",
+      "Label": "Office",
+      "City": "Cairo",
+      "District": "New Cairo",
+      "Street": "Road 90",
+      "BuildingNo": "156",
+      "Floor": 1,
+      "ApartmentNo": "3",
+      "Latitude": 30.0125,
+      "Longitude": 31.4285,
+      "IsDefault": true,
+      "CreatedAt": "2026-07-29T11:05:00Z",
+      "UpdatedAt": null
+    },
+    {
+      "Id": "add-customer3-guid-0000-0000-00000003",
+      "UserId": "usr-customer3-guid-0000-0000-000000000008",
+      "Label": "Home",
+      "City": "Cairo",
+      "District": "Heliopolis",
+      "Street": "Merghany St",
+      "BuildingNo": "12",
+      "Floor": 3,
+      "ApartmentNo": "8",
+      "Latitude": 30.0902,
+      "Longitude": 31.3235,
+      "IsDefault": true,
+      "CreatedAt": "2026-07-29T15:05:00Z",
+      "UpdatedAt": null
+    }
+  ],
+  "Organizations": [
+    {
+      "Id": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "OwnerId": "usr-spinneys-guid-0000-0000-000000000002",
+      "Name": "Spinneys Supermarket",
+      "NameAr": "سوبرماركت سبينس",
+      "Description": "Fresh organic groceries and bakery items.",
+      "DescriptionAr": "أغذية ومخبوزات عضوية طازجة يومياً.",
+      "BusinessCategory": 0,
+      "VerificationStatus": 1,
+      "LogoUrl": "https://res.cloudinary.com/foodloop/store-logos/spinneys.jpg",
+      "Phone": "+201200000001",
+      "Email": "store.spinneys@example.com",
+      "OpeningHours": "{\"Monday\":{\"open\":\"08:00\",\"close\":\"22:00\"}}",
+      "Latitude": 30.0450,
+      "Longitude": 31.2360,
+      "City": "Cairo",
+      "Neighborhood": "Maadi",
+      "Street": "Road 9",
+      "BuildingNo": "44",
+      "IsDeleted": false,
+      "CreatedAt": "2026-07-28T22:31:00Z"
+    },
+    {
+      "Id": "org-carrefour-guid-0000-0000-00000002",
+      "OwnerId": "usr-carrefour-guid-0000-0000-000000000003",
+      "Name": "Carrefour Market",
+      "NameAr": "كارفور ماركت",
+      "Description": "High quality dairy and pre-cooked meals.",
+      "DescriptionAr": "أجبان وألبان ووجبات جاهزة عالية الجودة.",
+      "BusinessCategory": 0,
+      "VerificationStatus": 1,
+      "LogoUrl": "https://res.cloudinary.com/foodloop/store-logos/carrefour.jpg",
+      "Phone": "+201200000002",
+      "Email": "store.carrefour@example.com",
+      "OpeningHours": "{\"Monday\":{\"open\":\"09:00\",\"close\":\"23:00\"}}",
+      "Latitude": 30.0460,
+      "Longitude": 31.2370,
+      "City": "Cairo",
+      "Neighborhood": "Maadi",
+      "Street": "El-Nasr St",
+      "BuildingNo": "100",
+      "IsDeleted": false,
+      "CreatedAt": "2026-07-28T22:36:00Z"
+    },
+    {
+      "Id": "org-metro-guid-0000-0000-000000000003",
+      "OwnerId": "usr-metro-guid-0000-0000-000000000004",
+      "Name": "Metro Market",
+      "NameAr": "مترو ماركت",
+      "Description": "Premium selection of imported products and meats.",
+      "DescriptionAr": "تشكيلة ممتازة من اللحوم والمستوردات.",
+      "BusinessCategory": 0,
+      "VerificationStatus": 1,
+      "LogoUrl": "https://res.cloudinary.com/foodloop/store-logos/metro.jpg",
+      "Phone": "+201200000003",
+      "Email": "store.metro@example.com",
+      "OpeningHours": "{\"Monday\":{\"open\":\"08:00\",\"close\":\"23:00\"}}",
+      "Latitude": 30.0810,
+      "Longitude": 31.3120,
+      "City": "Cairo",
+      "Neighborhood": "Heliopolis",
+      "Street": "El-Horreya St",
+      "BuildingNo": "85",
+      "IsDeleted": false,
+      "CreatedAt": "2026-07-29T08:05:00Z"
+    },
+    {
+      "Id": "org-seoudi-guid-0000-0000-000000000004",
+      "OwnerId": "usr-seoudi-guid-0000-0000-000000000005",
+      "Name": "Seoudi Supermarket",
+      "NameAr": "سوبرماركت سعودي",
+      "Description": "Fine cheeses and bakery items.",
+      "DescriptionAr": "أجبان فاخرة ومخبوزات طازجة.",
+      "BusinessCategory": 0,
+      "VerificationStatus": 1,
+      "LogoUrl": "https://res.cloudinary.com/foodloop/store-logos/seoudi.jpg",
+      "Phone": "+201200000004",
+      "Email": "store.seoudi@example.com",
+      "OpeningHours": "{\"Monday\":{\"open\":\"07:00\",\"close\":\"24:00\"}}",
+      "Latitude": 30.0750,
+      "Longitude": 31.3340,
+      "City": "Cairo",
+      "Neighborhood": "Sheraton",
+      "Street": "Khaled Ibn El-Waleed St",
+      "BuildingNo": "12",
+      "IsDeleted": false,
+      "CreatedAt": "2026-07-29T09:05:00Z"
+    },
+    {
+      "Id": "org-charity-guid-0000-0000-000000000005",
+      "OwnerId": "usr-charity1-guid-0000-0000-000000000010",
+      "Name": "Help Hand Association",
+      "NameAr": "جمعية يد العون",
+      "Description": "Non-profit charity distributing meals to families in need.",
+      "DescriptionAr": "جمعية خيرية لتوزيع الوجبات على الأسر المستحقة.",
+      "BusinessCategory": 1,
+      "VerificationStatus": 1,
+      "LogoUrl": "https://res.cloudinary.com/foodloop/charity-logos/helphand.jpg",
+      "Phone": "+201200000005",
+      "Email": "charity.org@example.com",
+      "OpeningHours": "{\"Monday\":{\"open\":\"09:00\",\"close\":\"17:00\"}}",
+      "Latitude": 30.0400,
+      "Longitude": 31.2200,
+      "City": "Cairo",
+      "Neighborhood": "Sayeda Zeinab",
+      "Street": "El-Mubtadiyan St",
+      "BuildingNo": "1",
+      "IsDeleted": false,
+      "CreatedAt": "2026-07-29T12:05:00Z"
+    }
+  ],
+  "StoreVerifications": [
+    {
+      "Id": "ver-spinneys-guid-0000-0000-0001",
+      "OrganizationId": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "VerificationType": 0,
+      "FileUrl": "https://res.cloudinary.com/foodloop/documents/cr_spinneys.pdf",
+      "Status": 1,
+      "ReviewedBy": "usr-admin-guid-0000-0000-000000000001",
+      "ReviewedAt": "2026-07-28T23:00:00Z",
+      "AdminNotes": "All documents verified.",
+      "CreatedAt": "2026-07-28T22:32:00Z"
+    },
+    {
+      "Id": "ver-carrefour-guid-0000-0000-0002",
+      "OrganizationId": "org-carrefour-guid-0000-0000-0002",
+      "VerificationType": 0,
+      "FileUrl": "https://res.cloudinary.com/foodloop/documents/cr_carrefour.pdf",
+      "Status": 1,
+      "ReviewedBy": "usr-admin-guid-0000-0000-000000000001",
+      "ReviewedAt": "2026-07-28T23:05:00Z",
+      "AdminNotes": "Approved.",
+      "CreatedAt": "2026-07-28T22:37:00Z"
+    },
+    {
+      "Id": "ver-metro-guid-0000-0000-0003",
+      "OrganizationId": "org-metro-guid-0000-0000-000000000003",
+      "VerificationType": 0,
+      "FileUrl": "https://res.cloudinary.com/foodloop/documents/cr_metro.pdf",
+      "Status": 1,
+      "ReviewedBy": "usr-admin-guid-0000-0000-000000000001",
+      "ReviewedAt": "2026-07-29T08:15:00Z",
+      "AdminNotes": "Approved.",
+      "CreatedAt": "2026-07-29T08:06:00Z"
+    },
+    {
+      "Id": "ver-seoudi-guid-0000-0000-0004",
+      "OrganizationId": "org-seoudi-guid-0000-0000-000000000004",
+      "VerificationType": 0,
+      "FileUrl": "https://res.cloudinary.com/foodloop/documents/cr_seoudi.pdf",
+      "Status": 1,
+      "ReviewedBy": "usr-admin-guid-0000-0000-000000000001",
+      "ReviewedAt": "2026-07-29T09:15:00Z",
+      "AdminNotes": "Approved.",
+      "CreatedAt": "2026-07-29T09:06:00Z"
+    },
+    {
+      "Id": "ver-charity-guid-0000-0000-0005",
+      "OrganizationId": "org-charity-guid-0000-0000-000000000005",
+      "VerificationType": 3,
+      "FileUrl": "https://res.cloudinary.com/foodloop/documents/association_helphand.pdf",
+      "Status": 1,
+      "ReviewedBy": "usr-admin-guid-0000-0000-000000000001",
+      "ReviewedAt": "2026-07-29T12:15:00Z",
+      "AdminNotes": "Charity license verified.",
+      "CreatedAt": "2026-07-29T12:06:00Z"
+    }
+  ],
+  "Categories": [
+    {
+      "Id": "e4fa0739-b96b-4aea-9c07-45bb63de2058",
+      "Name": "Bakery",
+      "NameAr": "مخبوزات",
+      "Icon": "bread-icon",
+      "CreatedAt": "2026-07-28T22:00:00Z"
+    },
+    {
+      "Id": "cat-veg-guid-0000-0000-000000000002",
+      "Name": "Fruits & Vegetables",
+      "NameAr": "فواكه وخضروات",
+      "Icon": "apple-icon",
+      "CreatedAt": "2026-07-28T22:01:00Z"
+    },
+    {
+      "Id": "cat-dairy-guid-0000-0000-000000000003",
+      "Name": "Dairy & Eggs",
+      "NameAr": "ألبان وبيض",
+      "Icon": "egg-icon",
+      "CreatedAt": "2026-07-28T22:02:00Z"
+    },
+    {
+      "Id": "cat-meals-guid-0000-0000-000000000004",
+      "Name": "Meals",
+      "NameAr": "وجبات جاهزة",
+      "Icon": "bowl-icon",
+      "CreatedAt": "2026-07-28T22:03:00Z"
+    },
+    {
+      "Id": "cat-meat-guid-0000-0000-000000000005",
+      "Name": "Meat & Poultry",
+      "NameAr": "لحوم ودواجن",
+      "Icon": "meat-icon",
+      "CreatedAt": "2026-07-28T22:04:00Z"
+    }
+  ],
+  "Products": [
+    {
+      "Id": "prd-lettuce-guid-0000-0000-00000001",
+      "OrganizationId": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "CategoryId": "cat-veg-guid-0000-0000-000000000002",
+      "Title": "Fresh Lettuce Head",
+      "TitleAr": "خس طازج",
+      "Description": "Crisp green organic lettuce.",
+      "DescriptionAr": "خس طازج مغسول ومغلف.",
+      "OriginalPrice": 8.00,
+      "DiscountedPrice": 4.00,
+      "QuantityAvailable": 18,
+      "ExpirationDate": "2026-08-15",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-01T08:00:00Z"
+    },
+    {
+      "Id": "prd-bananas-guid-0000-0000-00000002",
+      "OrganizationId": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "CategoryId": "cat-veg-guid-0000-0000-000000000002",
+      "Title": "Organic Bananas",
+      "TitleAr": "موز عضوي",
+      "Description": "Sweet local organic bananas.",
+      "DescriptionAr": "موز بلدي عضوي حلو المذاق.",
+      "OriginalPrice": 10.00,
+      "DiscountedPrice": 5.00,
+      "QuantityAvailable": 30,
+      "ExpirationDate": "2026-08-12",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-01T08:05:00Z"
+    },
+    {
+      "Id": "prd-bread-guid-0000-0000-00000003",
+      "OrganizationId": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "CategoryId": "e4fa0739-b96b-4aea-9c07-45bb63de2058",
+      "Title": "Sourdough Bread Loaf",
+      "TitleAr": "خبز التوست بالخميرة الطبيعية",
+      "Description": "Freshly baked artisan loaf.",
+      "DescriptionAr": "خبز ريف طازج بالخميرة الطبيعية.",
+      "OriginalPrice": 20.00,
+      "DiscountedPrice": 10.00,
+      "QuantityAvailable": 13,
+      "ExpirationDate": "2026-08-10",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-01T08:10:00Z"
+    },
+    {
+      "Id": "prd-cheese-guid-0000-0000-00000004",
+      "OrganizationId": "org-carrefour-guid-0000-0000-0002",
+      "CategoryId": "cat-dairy-guid-0000-0000-000000000003",
+      "Title": "Cheddar Cheese Block",
+      "TitleAr": "جبنة شيدر قالب",
+      "Description": "Aged white cheddar cheese block.",
+      "DescriptionAr": "قالب جبن شيدر أبيض معتق.",
+      "OriginalPrice": 80.00,
+      "DiscountedPrice": 45.00,
+      "QuantityAvailable": 10,
+      "ExpirationDate": "2026-08-20",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-01T09:00:00Z"
+    },
+    {
+      "Id": "prd-lasagna-guid-0000-0000-00000005",
+      "OrganizationId": "org-carrefour-guid-0000-0000-0002",
+      "CategoryId": "cat-meals-guid-0000-0000-000000000004",
+      "Title": "Beef Lasagna Ready Meal",
+      "TitleAr": "وجبة لازانيا باللحم البقري",
+      "Description": "Oven ready beef lasagna meal.",
+      "DescriptionAr": "وجبة لازانيا باللحم البقري جاهزة للفرن.",
+      "OriginalPrice": 120.00,
+      "DiscountedPrice": 60.00,
+      "QuantityAvailable": 5,
+      "ExpirationDate": "2026-08-09",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-01T09:05:00Z"
+    },
+    {
+      "Id": "prd-milk-guid-0000-0000-00000006",
+      "OrganizationId": "org-carrefour-guid-0000-0000-0002",
+      "CategoryId": "cat-dairy-guid-0000-0000-000000000003",
+      "Title": "Fresh Whole Milk 1L",
+      "TitleAr": "حليب كامل الدسم 1 لتر",
+      "Description": "Pasteurized fresh milk.",
+      "DescriptionAr": "حليب طازج مبستر كامل الدسم.",
+      "OriginalPrice": 25.00,
+      "DiscountedPrice": 15.00,
+      "QuantityAvailable": 15,
+      "ExpirationDate": "2026-08-08",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-01T09:10:00Z"
+    },
+    {
+      "Id": "prd-croissant-guid-0000-0000-00000007",
+      "OrganizationId": "org-seoudi-guid-0000-0000-000000000004",
+      "CategoryId": "e4fa0739-b96b-4aea-9c07-45bb63de2058",
+      "Title": "Butter Croissant Box",
+      "TitleAr": "علبة كرواسون بالزبدة",
+      "Description": "Box of 6 flaky butter croissants.",
+      "DescriptionAr": "علبة تحتوي على 6 قطع كرواسون بالزبدة.",
+      "OriginalPrice": 30.00,
+      "DiscountedPrice": 18.00,
+      "QuantityAvailable": 10,
+      "ExpirationDate": "2026-08-09",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-02T08:00:00Z"
+    },
+    {
+      "Id": "prd-yogurt-guid-0000-0000-00000008",
+      "OrganizationId": "org-seoudi-guid-0000-0000-000000000004",
+      "CategoryId": "cat-dairy-guid-0000-0000-000000000003",
+      "Title": "Greek Yogurt Tub",
+      "TitleAr": "علبة لبن زبادي يوناني",
+      "Description": "High protein plain Greek yogurt.",
+      "DescriptionAr": "زبادي يوناني طبيعي غني بالبروتين.",
+      "OriginalPrice": 25.00,
+      "DiscountedPrice": 15.00,
+      "QuantityAvailable": 25,
+      "ExpirationDate": "2026-08-11",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-02T08:05:00Z"
+    },
+    {
+      "Id": "prd-apples-guid-0000-0000-00000009",
+      "OrganizationId": "org-metro-guid-0000-0000-000000000003",
+      "CategoryId": "cat-veg-guid-0000-0000-000000000002",
+      "Title": "Red Apple Bag 1kg",
+      "TitleAr": "كيس تفاح أحمر 1 كجم",
+      "Description": "Sweet crisp red apples.",
+      "DescriptionAr": "تفاح أحمر حلو ومقرمش.",
+      "OriginalPrice": 40.00,
+      "DiscountedPrice": 20.00,
+      "QuantityAvailable": 20,
+      "ExpirationDate": "2026-08-18",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-02T09:00:00Z"
+    },
+    {
+      "Id": "prd-chicken-guid-0000-0000-00000010",
+      "OrganizationId": "org-metro-guid-0000-0000-000000000003",
+      "CategoryId": "cat-meat-guid-0000-0000-000000000005",
+      "Title": "Fresh Chicken Breast 1kg",
+      "TitleAr": "صدور دجاج طازجة 1 كجم",
+      "Description": "Boneless skinless chicken breasts.",
+      "DescriptionAr": "صدور دجاج طازجة مخلية من العظم والجلد.",
+      "OriginalPrice": 160.00,
+      "DiscountedPrice": 95.00,
+      "QuantityAvailable": 8,
+      "ExpirationDate": "2026-08-08",
+      "Status": 0,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-02T09:05:00Z"
+    }
+  ],
+  "ProductImages": [
+    {
+      "Id": "img-lettuce-guid-0000-0000-0001",
+      "ProductId": "prd-lettuce-guid-0000-0000-0001",
+      "ImageUrl": "https://res.cloudinary.com/foodloop/product-images/lettuce.jpg",
+      "DisplayOrder": 0,
+      "CreatedAt": "2026-08-01T08:01:00Z"
+    },
+    {
+      "Id": "img-bread-guid-0000-0000-0002",
+      "ProductId": "prd-bread-guid-0000-0000-0003",
+      "ImageUrl": "https://res.cloudinary.com/foodloop/product-images/sourdough.jpg",
+      "DisplayOrder": 0,
+      "CreatedAt": "2026-08-01T08:11:00Z"
+    },
+    {
+      "Id": "img-bananas-guid-0000-0000-0003",
+      "ProductId": "prd-bananas-guid-0000-0000-0002",
+      "ImageUrl": "https://res.cloudinary.com/foodloop/product-images/bananas.jpg",
+      "DisplayOrder": 0,
+      "CreatedAt": "2026-08-01T08:06:00Z"
+    },
+    {
+      "Id": "img-cheese-guid-0000-0000-0004",
+      "ProductId": "prd-cheese-guid-0000-0000-0004",
+      "ImageUrl": "https://res.cloudinary.com/foodloop/product-images/cheddar.jpg",
+      "DisplayOrder": 0,
+      "CreatedAt": "2026-08-01T09:01:00Z"
+    },
+    {
+      "Id": "img-lasagna-guid-0000-0000-0005",
+      "ProductId": "prd-lasagna-guid-0000-0000-0005",
+      "ImageUrl": "https://res.cloudinary.com/foodloop/product-images/lasagna.jpg",
+      "DisplayOrder": 0,
+      "CreatedAt": "2026-08-01T09:06:00Z"
+    }
+  ],
+  "Orders": [
+    {
+      "Id": "ord-completed-guid-0000-0000-0001",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "TotalAmount": 28.00,
+      "OrderStatus": 4,
+      "PaymentStatus": 1,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-02T14:00:00Z"
+    },
+    {
+      "Id": "ord-ready-guid-0000-0000-0002",
+      "UserId": "usr-customer2-guid-0000-0000-000000000007",
+      "TotalAmount": 45.00,
+      "OrderStatus": 3,
+      "PaymentStatus": 1,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-03T11:30:00Z"
+    },
+    {
+      "Id": "ord-pending-guid-0000-0000-0003",
+      "UserId": "usr-customer3-guid-0000-0000-000000000008",
+      "TotalAmount": 36.00,
+      "OrderStatus": 0,
+      "PaymentStatus": 1,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-04T12:00:00Z"
+    },
+    {
+      "Id": "ord-completed2-guid-0000-0000-0004",
+      "UserId": "usr-customer4-guid-0000-0000-000000000009",
+      "TotalAmount": 115.00,
+      "OrderStatus": 4,
+      "PaymentStatus": 1,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-04T15:00:00Z"
+    },
+    {
+      "Id": "ord-cancelled-guid-0000-0000-0005",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "TotalAmount": 20.00,
+      "OrderStatus": 5,
+      "PaymentStatus": 2,
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-05T09:00:00Z"
+    }
+  ],
+  "OrderItems": [
+    {
+      "Id": "item-completed-1",
+      "OrderId": "ord-completed-guid-0000-0000-0001",
+      "ProductId": "prd-lettuce-guid-0000-0000-0001",
+      "Quantity": 2,
+      "UnitPrice": 4.00
+    },
+    {
+      "Id": "item-completed-2",
+      "OrderId": "ord-completed-guid-0000-0000-0001",
+      "ProductId": "prd-bread-guid-0000-0000-0003",
+      "Quantity": 2,
+      "UnitPrice": 10.00
+    },
+    {
+      "Id": "item-ready-1",
+      "OrderId": "ord-ready-guid-0000-0000-0002",
+      "ProductId": "prd-cheese-guid-0000-0000-0004",
+      "Quantity": 1,
+      "UnitPrice": 45.00
+    },
+    {
+      "Id": "item-pending-1",
+      "OrderId": "ord-pending-guid-0000-0000-0003",
+      "ProductId": "prd-croissant-guid-0000-0000-0007",
+      "Quantity": 2,
+      "UnitPrice": 18.00
+    },
+    {
+      "Id": "item-completed2-1",
+      "OrderId": "ord-completed2-guid-0000-0000-0004",
+      "ProductId": "prd-apples-guid-0000-0000-0009",
+      "Quantity": 1,
+      "UnitPrice": 20.00
+    },
+    {
+      "Id": "item-completed2-2",
+      "OrderId": "ord-completed2-guid-0000-0000-0004",
+      "ProductId": "prd-chicken-guid-0000-0000-0010",
+      "Quantity": 1,
+      "UnitPrice": 95.00
+    },
+    {
+      "Id": "item-cancelled-1",
+      "OrderId": "ord-cancelled-guid-0000-0000-0005",
+      "ProductId": "prd-apples-guid-0000-0000-0009",
+      "Quantity": 1,
+      "UnitPrice": 20.00
+    }
+  ],
+  "Payments": [
+    {
+      "Id": "pay-completed-guid-0000-0000-0001",
+      "OrderId": "ord-completed-guid-0000-0000-0001",
+      "Amount": 28.00,
+      "Method": "CreditCard",
+      "TransactionReference": "tx-reference-completed-001",
+      "Status": 1,
+      "CreatedAt": "2026-08-02T14:02:00Z"
+    },
+    {
+      "Id": "pay-ready-guid-0000-0000-0002",
+      "OrderId": "ord-ready-guid-0000-0000-0002",
+      "Amount": 45.00,
+      "Method": "CreditCard",
+      "TransactionReference": "tx-reference-ready-002",
+      "Status": 1,
+      "CreatedAt": "2026-08-03T11:32:00Z"
+    },
+    {
+      "Id": "pay-pending-guid-0000-0000-0003",
+      "OrderId": "ord-pending-guid-0000-0000-0003",
+      "Amount": 36.00,
+      "Method": "CreditCard",
+      "TransactionReference": "tx-reference-pending-003",
+      "Status": 1,
+      "CreatedAt": "2026-08-04T12:02:00Z"
+    },
+    {
+      "Id": "pay-completed2-guid-0000-0000-0004",
+      "OrderId": "ord-completed2-guid-0000-0000-0004",
+      "Amount": 115.00,
+      "Method": "CreditCard",
+      "TransactionReference": "tx-reference-completed-004",
+      "Status": 1,
+      "CreatedAt": "2026-08-04T15:02:00Z"
+    },
+    {
+      "Id": "pay-cancelled-guid-0000-0000-0005",
+      "OrderId": "ord-cancelled-guid-0000-0000-0005",
+      "Amount": 20.00,
+      "Method": "CreditCard",
+      "TransactionReference": "tx-reference-cancelled-005",
+      "Status": 2,
+      "CreatedAt": "2026-08-05T09:02:00Z"
+    }
+  ],
+  "Reviews": [
+    {
+      "Id": "rev-lettuce-guid-0000-0000-0001",
+      "OrderId": "ord-completed-guid-0000-0000-0001",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "OrganizationId": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "Rating": 5,
+      "Comment": "Lettuce and bread were exceptionally fresh!",
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-02T16:00:00Z"
+    },
+    {
+      "Id": "rev-carrefour-guid-0000-0000-0002",
+      "OrderId": "ord-completed2-guid-0000-0000-0004",
+      "UserId": "usr-customer4-guid-0000-0000-000000000009",
+      "OrganizationId": "org-carrefour-guid-0000-0000-0002",
+      "Rating": 4,
+      "Comment": "Very good chicken, apple bag had a bruised apple though.",
+      "IsDeleted": false,
+      "CreatedAt": "2026-08-04T18:00:00Z"
+    }
+  ],
+  "Favorites": [
+    {
+      "Id": "fav-customer1-bread",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "ProductId": "prd-bread-guid-0000-0000-0003",
+      "CreatedAt": "2026-08-01T12:00:00Z"
+    },
+    {
+      "Id": "fav-customer2-croissant",
+      "UserId": "usr-customer2-guid-0000-0000-000000000007",
+      "ProductId": "prd-croissant-guid-0000-0000-0007",
+      "CreatedAt": "2026-08-03T10:00:00Z"
+    }
+  ],
+  "Notifications": [
+    {
+      "Id": "nt-customer1-guid-0000-0000-0001",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "Title": "Order Placed Successfully",
+      "Body": "Your order #ord-comp has been placed successfully.",
+      "Type": "OrderPlaced",
+      "IsRead": true,
+      "CreatedAt": "2026-08-02T14:00:00Z"
+    },
+    {
+      "Id": "nt-merchant-guid-0000-0000-0002",
+      "UserId": "usr-spinneys-guid-0000-0000-000000000002",
+      "Title": "New Order Received",
+      "Body": "Store 'Spinneys Supermarket' received order #ord-comp for pickup.",
+      "Type": "OrderReceived",
+      "IsRead": false,
+      "CreatedAt": "2026-08-02T14:00:00Z"
+    },
+    {
+      "Id": "nt-customer2-guid-0000-0000-0003",
+      "UserId": "usr-customer2-guid-0000-0000-000000000007",
+      "Title": "Order Ready for Pickup",
+      "Body": "Your order at Carrefour Market is ready for pickup.",
+      "Type": "OrderReadyForPickup",
+      "IsRead": false,
+      "CreatedAt": "2026-08-03T12:00:00Z"
+    }
+  ],
+  "SupportTickets": [
+    {
+      "Id": "tk-refund-guid-0000-0000-0001",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "Category": "Refund",
+      "Status": 0,
+      "Priority": 2,
+      "CreatedAt": "2026-08-04T10:00:00Z"
+    },
+    {
+      "Id": "tk-login-guid-0000-0000-0002",
+      "UserId": "usr-customer3-guid-0000-0000-000000000008",
+      "Category": "Account",
+      "Status": 2,
+      "Priority": 1,
+      "CreatedAt": "2026-08-05T08:00:00Z"
+    }
+  ],
+  "TicketMessages": [
+    {
+      "Id": "msg-refund-customer-1",
+      "SupportTicketId": "tk-refund-guid-0000-0000-0001",
+      "SenderId": "usr-customer1-guid-0000-0000-000000000006",
+      "SenderName": "Customer Test",
+      "Message": "I cancelled my order but the refund hasn't arrived.",
+      "CreatedAt": "2026-08-04T10:00:00Z"
+    },
+    {
+      "Id": "msg-refund-admin-2",
+      "SupportTicketId": "tk-refund-guid-0000-0000-0001",
+      "SenderId": "usr-admin-guid-0000-0000-000000000001",
+      "SenderName": "System/Support",
+      "Message": "Checking with the payment provider. We will update you shortly.",
+      "CreatedAt": "2026-08-04T10:15:00Z"
+    },
+    {
+      "Id": "msg-login-customer-1",
+      "SupportTicketId": "tk-login-guid-0000-0000-0002",
+      "SenderId": "usr-customer3-guid-0000-0000-000000000008",
+      "SenderName": "Alex Green",
+      "Message": "I cannot change my default location coordinates in the profile page.",
+      "CreatedAt": "2026-08-05T08:00:00Z"
+    },
+    {
+      "Id": "msg-login-admin-2",
+      "SupportTicketId": "tk-login-guid-0000-0000-0002",
+      "SenderId": "usr-admin-guid-0000-0000-000000000001",
+      "SenderName": "System/Support",
+      "Message": "This has been resolved. Please refresh the application.",
+      "CreatedAt": "2026-08-05T08:30:00Z"
+    }
+  ],
+  "AuditLogs": [
+    {
+      "Id": "log-registration-guid-0001",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "OrganizationId": null,
+      "EventType": "AccountCreated",
+      "Title": "Account Created",
+      "Description": "New account registered with email customer.test@example.com.",
+      "IpAddress": "127.0.0.1",
+      "CreatedAt": "2026-07-29T10:00:00Z"
+    },
+    {
+      "Id": "log-order-guid-0002",
+      "UserId": "usr-customer1-guid-0000-0000-000000000006",
+      "OrganizationId": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "EventType": "OrderPlaced",
+      "Title": "Order Placed",
+      "Description": "Placed order ord-completed-guid-0000-0000-0001 with total amount $28.00.",
+      "IpAddress": "127.0.0.1",
+      "CreatedAt": "2026-08-02T14:00:00Z"
+    },
+    {
+      "Id": "log-profile-guid-0003",
+      "UserId": "usr-spinneys-guid-0000-0000-000000000002",
+      "OrganizationId": "4a259c99-52e0-47de-824f-37db1b2f0a12",
+      "EventType": "StoreProfileUpdated",
+      "Title": "Organization Profile Updated",
+      "Description": "Updated organization settings, opening hours, or location coordinates for 'Spinneys Supermarket'.",
+      "IpAddress": "127.0.0.1",
+      "CreatedAt": "2026-08-03T09:00:00Z"
+    }
+  ]
+}
