@@ -174,6 +174,17 @@ public class StoresController : ControllerBase
 
         return Ok(ApiResponse<OrderDto>.Ok(result.Data!));
     }
+
+    /// <summary>
+    /// GET /stores/me/analytics — retrieve store-level analytics/metrics for the insights dashboard.
+    /// </summary>
+    [HttpGet("me/analytics")]
+    public async Task<IActionResult> GetMyStoreAnalytics(CancellationToken cancellationToken)
+    {
+        var query = new GetStoreAnalyticsQuery(OwnerId);
+        var analytics = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<StoreAnalyticsDto>.Ok(analytics));
+    }
 }
 
 public class UploadStoreDocumentRequest
