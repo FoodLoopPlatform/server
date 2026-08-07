@@ -201,6 +201,68 @@ public class ProductsController : ControllerBase
         var products = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ProductDto>>.Ok(products));
     }
+
+    /// <summary>
+    /// GET /stores/me/products/risk-analysis — expiry risk report grouped by risk level.
+    /// Declared before {id:guid} to avoid route conflicts.
+    /// </summary>
+    [HttpGet("risk-analysis")]
+    public async Task<IActionResult> GetRiskAnalysis(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetRiskAnalysisQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<RiskAnalysisDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /stores/me/products/{id}/price-history — price change audit log for a product.
+    /// </summary>
+    [HttpGet("{id:guid}/price-history")]
+    public async Task<IActionResult> GetPriceHistory(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetPriceHistoryQuery(OwnerId, id), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<PriceHistoryDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// PATCH /stores/me/products/{id}/discount — apply or update a discount on a product.
+    /// </summary>
+    [HttpPatch("{id:guid}/discount")]
+    public async Task<IActionResult> ApplyDiscount(Guid id, [FromBody] ApplyDiscountRequest request, CancellationToken cancellationToken)
+    {
+        var command = new ApplyDiscountCommand(OwnerId, id, request.DiscountedPrice, request.ChangeReason);
+        var product = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<ProductDto>.Ok(product));
+    }
+
+    /// <summary>
+    /// POST /stores/me/products/{id}/ocr — submit image for AI/OCR analysis.
+    /// </summary>
+    [HttpPost("{id:guid}/ocr")]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> SubmitOcr(Guid id, IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(ext))
+            return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
+
+        await using var stream = file.OpenReadStream();
+        var upload = new FileUploadRequest { Content = stream, FileName = file.FileName, ContentType = file.ContentType };
+        var result = await _mediator.Send(new OcrScanCommand(OwnerId, id, upload), cancellationToken);
+        return Ok(ApiResponse<OcrResultDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /stores/me/products/{id}/ocr-result — poll the latest OCR result.
+    /// </summary>
+    [HttpGet("{id:guid}/ocr-result")]
+    public async Task<IActionResult> GetOcrResult(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetOcrResultQuery(OwnerId, id), cancellationToken);
+        return Ok(ApiResponse<OcrResultDto>.Ok(result));
+    }
 }
 
 public class CreateProductRequest
@@ -240,6 +302,13 @@ public class UpdateProductRequest
     public int? QuantityAvailable { get; set; }
     public DateOnly? ExpirationDate { get; set; }
     public ProductStatus? Status { get; set; }
+}
+
+public class ApplyDiscountRequest
+{
+    [Required, Range(0.0, 1000000.0)]
+    public decimal DiscountedPrice { get; set; }
+    public string? ChangeReason { get; set; }
 }
 
 

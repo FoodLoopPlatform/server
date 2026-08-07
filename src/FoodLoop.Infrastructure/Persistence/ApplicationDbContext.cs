@@ -36,6 +36,9 @@ public class ApplicationDbContext
     public DbSet<AIRecognitionResult> AIRecognitionResults => Set<AIRecognitionResult>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
+    public DbSet<ProductReport> ProductReports => Set<ProductReport>();
+    public DbSet<Donation> Donations => Set<Donation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -47,6 +50,28 @@ public class ApplicationDbContext
         {
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.OrganizationId);
+        });
+
+        // Donation has two FKs to Organization; specify explicitly to avoid cascade conflicts.
+        builder.Entity<Donation>(entity =>
+        {
+            entity.HasOne(d => d.DonorOrganization)
+                  .WithMany(o => o.DonationsGiven)
+                  .HasForeignKey(d => d.DonorOrganizationId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.RecipientOrganization)
+                  .WithMany(o => o.DonationsReceived)
+                  .HasForeignKey(d => d.RecipientOrganizationId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<PriceHistory>(entity =>
+        {
+            entity.Property(p => p.OldOriginalPrice).HasPrecision(18, 2);
+            entity.Property(p => p.OldDiscountedPrice).HasPrecision(18, 2);
+            entity.Property(p => p.NewOriginalPrice).HasPrecision(18, 2);
+            entity.Property(p => p.NewDiscountedPrice).HasPrecision(18, 2);
         });
 
         // Rename default Identity tables to a cleaner schema (optional but tidy).

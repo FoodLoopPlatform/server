@@ -1,4 +1,4 @@
-using FoodLoop.API.Common;
+﻿using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Admin;
@@ -327,5 +327,30 @@ public class AdminController : ControllerBase
         await _mediator.Send(new CloseSupportTicketCommand(id), cancellationToken);
         return NoContent();
     }
+
+
+    // ── Disputes (product reports) ────────────────────────────────────────
+
+    /// <summary>GET /admin/disputes — list product reports (dispute_handling_resolution screen).</summary>
+    [HttpGet("disputes")]
+    public async Task<IActionResult> GetDisputes(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool? isResolved = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetDisputesQuery(pageNumber, pageSize, isResolved), cancellationToken);
+        return Ok(ApiResponse<System.Collections.Generic.IReadOnlyList<DisputeDto>>.Ok(result));
+    }
+
+    /// <summary>PATCH /admin/disputes/{id}/resolve — mark a product report as resolved.</summary>
+    [HttpPatch("disputes/{id:guid}/resolve")]
+    public async Task<IActionResult> ResolveDispute(Guid id, [FromBody] ResolveDisputeRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ResolveDisputeCommand(id, AdminId, request.AdminNote), cancellationToken);
+        return Ok(ApiResponse<DisputeDto>.Ok(result));
+    }
 }
 
+public class ProductModerationRequest { public string? Note { get; set; } }
+public class ResolveDisputeRequest { [System.ComponentModel.DataAnnotations.Required] public string AdminNote { get; set; } = null!; }
