@@ -74,6 +74,16 @@ public class OrdersController : ControllerBase
         var order = await _mediator.Send(query, cancellationToken);
         return Ok(ApiResponse<OrderDto>.Ok(order));
     }
+
+    /// <summary>
+    /// GET /orders/{id}/tracking — customer-facing real-time order status and progress steps.
+    /// </summary>
+    [HttpGet("{id:guid}/tracking")]
+    public async Task<IActionResult> GetOrderTracking(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetOrderTrackingQuery(id, UserId), cancellationToken);
+        return Ok(ApiResponse<OrderTrackingDto>.Ok(result));
+    }
 }
 
 public class CheckoutRequest

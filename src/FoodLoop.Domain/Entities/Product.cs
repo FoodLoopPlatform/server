@@ -29,6 +29,8 @@ public class Product : BaseEntity, ISoftDelete
 
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public ICollection<PriceHistory> PriceHistories { get; set; } = new List<PriceHistory>();
+    public ICollection<ProductReport> Reports { get; set; } = new List<ProductReport>();
     public AIRecognitionResult? AIRecognitionResult { get; set; }
 
     public DateTimeOffset? DeletedAt { get; set; }

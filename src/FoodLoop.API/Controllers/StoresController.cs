@@ -1,4 +1,5 @@
 using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Organizations;
@@ -192,6 +193,53 @@ public class StoresController : ControllerBase
         var analytics = await _mediator.Send(query, cancellationToken);
         return Ok(ApiResponse<StoreAnalyticsDto>.Ok(analytics));
     }
+
+    /// <summary>
+    /// GET /stores/me/ai-settings — read AI automation preferences.
+    /// </summary>
+    [HttpGet("me/ai-settings")]
+    public async Task<IActionResult> GetAiSettings(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetAiSettingsQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<AiSettingsDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// PATCH /stores/me/ai-settings — update AI automation preferences.
+    /// </summary>
+    [HttpPatch("me/ai-settings")]
+    public async Task<IActionResult> UpdateAiSettings([FromBody] UpdateAiSettingsRequest request, CancellationToken cancellationToken)
+    {
+        var command = new UpdateAiSettingsCommand(
+            OwnerId,
+            request.AiAutoDiscountEnabled,
+            request.AiAutoDiscountPercent,
+            request.AiAutoDiscountDaysBeforeExpiry,
+            request.AiAutoPricingEnabled);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<AiSettingsDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /stores/me/delivery/fleet — active orders overview for fleet/logistics management.
+    /// </summary>
+    [HttpGet("me/delivery/fleet")]
+    public async Task<IActionResult> GetDeliveryFleet(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetDeliveryFleetQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<DeliveryFleetDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// POST /stores/me/donations — donate surplus product inventory to a verified charity.
+    /// </summary>
+    [HttpPost("me/donations")]
+    public async Task<IActionResult> DonateSurplus([FromBody] DonateSurplusRequest request, CancellationToken cancellationToken)
+    {
+        var command = new DonateSurplusCommand(OwnerId, request.RecipientOrganizationId, request.ProductId, request.Quantity, request.Note);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<DonationDto>.Ok(result));
+    }
 }
 
 public class UploadStoreDocumentRequest
@@ -236,5 +284,21 @@ public class UpdateOrderStatusRequest
 {
     [Required]
     public string Status { get; set; } = null!;
+}
+
+public class UpdateAiSettingsRequest
+{
+    public bool AiAutoDiscountEnabled { get; set; }
+    [Range(0, 100)] public int AiAutoDiscountPercent { get; set; } = 20;
+    [Range(1, 365)] public int AiAutoDiscountDaysBeforeExpiry { get; set; } = 3;
+    public bool AiAutoPricingEnabled { get; set; }
+}
+
+public class DonateSurplusRequest
+{
+    [Required] public Guid RecipientOrganizationId { get; set; }
+    [Required] public Guid ProductId { get; set; }
+    [Required, Range(1, 100000)] public int Quantity { get; set; }
+    public string? Note { get; set; }
 }
 

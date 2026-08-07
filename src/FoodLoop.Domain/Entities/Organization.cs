@@ -40,9 +40,21 @@ public class Organization : BaseEntity, ISoftDelete
     public string? AdminNote { get; set; }
     public double AverageRating { get; set; }
 
+    // ── AI Automation Settings (ai_automation_settings screen) ─────────────
+    /// <summary>Whether the AI auto-discount engine is enabled for this org.</summary>
+    public bool AiAutoDiscountEnabled { get; set; } = false;
+    /// <summary>Discount % to apply when AI detects near-expiry risk (0–100).</summary>
+    public int AiAutoDiscountPercent { get; set; } = 20;
+    /// <summary>Days before expiry at which the auto-discount triggers.</summary>
+    public int AiAutoDiscountDaysBeforeExpiry { get; set; } = 3;
+    /// <summary>Whether AI can auto-adjust pricing recommendations without manual review.</summary>
+    public bool AiAutoPricingEnabled { get; set; } = false;
+
     public ICollection<Product> Products { get; set; } = new List<Product>();
     public ICollection<OrganizationVerification> Verifications { get; set; } = new List<OrganizationVerification>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<Donation> DonationsGiven { get; set; } = new List<Donation>();
+    public ICollection<Donation> DonationsReceived { get; set; } = new List<Donation>();
 
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid? DeletedBy { get; set; }

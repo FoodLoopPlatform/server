@@ -952,6 +952,329 @@ else
 fi
 
 # ==============================================================================
+# SECTION 11: INVENTORY RISK ANALYSIS (/stores/me/products/risk-analysis)
+# ==============================================================================
+echo -e "\n--- Testing Inventory Risk Analysis ---"
+
+# Scenario 11.1: Get risk analysis (Happy Path)
+res=$(send_request "GET" "/stores/me/products/risk-analysis" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "11.1: Get Inventory Risk Analysis Report" "$status" "200" "$body"
+
+# Scenario 11.2: Get risk analysis unauthenticated (401)
+res=$(send_request "GET" "/stores/me/products/risk-analysis" "" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "11.2: Get Risk Analysis Unauthenticated" "$status" "401" "$body"
+
+# Scenario 11.3: Get risk analysis as Customer (403)
+res=$(send_request "GET" "/stores/me/products/risk-analysis" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "11.3: Get Risk Analysis as Customer Role" "$status" "403" "$body"
+
+# ==============================================================================
+# SECTION 12: SMART DISCOUNT MANAGER (/stores/me/products/{id}/discount)
+# ==============================================================================
+echo -e "\n--- Testing Smart Discount Manager ---"
+
+# Re-create product if it was deleted in previous cleanup
+if [ -z "$PRODUCT_ID" ]; then
+    res=$(send_request "GET" "/categories" "")
+    body=${res#*|}
+    CATEGORY_ID=$(get_json_value "$body" "id")
+    PRD_PAYLOAD="{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"Discount Test Product $RANDOM_VAL\",\"originalPrice\":20.00,\"discountedPrice\":20.00,\"quantityAvailable\":10,\"expirationDate\":\"2026-09-30\"}"
+    res=$(send_request "POST" "/stores/me/products" "$PRD_PAYLOAD" "$MERCHANT_TOKEN")
+    body=${res#*|}
+    PRODUCT_ID=$(get_json_value "$body" "id")
+fi
+
+# Scenario 12.1: Apply discount (Happy Path)
+DISCOUNT_PAYLOAD="{\"discountedPrice\":8.00,\"changeReason\":\"Near expiry smart discount\"}"
+res=$(send_request "PATCH" "/stores/me/products/$PRODUCT_ID/discount" "$DISCOUNT_PAYLOAD" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "12.1: Apply Smart Discount to Product" "$status" "200" "$body"
+
+# Scenario 12.2: Apply invalid discount (price > original — 400)
+BAD_DISCOUNT="{\"discountedPrice\":999.00,\"changeReason\":\"invalid\"}"
+res=$(send_request "PATCH" "/stores/me/products/$PRODUCT_ID/discount" "$BAD_DISCOUNT" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "12.2: Apply Discount Exceeding Original Price" "$status" "400" "$body"
+
+# Scenario 12.3: Apply discount unauthenticated (401)
+res=$(send_request "PATCH" "/stores/me/products/$PRODUCT_ID/discount" "$DISCOUNT_PAYLOAD" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "12.3: Apply Discount Unauthenticated" "$status" "401" "$body"
+
+# ==============================================================================
+# SECTION 13: PRICE HISTORY AUDIT (/stores/me/products/{id}/price-history)
+# ==============================================================================
+echo -e "\n--- Testing Price History Audit ---"
+
+# Scenario 13.1: Get price history (Happy Path — should have at least 1 entry from section 12)
+res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/price-history" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "13.1: Get Product Price History Log" "$status" "200" "$body"
+
+# Scenario 13.2: Get price history for non-existent product (404)
+res=$(send_request "GET" "/stores/me/products/00000000-0000-0000-0000-000000000000/price-history" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "13.2: Get Price History Non-existent Product" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 14: AI AUTOMATION SETTINGS (/stores/me/ai-settings)
+# ==============================================================================
+echo -e "\n--- Testing AI Automation Settings ---"
+
+# Scenario 14.1: Get AI settings (Happy Path)
+res=$(send_request "GET" "/stores/me/ai-settings" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "14.1: Get Merchant AI Automation Settings" "$status" "200" "$body"
+
+# Scenario 14.2: Update AI settings (Happy Path)
+AI_SETTINGS="{\"aiAutoDiscountEnabled\":true,\"aiAutoDiscountPercent\":25,\"aiAutoDiscountDaysBeforeExpiry\":3,\"aiAutoPricingEnabled\":false}"
+res=$(send_request "PATCH" "/stores/me/ai-settings" "$AI_SETTINGS" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "14.2: Update Merchant AI Automation Settings" "$status" "200" "$body"
+
+# Scenario 14.3: Update AI settings invalid percent (400)
+BAD_AI="{\"aiAutoDiscountEnabled\":true,\"aiAutoDiscountPercent\":150,\"aiAutoDiscountDaysBeforeExpiry\":3,\"aiAutoPricingEnabled\":false}"
+res=$(send_request "PATCH" "/stores/me/ai-settings" "$BAD_AI" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "14.3: Update AI Settings With Invalid Discount Percent" "$status" "400" "$body"
+
+# Scenario 14.4: Get AI settings unauthenticated (401)
+res=$(send_request "GET" "/stores/me/ai-settings" "" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "14.4: Get AI Settings Unauthenticated" "$status" "401" "$body"
+
+# ==============================================================================
+# SECTION 15: DONATION COMMUNITY IMPACT (/charities + /stores/me/donations)
+# ==============================================================================
+echo -e "\n--- Testing Donation & Community Impact ---"
+
+# Scenario 15.1: List verified charities (public, no auth)
+res=$(send_request "GET" "/charities" "" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "15.1: Get Verified Charities List (Public)" "$status" "200" "$body"
+CHARITY_ORG_ID=$(get_json_value "$body" "id")
+echo "[INFO] First charity org ID: $CHARITY_ORG_ID"
+
+# Scenario 15.2: Donate surplus product to a charity (Happy Path)
+if [ -n "$CHARITY_ORG_ID" ] && [ -n "$PRODUCT_ID" ]; then
+    DONATION_PAYLOAD="{\"recipientOrganizationId\":\"$CHARITY_ORG_ID\",\"productId\":\"$PRODUCT_ID\",\"quantity\":1,\"note\":\"Near-expiry donation from test suite\"}"
+    res=$(send_request "POST" "/stores/me/donations" "$DONATION_PAYLOAD" "$MERCHANT_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "15.2: Donate Surplus Product to Charity" "$status" "200" "$body"
+fi
+
+# Scenario 15.3: Donate with zero quantity (400)
+if [ -n "$CHARITY_ORG_ID" ] && [ -n "$PRODUCT_ID" ]; then
+    BAD_DONATION="{\"recipientOrganizationId\":\"$CHARITY_ORG_ID\",\"productId\":\"$PRODUCT_ID\",\"quantity\":0}"
+    res=$(send_request "POST" "/stores/me/donations" "$BAD_DONATION" "$MERCHANT_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "15.3: Donate With Zero Quantity Validation" "$status" "400" "$body"
+fi
+
+# Scenario 15.4: Donate unauthenticated (401)
+DUMMY_DONATION="{\"recipientOrganizationId\":\"00000000-0000-0000-0000-000000000001\",\"productId\":\"00000000-0000-0000-0000-000000000001\",\"quantity\":1}"
+res=$(send_request "POST" "/stores/me/donations" "$DUMMY_DONATION" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "15.4: Donate Unauthenticated" "$status" "401" "$body"
+
+# ==============================================================================
+# SECTION 16: ORDER TRACKING (/orders/{id}/tracking)
+# ==============================================================================
+echo -e "\n--- Testing Order Tracking ---"
+
+if [ -n "$ORDER_ID" ]; then
+    # Scenario 16.1: Get order tracking (Happy Path)
+    res=$(send_request "GET" "/orders/$ORDER_ID/tracking" "" "$CUSTOMER_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "16.1: Get Real-Time Order Tracking Status" "$status" "200" "$body"
+
+    # Scenario 16.2: Get order tracking unauthenticated (401)
+    res=$(send_request "GET" "/orders/$ORDER_ID/tracking" "" "")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "16.2: Get Order Tracking Unauthenticated" "$status" "401" "$body"
+fi
+
+# Scenario 16.3: Get tracking for non-existent order (404)
+res=$(send_request "GET" "/orders/00000000-0000-0000-0000-000000000000/tracking" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "16.3: Get Tracking Non-existent Order" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 17: DELIVERY FLEET OVERVIEW (/stores/me/delivery/fleet)
+# ==============================================================================
+echo -e "\n--- Testing Delivery Fleet Overview ---"
+
+# Scenario 17.1: Get fleet overview (Happy Path)
+res=$(send_request "GET" "/stores/me/delivery/fleet" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "17.1: Get Delivery Fleet Overview" "$status" "200" "$body"
+
+# Scenario 17.2: Get fleet unauthenticated (401)
+res=$(send_request "GET" "/stores/me/delivery/fleet" "" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "17.2: Get Fleet Overview Unauthenticated" "$status" "401" "$body"
+
+# Scenario 17.3: Get fleet as Customer (403)
+res=$(send_request "GET" "/stores/me/delivery/fleet" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "17.3: Get Fleet Overview as Customer Role" "$status" "403" "$body"
+
+# ==============================================================================
+# SECTION 18: PUBLIC PRODUCT DETAIL (/marketplace/products/{id})
+# ==============================================================================
+echo -e "\n--- Testing Public Product Detail ---"
+
+# Use the seeded Spinneys product ID from the database (fetch one from marketplace first)
+res=$(send_request "GET" "/marketplace/products?pageSize=1" "" "")
+status=${res%%|*}
+body=${res#*|}
+MARKET_PRODUCT_ID=$(get_json_value "$body" "id")
+echo "[INFO] Sample marketplace product ID: $MARKET_PRODUCT_ID"
+
+if [ -n "$MARKET_PRODUCT_ID" ]; then
+    # Scenario 18.1: Get product detail (Happy Path)
+    res=$(send_request "GET" "/marketplace/products/$MARKET_PRODUCT_ID" "" "")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "18.1: Get Public Product Detail Page" "$status" "200" "$body"
+fi
+
+# Scenario 18.2: Get non-existent product detail (404)
+res=$(send_request "GET" "/marketplace/products/00000000-0000-0000-0000-000000000000" "" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "18.2: Get Non-existent Product Detail" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 19: REPORT AN ISSUE (/marketplace/products/{id}/report)
+# ==============================================================================
+echo -e "\n--- Testing Report An Issue ---"
+
+if [ -n "$MARKET_PRODUCT_ID" ]; then
+    # Scenario 19.1: Report a product (Happy Path)
+    REPORT_PAYLOAD="{\"reason\":\"WrongExpiry\",\"details\":\"Expiry date shown does not match the actual product label.\"}"
+    res=$(send_request "POST" "/marketplace/products/$MARKET_PRODUCT_ID/report" "$REPORT_PAYLOAD" "$CUSTOMER_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "19.1: Report Product Listing Issue" "$status" "200" "$body"
+
+    # Scenario 19.2: Report with invalid reason (400)
+    BAD_REPORT="{\"reason\":\"InvalidCategory\",\"details\":\"test\"}"
+    res=$(send_request "POST" "/marketplace/products/$MARKET_PRODUCT_ID/report" "$BAD_REPORT" "$CUSTOMER_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "19.2: Report Product With Invalid Reason" "$status" "400" "$body"
+fi
+
+# Scenario 19.3: Report unauthenticated (401)
+res=$(send_request "POST" "/marketplace/products/00000000-0000-0000-0000-000000000001/report" "{\"reason\":\"Spam\"}" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "19.3: Report Product Unauthenticated" "$status" "401" "$body"
+
+# ==============================================================================
+# SECTION 20: OCR VERIFICATION (/stores/me/products/{id}/ocr)
+# ==============================================================================
+echo -e "\n--- Testing OCR Verification ---"
+
+if [ -n "$PRODUCT_ID" ]; then
+    # Scenario 20.1: Submit OCR scan (Happy Path)
+    echo "PNG-MOCK-PAYLOAD" > mock_ocr.png
+    res=$(curl.exe -s -k -w "\n%{http_code}" -X POST \
+      -H "Authorization: Bearer $MERCHANT_TOKEN" \
+      -F "File=@mock_ocr.png" \
+      "$BASE_URL/stores/me/products/$PRODUCT_ID/ocr")
+    rm -f mock_ocr.png
+    status=$(echo "$res" | tail -n 1)
+    body=$(echo "$res" | sed '$d')
+    assert_status "20.1: Submit Product Image for OCR Analysis" "$status" "200" "$body"
+
+    # Scenario 20.2: Poll OCR result (Happy Path)
+    res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/ocr-result" "" "$MERCHANT_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "20.2: Poll OCR Scan Result" "$status" "200" "$body"
+
+    # Scenario 20.3: Poll OCR result unauthenticated (401)
+    res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/ocr-result" "" "")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "20.3: Poll OCR Result Unauthenticated" "$status" "401" "$body"
+fi
+
+# Scenario 20.4: Poll OCR result for non-existent product (404)
+res=$(send_request "GET" "/stores/me/products/00000000-0000-0000-0000-000000000000/ocr-result" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "20.4: Poll OCR Result Non-existent Product" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 21: ADMIN DISPUTE HANDLING (/admin/disputes)
+# ==============================================================================
+echo -e "\n--- Testing Admin Dispute Handling ---"
+
+if [ -n "$ADMIN_TOKEN" ]; then
+    # Scenario 21.1: List all disputes (Happy Path)
+    res=$(send_request "GET" "/admin/disputes" "" "$ADMIN_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "21.1: Admin List All Product Disputes" "$status" "200" "$body"
+    DISPUTE_ID=$(get_json_value "$body" "id")
+
+    # Scenario 21.2: List unresolved disputes only
+    res=$(send_request "GET" "/admin/disputes?isResolved=false" "" "$ADMIN_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "21.2: Admin List Unresolved Disputes" "$status" "200" "$body"
+
+    # Scenario 21.3: Resolve a dispute (Happy Path)
+    if [ -n "$DISPUTE_ID" ]; then
+        RESOLVE_PAYLOAD="{\"adminNote\":\"Reviewed and confirmed — product listing corrected by merchant.\"}"
+        res=$(send_request "PATCH" "/admin/disputes/$DISPUTE_ID/resolve" "$RESOLVE_PAYLOAD" "$ADMIN_TOKEN")
+        status=${res%%|*}
+        body=${res#*|}
+        assert_status "21.3: Admin Resolve Product Dispute" "$status" "200" "$body"
+    fi
+
+    # Scenario 21.4: List resolved disputes
+    res=$(send_request "GET" "/admin/disputes?isResolved=true" "" "$ADMIN_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "21.4: Admin List Resolved Disputes" "$status" "200" "$body"
+
+    # Scenario 21.5: Resolve non-existent dispute (404)
+    res=$(send_request "PATCH" "/admin/disputes/00000000-0000-0000-0000-000000000000/resolve" "{\"adminNote\":\"test\"}" "$ADMIN_TOKEN")
+    status=${res%%|*}
+    body=${res#*|}
+    assert_status "21.5: Resolve Non-existent Dispute" "$status" "404" "$body"
+fi
+
+# ==============================================================================
 # TEST RUN SUMMARY
 # ==============================================================================
 echo "=========================================================="
