@@ -252,13 +252,13 @@ Assert-Status -Scenario "3.2: Update Store Location Details" -ActualCode $Res.St
 $Boundary = [System.Guid]::NewGuid().ToString()
 $LF = "`r`n"
 $MultipartBody = "--$Boundary$LF" +
-                 "Content-Disposition: form-data; name=`"Email``"$LF$LF" +
+                 "Content-Disposition: form-data; name=`"Email`"$LF$LF" +
                  "$MerchantEmail$LF" +
                  "--$Boundary$LF" +
-                 "Content-Disposition: form-data; name=`"Type``"$LF$LF" +
+                 "Content-Disposition: form-data; name=`"Type`"$LF$LF" +
                  "CommercialRegistration$LF" +
                  "--$Boundary$LF" +
-                 "Content-Disposition: form-data; name=`"File``; filename=`"mock_cr.pdf``"$LF" +
+                 "Content-Disposition: form-data; name=`"File`"; filename=`"mock_cr.pdf`"$LF" +
                  "Content-Type: application/pdf$LF$LF" +
                  "PDF-MOCK-CONTENT-GOES-HERE$LF" +
                  "--$Boundary--$LF"
