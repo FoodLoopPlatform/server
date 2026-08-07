@@ -436,6 +436,12 @@ status=${res%%|*}
 body=${res#*|}
 assert_status "3.6: Retrieve Merchant Received Orders List" "$status" "200" "$body"
 
+# Scenario 3.7: Get Merchant Store Analytics
+res=$(send_request "GET" "/stores/me/analytics" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "3.7: Retrieve Merchant Store Analytics" "$status" "200" "$body"
+
 # ==============================================================================
 # SECTION 4: MERCHANT INVENTORY (/stores/me/products)
 # ==============================================================================

@@ -51,8 +51,12 @@ function Send-Request {
     $BodyJson = $null
     if ($Body -and $ContentType -eq "application/json") {
         $BodyJson = $Body | ConvertTo-Json -Depth 10
+        $BodyJson = [System.Text.Encoding]::UTF8.GetBytes($BodyJson)
     } elseif ($Body) {
         $BodyJson = $Body
+        if ($BodyJson -is [string]) {
+            $BodyJson = [System.Text.Encoding]::UTF8.GetBytes($BodyJson)
+        }
     }
 
     try {
@@ -442,6 +446,10 @@ Assert-Status -Scenario "3.5: Update Store Name and Category Profile" -ActualCod
 $res = Send-Request -Method "GET" -Route "/stores/me/orders" -Token $MerchantToken
 Assert-Status -Scenario "3.6: Retrieve Merchant Received Orders List" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
 
+# Scenario 3.7: Get Merchant Store Analytics
+$res = Send-Request -Method "GET" -Route "/stores/me/analytics" -Token $MerchantToken
+Assert-Status -Scenario "3.7: Retrieve Merchant Store Analytics" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.RawContent
+
 # ==============================================================================
 # SECTION 4: MERCHANT INVENTORY (/stores/me/products)
 # ==============================================================================
@@ -464,7 +472,7 @@ $PrdPayload = @{
     expirationDate = "2026-08-15"
 }
 $res = Send-Request -Method "POST" -Route "/stores/me/products" -Body $PrdPayload -Token $MerchantToken
-Assert-Status -Scenario "4.1: Add Product to Store Inventory" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
+Assert-Status -Scenario "4.1: Add Product to Store Inventory" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.RawContent
 $ProductId = $res.Data.data.id
 
 # Scenario 4.2: Invalid Discount Price
@@ -501,7 +509,7 @@ $multipartPrdUpdate = (
     "--$boundary--"
 ) -join $LF
 $res = Send-Request -Method "PATCH" -Route "/stores/me/products/$ProductId" -Body $multipartPrdUpdate -Token $MerchantToken -ContentType "multipart/form-data; boundary=$boundary"
-Assert-Status -Scenario "4.5: Update Product Pricing & Stock Levels" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
+Assert-Status -Scenario "4.5: Update Product Pricing & Stock Levels" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.RawContent
 
 # Scenario 4.6: List Active Listings
 $res = Send-Request -Method "GET" -Route "/stores/me/products?status=Active" -Token $MerchantToken
@@ -516,7 +524,7 @@ $multipartPrdImage = (
     "--$boundary--"
 ) -join $LF
 $res = Send-Request -Method "POST" -Route "/stores/me/products/$ProductId/images" -Body $multipartPrdImage -Token $MerchantToken -ContentType "multipart/form-data; boundary=$boundary"
-Assert-Status -Scenario "4.7: Upload Product Display Image" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
+Assert-Status -Scenario "4.7: Upload Product Display Image" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.RawContent
 $ImageId = $res.Data.data.images[0].id
 
 # Scenario 4.8: Remove Product Display Image
@@ -811,6 +819,9 @@ if ($AdminToken) {
     # Scenario 10.26: Admin delete user directly
     $res = Send-Request -Method "DELETE" -Route "/users/$AdmUserId" -Token $AdminToken
     Assert-Status -Scenario "10.26: Admin Delete User Account Directly" -ActualCode $res.StatusCode -ExpectedCode 204 -Data $res.Data
+} else {
+    Write-Host "[WARNING] Skipping Admin-locked checks due to missing admin token." -ForegroundColor Yellow
+}
 
     # ==============================================================================
     # TEST RUN SUMMARY
@@ -818,7 +829,7 @@ if ($AdminToken) {
     Write-Host "==========================================================" -ForegroundColor Cyan
     Write-Host "FoodLoop Automated Integration Test Suite Completed" -ForegroundColor Cyan
     Write-Host "TOTAL PASSED ASSERTIONS: $PassCount" -ForegroundColor Green
-    Write-Host "TOTAL FAILED ASSERTIONS: $FailCount" -ForegroundColor (If ($FailCount -eq 0) { "Green" } Else { "Red" })
+    Write-Host "TOTAL FAILED ASSERTIONS: $FailCount" -ForegroundColor $(if ($FailCount -eq 0) { "Green" } else { "Red" })
     Write-Host "==========================================================" -ForegroundColor Cyan
 
     if ($FailCount -eq 0) {
