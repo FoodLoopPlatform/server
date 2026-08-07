@@ -1,4 +1,4 @@
-﻿using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Products;
@@ -188,6 +188,17 @@ public class ProductsController : ControllerBase
         var command = new BulkUploadProductsCommand(OwnerId, uploadRequest);
         var products = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ProductDto>>.Ok(products));
+    }
+
+    /// <summary>
+    /// GET /stores/me/products/pricing — retrieve store-level pricing and discount overview metrics.
+    /// </summary>
+    [HttpGet("pricing")]
+    public async Task<IActionResult> GetPricingOverview(CancellationToken cancellationToken)
+    {
+        var query = new GetStorePricingOverviewQuery(OwnerId);
+        var overview = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<StorePricingOverviewDto>.Ok(overview));
     }
 }
 
