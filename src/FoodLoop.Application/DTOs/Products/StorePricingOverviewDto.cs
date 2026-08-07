@@ -11,7 +11,8 @@ public class StorePricingOverviewDto
 
 public class PricingSummaryDto
 {
-    public int TotalProducts { get; set; }
+    /// <summary>Number of active (non-deleted) products included in the pricing metrics.</summary>
+    public int TotalActiveProducts { get; set; }
     public decimal AverageDiscountPercentage { get; set; }
     public decimal MaxDiscountPercentage { get; set; }
     public decimal MinDiscountPercentage { get; set; }

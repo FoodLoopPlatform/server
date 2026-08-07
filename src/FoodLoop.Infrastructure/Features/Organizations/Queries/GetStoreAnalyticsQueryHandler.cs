@@ -27,30 +27,37 @@ public class GetStoreAnalyticsQueryHandler : IRequestHandler<GetStoreAnalyticsQu
         var org = await _db.Organizations.FirstOrDefaultAsync(o => o.OwnerId == request.OwnerId && !o.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Organization", request.OwnerId);
 
-        var orders = await _db.Orders
+        // Determine the start of the requested period (UTC)
+        DateTimeOffset? since = request.Period?.ToLowerInvariant() switch
+        {
+            "today" => DateTimeOffset.UtcNow.Date,
+            "week"  => DateTimeOffset.UtcNow.Date.AddDays(-6),
+            "month" => DateTimeOffset.UtcNow.Date.AddDays(-29),
+            _       => null   // "all" or unrecognised — no date filter
+        };
+
+        var ordersQuery = _db.Orders
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
-            .Where(o => o.Items.Any(i => i.Product!.OrganizationId == org.Id))
-            .ToListAsync(cancellationToken);
+            .Where(o => o.Items.Any(i => i.Product!.OrganizationId == org.Id));
 
-        var revenue = orders
+        if (since.HasValue)
+            ordersQuery = ordersQuery.Where(o => o.CreatedAt >= since.Value);
+
+        var orders = await ordersQuery.ToListAsync(cancellationToken);
+
+        // Only completed / paid orders contribute to revenue and savings
+        var completedItems = orders
             .Where(o => o.OrderStatus == OrderStatus.Completed || o.PaymentStatus == PaymentStatus.Paid)
             .SelectMany(o => o.Items)
             .Where(i => i.Product!.OrganizationId == org.Id)
-            .Sum(i => i.Quantity * i.UnitPrice);
+            .ToList();
 
-        var ordersCount = orders.Count;
+        var revenue      = completedItems.Sum(i => i.Quantity * i.UnitPrice);
+        var ordersCount  = orders.Count(o => o.OrderStatus == OrderStatus.Completed || o.PaymentStatus == PaymentStatus.Paid);
+        var savingsImpact = completedItems.Sum(i => i.Quantity * (i.Product!.OriginalPrice - i.UnitPrice));
 
-        var savingsImpact = orders
-            .Where(o => o.OrderStatus == OrderStatus.Completed || o.PaymentStatus == PaymentStatus.Paid)
-            .SelectMany(o => o.Items)
-            .Where(i => i.Product!.OrganizationId == org.Id)
-            .Sum(i => i.Quantity * (i.Product!.OriginalPrice - i.UnitPrice));
-
-        var topProducts = orders
-            .Where(o => o.OrderStatus == OrderStatus.Completed || o.PaymentStatus == PaymentStatus.Paid)
-            .SelectMany(o => o.Items)
-            .Where(i => i.Product!.OrganizationId == org.Id)
+        var topProducts = completedItems
             .GroupBy(i => new { i.ProductId, i.Product!.Title, i.Product!.TitleAr })
             .Select(g => new TopProductDto
             {
@@ -66,10 +73,11 @@ public class GetStoreAnalyticsQueryHandler : IRequestHandler<GetStoreAnalyticsQu
 
         return new StoreAnalyticsDto
         {
-            Revenue = revenue,
-            OrdersCount = ordersCount,
+            Period       = request.Period ?? "all",
+            Revenue      = revenue,
+            OrdersCount  = ordersCount,
             SavingsImpact = savingsImpact,
-            TopProducts = topProducts
+            TopProducts  = topProducts
         };
     }
 }

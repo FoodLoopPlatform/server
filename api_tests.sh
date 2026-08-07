@@ -436,11 +436,35 @@ status=${res%%|*}
 body=${res#*|}
 assert_status "3.6: Retrieve Merchant Received Orders List" "$status" "200" "$body"
 
-# Scenario 3.7: Get Merchant Store Analytics
+# Scenario 3.7: Get Merchant Store Analytics (all-time, default)
 res=$(send_request "GET" "/stores/me/analytics" "" "$MERCHANT_TOKEN")
 status=${res%%|*}
 body=${res#*|}
-assert_status "3.7: Retrieve Merchant Store Analytics" "$status" "200" "$body"
+assert_status "3.7: Retrieve Merchant Store Analytics (all-time)" "$status" "200" "$body"
+
+# Scenario 3.7.a: Get Analytics filtered by period=today
+res=$(send_request "GET" "/stores/me/analytics?period=today" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "3.7.a: Retrieve Merchant Store Analytics (today)" "$status" "200" "$body"
+
+# Scenario 3.7.b: Get Analytics filtered by period=week
+res=$(send_request "GET" "/stores/me/analytics?period=week" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "3.7.b: Retrieve Merchant Store Analytics (week)" "$status" "200" "$body"
+
+# Scenario 3.7.c: Get Analytics filtered by period=month
+res=$(send_request "GET" "/stores/me/analytics?period=month" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "3.7.c: Retrieve Merchant Store Analytics (month)" "$status" "200" "$body"
+
+# Scenario 3.7.d: Get Analytics with invalid period (should 400)
+res=$(send_request "GET" "/stores/me/analytics?period=invalid" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "3.7.d: Retrieve Store Analytics With Invalid Period" "$status" "400" "$body"
 
 # Scenario 3.7.1: Get Analytics without Token (Unauthenticated)
 res=$(send_request "GET" "/stores/me/analytics" "" "")
