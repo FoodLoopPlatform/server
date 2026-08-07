@@ -1,4 +1,4 @@
-﻿using FoodLoop.Domain.Entities;
+using FoodLoop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +8,8 @@ public class OrganizationVerificationConfiguration : IEntityTypeConfiguration<Or
 {
     public void Configure(EntityTypeBuilder<OrganizationVerification> builder)
     {
+        builder.ToTable("OrganizationVerifications");
+
         builder.Property(v => v.VerificationType)
             .HasConversion<string>()
             .HasMaxLength(100)
