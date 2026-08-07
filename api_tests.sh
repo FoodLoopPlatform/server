@@ -442,6 +442,18 @@ status=${res%%|*}
 body=${res#*|}
 assert_status "3.7: Retrieve Merchant Store Analytics" "$status" "200" "$body"
 
+# Scenario 3.7.1: Get Analytics without Token (Unauthenticated)
+res=$(send_request "GET" "/stores/me/analytics" "" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "3.7.1: Retrieve Store Analytics Unauthenticated" "$status" "401" "$body"
+
+# Scenario 3.7.2: Get Analytics as Customer (Forbidden)
+res=$(send_request "GET" "/stores/me/analytics" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "3.7.2: Retrieve Store Analytics as Customer" "$status" "403" "$body"
+
 # ==============================================================================
 # SECTION 4: MERCHANT INVENTORY (/stores/me/products)
 # ==============================================================================
@@ -542,6 +554,25 @@ res=$(send_request "POST" "/stores/me/products" "$PRD_PAYLOAD" "$MERCHANT_TOKEN"
 status=${res%%|*}
 body=${res#*|}
 PRODUCT_ID=$(get_json_value "$body" "id")
+
+# Scenario 4.11: Retrieve Store Pricing Overview
+res=$(send_request "GET" "/stores/me/products/pricing" "" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "4.11: Retrieve Store Pricing Overview" "$status" "200" "$body"
+
+# Scenario 4.11.1: Retrieve Store Pricing Overview without Token (Unauthenticated)
+res=$(send_request "GET" "/stores/me/products/pricing" "" "")
+status=${res%%|*}
+body=${res#*|}
+assert_status "4.11.1: Retrieve Store Pricing Overview Unauthenticated" "$status" "401" "$body"
+
+# Scenario 4.11.2: Retrieve Store Pricing Overview as Customer (Forbidden)
+res=$(send_request "GET" "/stores/me/products/pricing" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "4.11.2: Retrieve Store Pricing Overview as Customer" "$status" "403" "$body"
+
 
 # ==============================================================================
 # SECTION 5: MARKETPLACE (/marketplace)
