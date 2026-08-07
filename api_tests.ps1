@@ -29,6 +29,8 @@ $ReviewId = ""
 $SupportTicketId = ""
 $NotificationId = ""
 $ImageId = ""
+$AdmUserId = ""
+$AddressId = ""
 
 # Helper function to execute Web Requests
 function Send-Request {
@@ -123,11 +125,6 @@ try {
 # ==============================================================================
 Write-Host "`n--- Testing Health & Root Routes ---" -ForegroundColor Yellow
 
-# Scenario 0.0: Reset database state
-$res = Send-Request -Method "POST" -Route "/test/reset-db"
-Assert-Status -Scenario "0.0: Reset database state" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.RawContent
-
-
 # Scenario 0.1: GET /
 $res = Send-Request -Method "GET" -Route "/"
 Assert-Status -Scenario "0.1: GET Welcome Page" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.RawContent
@@ -141,14 +138,14 @@ Assert-Status -Scenario "0.2: GET Health Check" -ActualCode $res.StatusCode -Exp
 # ==============================================================================
 Write-Host "`n--- Testing Authentication Endpoints ---" -ForegroundColor Yellow
 
-$RandomVal = Get-Random -Min 10000 -Max 99999
+$RandomVal = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds().ToString() + "_" + (Get-Random -Min 10000 -Max 99999).ToString()
 $MerchantEmail = "merchant.ps${RandomVal}@example.com"
 $RegisterPayload = @{
-    name = "Test Merchant PS"
+    name = "Test Merchant PS $RandomVal"
     email = $MerchantEmail
     password = "Password@123"
     role = "Merchant"
-    businessName = "Test Organic Shop PS"
+    businessName = "Test Organic Shop PS $RandomVal"
 }
 
 $res = Send-Request -Method "POST" -Route "/auth/register" -Body $RegisterPayload
@@ -238,7 +235,7 @@ if ($res.StatusCode -eq 200) {
 # Log In / Register Customer
 $CustomerEmail = "customer.ps${RandomVal}@example.com"
 $CustomerReg = @{
-    name = "Test Customer PS"
+    name = "Test Customer PS $RandomVal"
     email = $CustomerEmail
     password = "Password@123"
     role = "Customer"
@@ -256,11 +253,11 @@ if ($res.StatusCode -eq 200) {
 # Log In / Register Charity
 $CharityEmail = "charity.ps${RandomVal}@example.com"
 $CharityReg = @{
-    name = "Test Charity PS"
+    name = "Test Charity PS $RandomVal"
     email = $CharityEmail
     password = "Password@123"
     role = "Charity"
-    businessName = "Test Charity Org PS"
+    businessName = "Test Charity Org PS $RandomVal"
 }
 $res = Send-Request -Method "POST" -Route "/auth/register" -Body $CharityReg
 $res = Send-Request -Method "POST" -Route "/auth/login" -Body @{ email = $CharityEmail; password = "Password@123" }
@@ -283,7 +280,8 @@ $res = Send-Request -Method "GET" -Route "/users/me"
 Assert-Status -Scenario "2.2: Get Profile Without Bearer Token" -ActualCode $res.StatusCode -ExpectedCode 401 -Data $res.Data
 
 # Scenario 2.3: Update Profile
-$res = Send-Request -Method "PATCH" -Route "/users/me" -Body @{ fullName = "Updated Customer PS"; language = "ar"; phoneNumber = "01012345678" } -Token $CustomerToken
+$CPhone = "010" + (Get-Random -Min 10000000 -Max 99999999).ToString()
+$res = Send-Request -Method "PATCH" -Route "/users/me" -Body @{ fullName = "Updated Customer PS $RandomVal"; language = "ar"; phoneNumber = $CPhone } -Token $CustomerToken
 Assert-Status -Scenario "2.3: Update Customer Profile Details" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
 
 # Scenario 2.4: Create Address
@@ -431,7 +429,7 @@ foreach ($type in @("CharityBylaws", "BoardOfDirectorsList")) {
 $multipartStoreProfile = (
     "--$boundary",
     "Content-Disposition: form-data; name=`"Name`"$LF",
-    "Spinneys Supermarket Updated PS",
+    "Spinneys Supermarket Updated PS $RandomVal",
     "--$boundary",
     "Content-Disposition: form-data; name=`"BusinessCategory`"$LF",
     "Supermarket",
@@ -456,7 +454,7 @@ Write-Host "[INFO] Loaded Dynamic Category ID: $CategoryId" -ForegroundColor Gre
 # Scenario 4.1: Add Product
 $PrdPayload = @{
     categoryId = $CategoryId
-    title = "Artisan Sourdough Loaf PS"
+    title = "Artisan Sourdough Loaf PS $RandomVal"
     titleAr = "خبز ساوردو يدوي"
     description = "Crispy sourdough bread."
     descriptionAr = "خبز مخبوز طازج."
@@ -528,7 +526,7 @@ if ($ImageId) {
 }
 
 # Scenario 4.9: Bulk Upload CSV
-$csvData = "title,originalprice,discountedprice,quantityavailable,expirationdate,categoryname`nBulk Artisan Bread PS,20.00,10.00,15,2026-08-25,Bakery"
+$csvData = "title,originalprice,discountedprice,quantityavailable,expirationdate,categoryname`nBulk Artisan Bread PS $RandomVal,20.00,10.00,15,2026-08-25,Bakery"
 $multipartCsv = (
     "--$boundary",
     "Content-Disposition: form-data; name=`"File`"; filename=`"bulk_prd.csv`"",
@@ -610,7 +608,7 @@ $ReviewPayload = @{
     orderId = $OrderId
     organizationId = $OrganizationId
     rating = 5
-    comment = "Exceptional service and sourdough! PS"
+    comment = "Exceptional service and sourdough! PS $RandomVal"
 }
 $res = Send-Request -Method "POST" -Route "/reviews" -Body $ReviewPayload -Token $CustomerToken
 Assert-Status -Scenario "7.1: Post Order Rating Review" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
@@ -658,7 +656,7 @@ Write-Host "`n--- Testing Customer Support Tickets ---" -ForegroundColor Yellow
 # Scenario 9.1: Create Ticket
 $TicketPayload = @{
     category = "Refund"
-    message = "Refund delay query PS"
+    message = "Refund delay query PS $RandomVal"
     priority = "High"
 }
 $res = Send-Request -Method "POST" -Route "/support-tickets" -Body $TicketPayload -Token $CustomerToken
@@ -798,7 +796,7 @@ if ($AdminToken) {
     Assert-Status -Scenario "10.22: Soft Delete Product Listing via Admin" -ActualCode $res.StatusCode -ExpectedCode 204 -Data $res.Data
 
     # Scenario 10.23: Admin direct user CRUD check
-    $res = Send-Request -Method "POST" -Route "/users" -Body @{ fullName = "Admin Direct PS"; email = "admdirectps${RandomVal}@example.com"; password = "Password@123"; role = "Customer" } -Token $AdminToken
+    $res = Send-Request -Method "POST" -Route "/users" -Body @{ fullName = "Admin Direct PS $RandomVal"; email = "admdirectps_${RandomVal}@test.com"; password = "Password@123"; role = "Customer" } -Token $AdminToken
     Assert-Status -Scenario "10.23: Admin Create User Account Directly" -ActualCode $res.StatusCode -ExpectedCode 201 -Data $res.Data
     $AdmUserId = $res.Data.data.id
 
@@ -807,7 +805,7 @@ if ($AdminToken) {
     Assert-Status -Scenario "10.24: Admin Retrieve User Account by ID" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
 
     # Scenario 10.25: Admin update user directly
-    $res = Send-Request -Method "PATCH" -Route "/users/$AdmUserId" -Body @{ fullName = "Admin Direct Updated" } -Token $AdminToken
+    $res = Send-Request -Method "PATCH" -Route "/users/$AdmUserId" -Body @{ fullName = "Admin Direct Updated $RandomVal" } -Token $AdminToken
     Assert-Status -Scenario "10.25: Admin Update User Account Directly" -ActualCode $res.StatusCode -ExpectedCode 200 -Data $res.Data
 
     # Scenario 10.26: Admin delete user directly
@@ -830,7 +828,37 @@ if ($AdminToken) {
     }
 }
 finally {
+    Write-Host "Executing Teardown / Cleanup..."
+    
+    # 1. Delete review if created
+    if ($ReviewId -and $AdminToken) {
+        Write-Host "Tearing down Review: $ReviewId"
+        $null = Send-Request -Method "DELETE" -Route "/admin/reviews/$ReviewId" -Token $AdminToken
+    }
+    
+    # 2. Delete product if created
+    if ($ProductId) {
+        Write-Host "Tearing down Product: $ProductId"
+        if ($AdminToken) {
+            $null = Send-Request -Method "DELETE" -Route "/admin/products/$ProductId" -Token $AdminToken
+        } elseif ($MerchantToken) {
+            $null = Send-Request -Method "DELETE" -Route "/stores/me/products/$ProductId" -Token $MerchantToken
+        }
+    }
+    
+    # 3. Delete address if created
+    if ($AddressId -and $CustomerToken) {
+        Write-Host "Tearing down Address: $AddressId"
+        $null = Send-Request -Method "DELETE" -Route "/users/me/addresses/$AddressId" -Token $CustomerToken
+    }
+    
+    # 4. Delete admin created user if created
+    if ($AdmUserId -and $AdminToken) {
+        Write-Host "Tearing down Admin Direct User: $AdmUserId"
+        $null = Send-Request -Method "DELETE" -Route "/users/$AdmUserId" -Token $AdminToken
+    }
+
     Write-Host "Cleaning up temporary files..."
-    Remove-Item -Path "temp_payload.json", "mock_cr.pdf", "mock_charity_cr.pdf", "mock_img.png", "bulk_prd.csv" -ErrorAction SilentlyContinue
+    Remove-Item -Path "temp_payload.json", "mock_cr.pdf", "mock_charity_cr.pdf", "mock_img.png", "bulk_prd.csv", "test.pdf" -ErrorAction SilentlyContinue
 }
 
