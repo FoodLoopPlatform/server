@@ -177,11 +177,18 @@ public class StoresController : ControllerBase
 
     /// <summary>
     /// GET /stores/me/analytics — retrieve store-level analytics/metrics for the insights dashboard.
+    /// Query param: period = today | week | month | all (default: all)
     /// </summary>
     [HttpGet("me/analytics")]
-    public async Task<IActionResult> GetMyStoreAnalytics(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMyStoreAnalytics(
+        [FromQuery] string period = "all",
+        CancellationToken cancellationToken = default)
     {
-        var query = new GetStoreAnalyticsQuery(OwnerId);
+        var allowed = new[] { "today", "week", "month", "all" };
+        if (!allowed.Contains(period.ToLowerInvariant()))
+            return BadRequest(ApiResponse.Fail("Invalid period. Allowed values: today, week, month, all."));
+
+        var query = new GetStoreAnalyticsQuery(OwnerId, period);
         var analytics = await _mediator.Send(query, cancellationToken);
         return Ok(ApiResponse<StoreAnalyticsDto>.Ok(analytics));
     }

@@ -76,7 +76,7 @@ public class GetStorePricingOverviewQueryHandler : IRequestHandler<GetStorePrici
         {
             Summary = new PricingSummaryDto
             {
-                TotalProducts = activeProducts.Count,
+                TotalActiveProducts = activeProducts.Count,
                 AverageDiscountPercentage = avgDiscount,
                 MaxDiscountPercentage = maxDiscount,
                 MinDiscountPercentage = minDiscount,
@@ -84,7 +84,8 @@ public class GetStorePricingOverviewQueryHandler : IRequestHandler<GetStorePrici
                 TotalValueAtDiscountedPrice = totalDiscountedValue,
                 TotalPotentialSavings = totalOriginalValue - totalDiscountedValue
             },
-            Products = productList
+            // Return only active products so the list count matches the summary
+            Products = activeProducts
         };
     }
 }
