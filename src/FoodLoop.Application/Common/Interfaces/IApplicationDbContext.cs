@@ -11,7 +11,7 @@ public interface IApplicationDbContext
 {
     DbSet<Address> Addresses { get; }
     DbSet<Organization> Organizations { get; }
-    DbSet<OrganizationVerification> StoreVerifications { get; }
+    DbSet<OrganizationVerification> OrganizationVerifications { get; }
     DbSet<Category> Categories { get; }
     DbSet<Product> Products { get; }
     DbSet<ProductImage> ProductImages { get; }
