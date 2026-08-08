@@ -31,4 +31,16 @@ public class NullEmailService : IEmailService
         _logger.LogInformation("[DEV EMAIL] Welcome {Name} <{Email}>", fullName, toEmail);
         return Task.CompletedTask;
     }
+
+    public Task SendApprovalEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[DEV EMAIL] Approval: {Name} <{Email}> — Organization: {Org}", fullName, toEmail, organizationName);
+        return Task.CompletedTask;
+    }
+
+    public Task SendRejectionEmailAsync(string toEmail, string fullName, string organizationName, string? adminNote, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[DEV EMAIL] Rejection: {Name} <{Email}> — Organization: {Org} — Note: {Note}", fullName, toEmail, organizationName, adminNote);
+        return Task.CompletedTask;
+    }
 }

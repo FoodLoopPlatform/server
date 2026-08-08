@@ -7,7 +7,6 @@ using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-
 namespace FoodLoop.Infrastructure.Features.Admin.Commands;
 
 public class VerifyStoreCommandHandler : IRequestHandler<VerifyOrganizationCommand, AdminOrganizationDto>
@@ -15,15 +14,18 @@ public class VerifyStoreCommandHandler : IRequestHandler<VerifyOrganizationComma
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuditLogService _auditLogService;
+    private readonly IEmailService _emailService;
 
     public VerifyStoreCommandHandler(
         IUnitOfWork unitOfWork,
         UserManager<ApplicationUser> userManager,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+        IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _auditLogService = auditLogService;
+        _emailService = emailService;
     }
 
     public async Task<AdminOrganizationDto> Handle(VerifyOrganizationCommand command, CancellationToken cancellationToken)
@@ -68,6 +70,18 @@ public class VerifyStoreCommandHandler : IRequestHandler<VerifyOrganizationComma
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Notify the merchant/charity owner by email
+        if (newStatus == VerificationStatus.Verified)
+        {
+            await _emailService.SendApprovalEmailAsync(
+                owner.Email!, owner.FullName, organization.Name, cancellationToken);
+        }
+        else if (newStatus == VerificationStatus.Rejected)
+        {
+            await _emailService.SendRejectionEmailAsync(
+                owner.Email!, owner.FullName, organization.Name, command.Request.Note, cancellationToken);
+        }
 
         // Log document reviews
         foreach (var doc in pendingDocs)

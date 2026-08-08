@@ -43,6 +43,21 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(toEmail, subject, body, cancellationToken);
     }
 
+    public async Task SendApprovalEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
+    {
+        var subject = "FoodLoop - Your Account Has Been Approved!";
+        var body = $"Hello {fullName},\n\nCongratulations! Your organization \"{organizationName}\" has been verified and approved on FoodLoop.\n\nYou can now log in and start using all merchant features.\n\nThank you,\nFoodLoop Team";
+        await SendEmailAsync(toEmail, subject, body, cancellationToken);
+    }
+
+    public async Task SendRejectionEmailAsync(string toEmail, string fullName, string organizationName, string? adminNote, CancellationToken cancellationToken = default)
+    {
+        var noteSection = string.IsNullOrWhiteSpace(adminNote) ? string.Empty : $"\n\nAdmin note: {adminNote}";
+        var subject = "FoodLoop - Account Verification Update";
+        var body = $"Hello {fullName},\n\nWe have reviewed your application for \"{organizationName}\" and unfortunately it was not approved at this time.{noteSection}\n\nPlease review your submitted documents and resubmit. If you have questions, contact our support team.\n\nThank you,\nFoodLoop Team";
+        await SendEmailAsync(toEmail, subject, body, cancellationToken);
+    }
+
     private async Task SendEmailAsync(string toEmail, string subject, string body, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(_options.Host) ||
