@@ -32,6 +32,12 @@ public class NullEmailService : IEmailService
         return Task.CompletedTask;
     }
 
+    public Task SendPendingReviewEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[DEV EMAIL] PendingReview: {Name} <{Email}> — Organization: {Org}", fullName, toEmail, organizationName);
+        return Task.CompletedTask;
+    }
+
     public Task SendApprovalEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("[DEV EMAIL] Approval: {Name} <{Email}> — Organization: {Org}", fullName, toEmail, organizationName);

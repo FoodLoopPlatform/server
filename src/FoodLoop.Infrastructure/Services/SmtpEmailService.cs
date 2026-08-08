@@ -43,6 +43,13 @@ public class SmtpEmailService : IEmailService
         await SendEmailAsync(toEmail, subject, body, cancellationToken);
     }
 
+    public async Task SendPendingReviewEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
+    {
+        var subject = "FoodLoop - Your Application Is Under Review";
+        var body = $"Hello {fullName},\n\nThank you for registering \"{organizationName}\" on FoodLoop!\n\nYour application is currently under review by our team. You will receive an email once a decision has been made.\n\nIn the meantime, you can upload your verification documents by logging into your account.\n\nThank you,\nFoodLoop Team";
+        await SendEmailAsync(toEmail, subject, body, cancellationToken);
+    }
+
     public async Task SendApprovalEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
     {
         var subject = "FoodLoop - Your Account Has Been Approved!";
