@@ -85,17 +85,7 @@ public class CloudinaryFileStorageService : IFileStorageService
                 throw new InvalidOperationException($"Cloudinary upload failed: {uploadResult.Error.Message}");
             }
 
-            // For raw files (PDFs etc.), append fl_attachment so Cloudinary serves them
-            // as a forced download rather than trying to render inline (avoids "untrusted" error).
             var url = uploadResult.SecureUrl.ToString();
-            if (!Array.Exists(ImageExtensions, e => e == ext) &&
-                !Array.Exists(VideoExtensions, e => e == ext))
-            {
-                // Insert fl_attachment into the Cloudinary URL path
-                // e.g. .../raw/upload/v123/... -> .../raw/upload/fl_attachment/v123/...
-                url = url.Replace("/raw/upload/", "/raw/upload/fl_attachment/");
-            }
-
             _logger.LogInformation("Uploaded {File} to Cloudinary: {Url}", file.FileName, url);
             return url;
         }
