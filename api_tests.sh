@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # FoodLoop API Automated Test Suite (Bash Edition)
 # This script executes happy paths, validation failures, not found, unauthorized, and state transition test scenarios.
 
@@ -1274,6 +1274,614 @@ if [ -n "$ADMIN_TOKEN" ]; then
     assert_status "21.5: Resolve Non-existent Dispute" "$status" "404" "$body"
 fi
 
+# ==============================================================================
+# SECTION 22: AUTH EDGE CASES
+# ==============================================================================
+echo -e "\n--- Testing Auth Edge Cases ---"
+
+# 22.1 Duplicate email registration (400)
+res=$(send_request "POST" "/auth/register" "{\"name\":\"Dup\",\"email\":\"$MERCHANT_EMAIL\",\"password\":\"Password@123\",\"role\":\"Customer\"}")
+status=${res%%|*}; body=${res#*|}
+assert_status "22.1: Register Duplicate Email" "$status" "400" "$body"
+
+# 22.2 Login with empty credentials (400)
+res=$(send_request "POST" "/auth/login" "{\"email\":\"\",\"password\":\"\"}")
+status=${res%%|*}; body=${res#*|}
+assert_status "22.2: Login Empty Credentials" "$status" "400" "$body"
+
+# 22.3 Refresh with invalid token (401)
+res=$(send_request "POST" "/auth/refresh" "{\"refreshToken\":\"invalid-token-xyz\"}")
+status=${res%%|*}; body=${res#*|}
+assert_status "22.3: Refresh With Invalid Token" "$status" "401" "$body"
+
+# 22.4 Reset password with invalid token (400)
+res=$(send_request "POST" "/auth/reset-password" "{\"email\":\"$MERCHANT_EMAIL\",\"token\":\"bad-token\",\"newPassword\":\"NewPassword@123\"}")
+status=${res%%|*}; body=${res#*|}
+assert_status "22.4: Reset Password With Invalid Token" "$status" "400" "$body"
+
+
+# ==============================================================================
+# SECTION 23: CATEGORIES EDGE CASES
+# ==============================================================================
+echo -e "\n--- Testing Categories Edge Cases ---"
+
+# 23.1 GET /categories returns 200 with no auth
+res=$(send_request "GET" "/categories" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "23.1: Get Categories Public No Auth" "$status" "200" "$body"
+
+# ==============================================================================
+# SECTION 24: USERS — 401/403/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Users Auth/Role Gaps ---"
+
+# 24.1 PATCH /users/me unauthenticated (401)
+res=$(send_request "PATCH" "/users/me" "{\"fullName\":\"X\"}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.1: Update Profile Unauthenticated" "$status" "401" "$body"
+
+# 24.2 GET /users/me/addresses unauthenticated (401)
+res=$(send_request "GET" "/users/me/addresses" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.2: Get Addresses Unauthenticated" "$status" "401" "$body"
+
+# 24.3 POST /users/me/addresses unauthenticated (401)
+res=$(send_request "POST" "/users/me/addresses" "{\"city\":\"Cairo\",\"district\":\"Maadi\",\"street\":\"Road 9\",\"buildingNo\":\"1\",\"latitude\":30.04,\"longitude\":31.23}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.3: Create Address Unauthenticated" "$status" "401" "$body"
+
+# 24.4 PATCH /users/me/preferences unauthenticated (401)
+res=$(send_request "PATCH" "/users/me/preferences" "{\"orderUpdatesEnabled\":true}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.4: Update Preferences Unauthenticated" "$status" "401" "$body"
+
+# 24.5 POST /users/me/tickets unauthenticated (401)
+res=$(send_request "POST" "/users/me/tickets" "{\"category\":\"Test\",\"message\":\"test\"}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.5: Create Ticket Unauthenticated" "$status" "401" "$body"
+
+# 24.6 GET /users (admin list) as Customer (403)
+res=$(send_request "GET" "/users" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.6: List All Users as Customer (Forbidden)" "$status" "403" "$body"
+
+# 24.7 GET /users/{id} as Customer (403)
+res=$(send_request "GET" "/users/$CUSTOMER_USER_ID" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.7: Get User By ID as Customer (Forbidden)" "$status" "403" "$body"
+
+# 24.8 GET /users/{id} non-existent (404)
+if [ -n "$ADMIN_TOKEN" ]; then
+  res=$(send_request "GET" "/users/00000000-0000-0000-0000-000000000000" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "24.8: Get Non-existent User By ID" "$status" "404" "$body"
+fi
+
+# 24.9 PATCH /users/{id} as Customer (403)
+res=$(send_request "PATCH" "/users/$CUSTOMER_USER_ID" "{\"fullName\":\"Hack\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.9: Update User By ID as Customer (Forbidden)" "$status" "403" "$body"
+
+# 24.10 PATCH /users/{id} non-existent (404)
+if [ -n "$ADMIN_TOKEN" ]; then
+  res=$(send_request "PATCH" "/users/00000000-0000-0000-0000-000000000000" "{\"fullName\":\"X\"}" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "24.10: Update Non-existent User By ID" "$status" "404" "$body"
+fi
+
+# 24.11 DELETE /users/{id} as Customer (403)
+res=$(send_request "DELETE" "/users/$CUSTOMER_USER_ID" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.11: Delete User as Customer (Forbidden)" "$status" "403" "$body"
+
+# 24.12 POST /users (create) as Customer (403)
+res=$(send_request "POST" "/users" "{\"fullName\":\"X\",\"email\":\"x@x.com\",\"password\":\"Pass@123\",\"role\":\"Customer\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "24.12: Create User as Customer (Forbidden)" "$status" "403" "$body"
+
+
+# ==============================================================================
+# SECTION 25: STORES - 401/403 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Stores Auth/Role Gaps ---"
+
+# 25.1 GET /stores/me unauthenticated (401)
+res=$(send_request "GET" "/stores/me" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.1: Get Store Profile Unauthenticated" "$status" "401" "$body"
+
+# 25.2 GET /stores/me as Customer (403)
+res=$(send_request "GET" "/stores/me" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.2: Get Store Profile as Customer (Forbidden)" "$status" "403" "$body"
+
+# 25.3 GET /stores/me/orders unauthenticated (401)
+res=$(send_request "GET" "/stores/me/orders" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.3: Get Merchant Orders Unauthenticated" "$status" "401" "$body"
+
+# 25.4 GET /stores/me/orders as Customer (403)
+res=$(send_request "GET" "/stores/me/orders" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.4: Get Merchant Orders as Customer (Forbidden)" "$status" "403" "$body"
+
+# 25.5 PATCH /stores/me/orders/{id}/status unauthenticated (401)
+res=$(send_request "PATCH" "/stores/me/orders/00000000-0000-0000-0000-000000000000/status" "{\"status\":\"Completed\"}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.5: Update Order Status Unauthenticated" "$status" "401" "$body"
+
+# 25.6 PATCH /stores/me/orders/{id}/status as Customer (403)
+res=$(send_request "PATCH" "/stores/me/orders/00000000-0000-0000-0000-000000000000/status" "{\"status\":\"Completed\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.6: Update Order Status as Customer (Forbidden)" "$status" "403" "$body"
+
+# 25.7 POST /stores/me/documents missing email (400)
+echo "PDF" > tmp_doc.pdf
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -F "Type=CommercialRegistration" -F "File=@tmp_doc.pdf" "$BASE_URL/stores/me/documents")
+rm -f tmp_doc.pdf
+status=$(echo "$res" | tail -n 1)
+body=$(echo "$res" | head -n -1)
+assert_status "25.7: Upload Store Doc Missing Email" "$status" "400" "$body"
+
+# 25.8 POST /charities/me/documents missing email (400)
+echo "PDF" > tmp_doc.pdf
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -F "Type=AssociationCertificate" -F "File=@tmp_doc.pdf" "$BASE_URL/charities/me/documents")
+rm -f tmp_doc.pdf
+status=$(echo "$res" | tail -n 1)
+body=$(echo "$res" | head -n -1)
+assert_status "25.8: Upload Charity Doc Missing Email" "$status" "400" "$body"
+
+# 25.9 POST /stores/me/donations as Customer (403)
+res=$(send_request "POST" "/stores/me/donations" "{\"recipientOrganizationId\":\"00000000-0000-0000-0000-000000000001\",\"productId\":\"00000000-0000-0000-0000-000000000001\",\"quantity\":1}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.9: Donate as Customer (Forbidden)" "$status" "403" "$body"
+
+# 25.10 PATCH /stores/me/ai-settings unauthenticated (401)
+res=$(send_request "PATCH" "/stores/me/ai-settings" "{\"aiAutoDiscountEnabled\":true,\"aiAutoDiscountPercent\":20,\"aiAutoDiscountDaysBeforeExpiry\":3,\"aiAutoPricingEnabled\":false}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.10: Update AI Settings Unauthenticated" "$status" "401" "$body"
+
+# 25.11 GET /stores/me/ai-settings as Customer (403)
+res=$(send_request "GET" "/stores/me/ai-settings" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.11: Get AI Settings as Customer (Forbidden)" "$status" "403" "$body"
+
+# 25.12 PATCH /stores/me/ai-settings as Customer (403)
+res=$(send_request "PATCH" "/stores/me/ai-settings" "{\"aiAutoDiscountEnabled\":false,\"aiAutoDiscountPercent\":10,\"aiAutoDiscountDaysBeforeExpiry\":2,\"aiAutoPricingEnabled\":false}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "25.12: Update AI Settings as Customer (Forbidden)" "$status" "403" "$body"
+
+# ==============================================================================
+# SECTION 26: PRODUCTS — 401/403/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Products Auth/Role/404 Gaps ---"
+
+# 26.1 POST /stores/me/products unauthenticated (401)
+res=$(send_request "POST" "/stores/me/products" "{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"X\",\"originalPrice\":10,\"discountedPrice\":5,\"quantityAvailable\":1,\"expirationDate\":\"2026-09-01\"}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.1: Create Product Unauthenticated" "$status" "401" "$body"
+
+# 26.2 POST /stores/me/products as Customer (403)
+res=$(send_request "POST" "/stores/me/products" "{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"X\",\"originalPrice\":10,\"discountedPrice\":5,\"quantityAvailable\":1,\"expirationDate\":\"2026-09-01\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.2: Create Product as Customer (Forbidden)" "$status" "403" "$body"
+
+# 26.3 GET /stores/me/products unauthenticated (401)
+res=$(send_request "GET" "/stores/me/products" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.3: List Products Unauthenticated" "$status" "401" "$body"
+
+# 26.4 GET /stores/me/products as Customer (403)
+res=$(send_request "GET" "/stores/me/products" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.4: List Products as Customer (Forbidden)" "$status" "403" "$body"
+
+# 26.5 GET /stores/me/products/{id} unauthenticated (401)
+res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.5: Get Product Detail Unauthenticated" "$status" "401" "$body"
+
+# 26.6 GET /stores/me/products/{id} as Customer (403)
+res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.6: Get Product Detail as Customer (Forbidden)" "$status" "403" "$body"
+
+# 26.7 PATCH /stores/me/products/{id} unauthenticated (401)
+res=$(curl.exe -s -k -w "\n%{http_code}" -X PATCH -F "DiscountedPrice=5.00" "$BASE_URL/stores/me/products/$PRODUCT_ID")
+status=$(echo "$res" | tail -n 1)
+assert_status "26.7: Update Product Unauthenticated" "$status" "401" ""
+
+# 26.8 PATCH /stores/me/products/{id} as Customer (403)
+res=$(curl.exe -s -k -w "\n%{http_code}" -X PATCH -H "Authorization: Bearer $CUSTOMER_TOKEN" -F "DiscountedPrice=5.00" "$BASE_URL/stores/me/products/$PRODUCT_ID")
+status=$(echo "$res" | tail -n 1)
+assert_status "26.8: Update Product as Customer (Forbidden)" "$status" "403" ""
+
+# 26.9 PATCH /stores/me/products/{id} non-existent (404)
+res=$(curl.exe -s -k -w "\n%{http_code}" -X PATCH -H "Authorization: Bearer $MERCHANT_TOKEN" -F "DiscountedPrice=5.00" "$BASE_URL/stores/me/products/00000000-0000-0000-0000-000000000000")
+status=$(echo "$res" | tail -n 1)
+assert_status "26.9: Update Non-existent Product" "$status" "404" ""
+
+# 26.10 DELETE /stores/me/products/{id} unauthenticated (401)
+res=$(send_request "DELETE" "/stores/me/products/$PRODUCT_ID" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.10: Delete Product Unauthenticated" "$status" "401" "$body"
+
+# 26.11 DELETE /stores/me/products/{id} as Customer (403)
+res=$(send_request "DELETE" "/stores/me/products/$PRODUCT_ID" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.11: Delete Product as Customer (Forbidden)" "$status" "403" "$body"
+
+# 26.12 DELETE /stores/me/products/{id} non-existent (404)
+res=$(send_request "DELETE" "/stores/me/products/00000000-0000-0000-0000-000000000000" "" "$MERCHANT_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "26.12: Delete Non-existent Product" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 27: PRODUCTS IMAGES/BULK — 401/403/400/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Product Images & Bulk Upload Auth/Role Gaps ---"
+
+# 27.1 POST /stores/me/products/{id}/images unauthenticated (401)
+echo "PNG" > tmp_img.png
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -F "File=@tmp_img.png" "$BASE_URL/stores/me/products/$PRODUCT_ID/images")
+rm -f tmp_img.png
+status=$(echo "$res" | tail -n 1)
+assert_status "27.1: Upload Image Unauthenticated" "$status" "401" ""
+
+# 27.2 POST /stores/me/products/{id}/images as Customer (403)
+echo "PNG" > tmp_img.png
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $CUSTOMER_TOKEN" -F "File=@tmp_img.png" "$BASE_URL/stores/me/products/$PRODUCT_ID/images")
+rm -f tmp_img.png
+status=$(echo "$res" | tail -n 1)
+assert_status "27.2: Upload Image as Customer (Forbidden)" "$status" "403" ""
+
+# 27.3 POST /stores/me/products/{id}/images — invalid file type (400)
+echo "PDF" > tmp_img.pdf
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $MERCHANT_TOKEN" -F "File=@tmp_img.pdf" "$BASE_URL/stores/me/products/$PRODUCT_ID/images")
+rm -f tmp_img.pdf
+status=$(echo "$res" | tail -n 1)
+assert_status "27.3: Upload Image Invalid File Type" "$status" "400" ""
+
+# 27.4 POST /stores/me/products/{id}/images — non-existent product (404)
+echo "PNG" > tmp_img.png
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $MERCHANT_TOKEN" -F "File=@tmp_img.png" "$BASE_URL/stores/me/products/00000000-0000-0000-0000-000000000000/images")
+rm -f tmp_img.png
+status=$(echo "$res" | tail -n 1)
+assert_status "27.4: Upload Image Non-existent Product" "$status" "404" ""
+
+# 27.5 DELETE /stores/me/products/{id}/images/{imageId} unauthenticated (401)
+res=$(send_request "DELETE" "/stores/me/products/$PRODUCT_ID/images/00000000-0000-0000-0000-000000000000" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "27.5: Delete Image Unauthenticated" "$status" "401" "$body"
+
+# 27.6 DELETE /stores/me/products/{id}/images/{imageId} as Customer (403)
+res=$(send_request "DELETE" "/stores/me/products/$PRODUCT_ID/images/00000000-0000-0000-0000-000000000000" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "27.6: Delete Image as Customer (Forbidden)" "$status" "403" "$body"
+
+# 27.7 POST /stores/me/products/bulk unauthenticated (401)
+echo "title,originalprice,discountedprice,quantityavailable,expirationdate,categoryname" > tmp_bulk.csv
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -F "File=@tmp_bulk.csv" "$BASE_URL/stores/me/products/bulk")
+rm -f tmp_bulk.csv
+status=$(echo "$res" | tail -n 1)
+assert_status "27.7: Bulk Upload Unauthenticated" "$status" "401" ""
+
+# 27.8 POST /stores/me/products/bulk as Customer (403)
+echo "title,originalprice,discountedprice,quantityavailable,expirationdate,categoryname" > tmp_bulk.csv
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $CUSTOMER_TOKEN" -F "File=@tmp_bulk.csv" "$BASE_URL/stores/me/products/bulk")
+rm -f tmp_bulk.csv
+status=$(echo "$res" | tail -n 1)
+assert_status "27.8: Bulk Upload as Customer (Forbidden)" "$status" "403" ""
+
+# 27.9 POST /stores/me/products/bulk empty file (400)
+echo "" > tmp_empty.csv
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $MERCHANT_TOKEN" -F "File=@tmp_empty.csv" "$BASE_URL/stores/me/products/bulk")
+rm -f tmp_empty.csv
+status=$(echo "$res" | tail -n 1)
+assert_status "27.9: Bulk Upload Empty File" "$status" "400" ""
+
+# ==============================================================================
+# SECTION 28: DISCOUNT & PRICE-HISTORY — 403/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Discount & Price History Gaps ---"
+
+# 28.1 PATCH /stores/me/products/{id}/discount as Customer (403)
+res=$(send_request "PATCH" "/stores/me/products/$PRODUCT_ID/discount" "{\"discountedPrice\":5.00}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "28.1: Apply Discount as Customer (Forbidden)" "$status" "403" "$body"
+
+# 28.2 PATCH /stores/me/products/{id}/discount non-existent product (404)
+res=$(send_request "PATCH" "/stores/me/products/00000000-0000-0000-0000-000000000000/discount" "{\"discountedPrice\":5.00}" "$MERCHANT_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "28.2: Apply Discount Non-existent Product" "$status" "404" "$body"
+
+# 28.3 GET /stores/me/products/{id}/price-history unauthenticated (401)
+res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/price-history" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "28.3: Get Price History Unauthenticated" "$status" "401" "$body"
+
+# 28.4 GET /stores/me/products/{id}/price-history as Customer (403)
+res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/price-history" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "28.4: Get Price History as Customer (Forbidden)" "$status" "403" "$body"
+
+# ==============================================================================
+# SECTION 29: OCR — 403 GAP
+# ==============================================================================
+echo -e "\n--- Testing OCR Auth/Role Gaps ---"
+
+# 29.1 POST /stores/me/products/{id}/ocr as Customer (403)
+echo "PNG" > tmp_ocr.png
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $CUSTOMER_TOKEN" -F "File=@tmp_ocr.png" "$BASE_URL/stores/me/products/$PRODUCT_ID/ocr")
+rm -f tmp_ocr.png
+status=$(echo "$res" | tail -n 1)
+assert_status "29.1: Submit OCR as Customer (Forbidden)" "$status" "403" ""
+
+# 29.2 POST /stores/me/products/{id}/ocr invalid file type (400)
+echo "PDF" > tmp_ocr.pdf
+res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $MERCHANT_TOKEN" -F "File=@tmp_ocr.pdf" "$BASE_URL/stores/me/products/$PRODUCT_ID/ocr")
+rm -f tmp_ocr.pdf
+status=$(echo "$res" | tail -n 1)
+assert_status "29.2: Submit OCR Invalid File Type" "$status" "400" ""
+
+# 29.3 GET /stores/me/products/{id}/ocr-result as Customer (403)
+res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/ocr-result" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "29.3: Get OCR Result as Customer (Forbidden)" "$status" "403" "$body"
+
+# ==============================================================================
+# SECTION 30: ORDERS — 401/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Orders Auth/404 Gaps ---"
+
+# 30.1 POST /orders unauthenticated (401)
+res=$(send_request "POST" "/orders" "{\"items\":[{\"productId\":\"$PRODUCT_ID\",\"quantity\":1}]}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "30.1: Checkout Unauthenticated" "$status" "401" "$body"
+
+# 30.2 POST /orders empty items (400)
+res=$(send_request "POST" "/orders" "{\"items\":[]}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "30.2: Checkout Empty Items" "$status" "400" "$body"
+
+# 30.3 GET /orders unauthenticated (401)
+res=$(send_request "GET" "/orders" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "30.3: Get Order History Unauthenticated" "$status" "401" "$body"
+
+# 30.4 GET /orders/{id} unauthenticated (401)
+res=$(send_request "GET" "/orders/00000000-0000-0000-0000-000000000000" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "30.4: Get Order Detail Unauthenticated" "$status" "401" "$body"
+
+# 30.5 GET /orders/{id} non-existent (404)
+res=$(send_request "GET" "/orders/00000000-0000-0000-0000-000000000000" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "30.5: Get Non-existent Order Detail" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 31: REVIEWS — 401/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Reviews Auth/404 Gaps ---"
+
+# 31.1 POST /reviews unauthenticated (401)
+res=$(send_request "POST" "/reviews" "{\"orderId\":\"00000000-0000-0000-0000-000000000000\",\"rating\":5}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "31.1: Submit Review Unauthenticated" "$status" "401" "$body"
+
+# 31.2 POST /reviews — order not found (400)
+res=$(send_request "POST" "/reviews" "{\"orderId\":\"00000000-0000-0000-0000-000000000000\",\"rating\":5,\"comment\":\"test\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "31.2: Submit Review Order Not Found" "$status" "400" "$body"
+
+# 31.3 GET /stores/{id}/reviews — non-existent store returns empty list (200)
+res=$(send_request "GET" "/stores/00000000-0000-0000-0000-000000000000/reviews" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "31.3: Get Reviews Non-existent Store Returns Empty" "$status" "200" "$body"
+
+# ==============================================================================
+# SECTION 32: NOTIFICATIONS — 401/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Notifications Auth/404 Gaps ---"
+
+# 32.1 GET /notifications unauthenticated (401)
+res=$(send_request "GET" "/notifications" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "32.1: Get Notifications Unauthenticated" "$status" "401" "$body"
+
+# 32.2 PATCH /notifications/{id}/read unauthenticated (401)
+res=$(send_request "PATCH" "/notifications/00000000-0000-0000-0000-000000000000/read" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "32.2: Mark Notification Read Unauthenticated" "$status" "401" "$body"
+
+# 32.3 PATCH /notifications/{id}/read non-existent (400 or 404)
+res=$(send_request "PATCH" "/notifications/00000000-0000-0000-0000-000000000000/read" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "32.3: Mark Non-existent Notification Read" "$status" "400" "$body"
+
+# 32.4 PATCH /notifications/read-all unauthenticated (401)
+res=$(send_request "PATCH" "/notifications/read-all" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "32.4: Mark All Notifications Read Unauthenticated" "$status" "401" "$body"
+
+# ==============================================================================
+# SECTION 33: SUPPORT TICKETS — 401/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Support Tickets Auth/404 Gaps ---"
+
+# 33.1 POST /support-tickets unauthenticated (401)
+res=$(send_request "POST" "/support-tickets" "{\"category\":\"Order\",\"message\":\"Test\"}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "33.1: Create Support Ticket Unauthenticated" "$status" "401" "$body"
+
+# 33.2 GET /support-tickets unauthenticated (401)
+res=$(send_request "GET" "/support-tickets" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "33.2: List Support Tickets Unauthenticated" "$status" "401" "$body"
+
+# 33.3 GET /support-tickets/{id} unauthenticated (401)
+res=$(send_request "GET" "/support-tickets/00000000-0000-0000-0000-000000000000" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "33.3: Get Ticket Detail Unauthenticated" "$status" "401" "$body"
+
+# 33.4 GET /support-tickets/{id} non-existent (404)
+res=$(send_request "GET" "/support-tickets/00000000-0000-0000-0000-000000000000" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "33.4: Get Non-existent Ticket Detail" "$status" "404" "$body"
+
+# 33.5 POST /support-tickets/{id}/reply unauthenticated (401)
+res=$(send_request "POST" "/support-tickets/00000000-0000-0000-0000-000000000000/reply" "{\"message\":\"test\"}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "33.5: Reply to Ticket Unauthenticated" "$status" "401" "$body"
+
+# 33.6 POST /support-tickets/{id}/reply non-existent ticket (404)
+res=$(send_request "POST" "/support-tickets/00000000-0000-0000-0000-000000000000/reply" "{\"message\":\"test\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "33.6: Reply to Non-existent Ticket" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 34: MARKETPLACE — MISSING SCENARIOS
+# ==============================================================================
+echo -e "\n--- Testing Marketplace Missing Scenarios ---"
+
+# 34.1 GET /marketplace/products with search text
+res=$(send_request "GET" "/marketplace/products?search=bread" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "34.1: Search Products by Text" "$status" "200" "$body"
+
+# 34.2 GET /marketplace/products with pagination
+res=$(send_request "GET" "/marketplace/products?pageNumber=1&pageSize=2" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "34.2: Marketplace Products Pagination" "$status" "200" "$body"
+
+# 34.3 POST /marketplace/products/{id}/report — product not found (404)
+res=$(send_request "POST" "/marketplace/products/00000000-0000-0000-0000-000000000000/report" "{\"reason\":\"Spam\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "34.3: Report Non-existent Product" "$status" "404" "$body"
+
+# ==============================================================================
+# SECTION 35: ADMIN — 403/404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Admin Auth/Role/404 Gaps ---"
+
+# 35.1 GET /admin/stores as Customer (403)
+res=$(send_request "GET" "/admin/stores" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "35.1: Admin List Stores as Customer (Forbidden)" "$status" "403" "$body"
+
+# 35.2 GET /admin/charities as Customer (403)
+res=$(send_request "GET" "/admin/charities" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "35.2: Admin List Charities as Customer (Forbidden)" "$status" "403" "$body"
+
+# 35.3 GET /admin/reviews as Customer (403)
+res=$(send_request "GET" "/admin/reviews" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "35.3: Admin List Reviews as Customer (Forbidden)" "$status" "403" "$body"
+
+# 35.4 GET /admin/products as Customer (403)
+res=$(send_request "GET" "/admin/products" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "35.4: Admin List Products as Customer (Forbidden)" "$status" "403" "$body"
+
+# 35.5 GET /admin/products/pending-ai as Customer (403)
+res=$(send_request "GET" "/admin/products/pending-ai" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "35.5: Admin Pending AI Products as Customer (Forbidden)" "$status" "403" "$body"
+
+# 35.6 GET /admin/support-tickets as Customer (403)
+res=$(send_request "GET" "/admin/support-tickets" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "35.6: Admin List Tickets as Customer (Forbidden)" "$status" "403" "$body"
+
+# ==============================================================================
+# SECTION 36: ADMIN — STORE/CHARITY/PRODUCT/TICKET 404 GAPS
+# ==============================================================================
+echo -e "\n--- Testing Admin 404 Scenarios ---"
+
+if [ -n "$ADMIN_TOKEN" ]; then
+
+# 36.1 GET /admin/stores/{id} non-existent (404)
+res=$(send_request "GET" "/admin/stores/00000000-0000-0000-0000-000000000000" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.1: Admin Get Non-existent Store" "$status" "404" "$body"
+
+# 36.2 PATCH /admin/stores/{id}/verify non-existent (404)
+res=$(send_request "PATCH" "/admin/stores/00000000-0000-0000-0000-000000000000/verify" "{\"action\":\"Approved\",\"note\":\"test\"}" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.2: Admin Verify Non-existent Store" "$status" "404" "$body"
+
+# 36.3 PATCH /admin/charities/{id}/verify non-existent (404)
+res=$(send_request "PATCH" "/admin/charities/00000000-0000-0000-0000-000000000000/verify" "{\"action\":\"Approved\",\"note\":\"test\"}" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.3: Admin Verify Non-existent Charity" "$status" "404" "$body"
+
+# 36.4 DELETE /admin/reviews/{id} non-existent (404)
+res=$(send_request "DELETE" "/admin/reviews/00000000-0000-0000-0000-000000000000" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.4: Admin Delete Non-existent Review" "$status" "404" "$body"
+
+# 36.5 PATCH /admin/products/{id}/approve non-existent (404)
+res=$(send_request "PATCH" "/admin/products/00000000-0000-0000-0000-000000000000/approve" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.5: Admin Approve Non-existent Product" "$status" "404" "$body"
+
+# 36.6 PATCH /admin/products/{id}/reject non-existent (404)
+res=$(send_request "PATCH" "/admin/products/00000000-0000-0000-0000-000000000000/reject" "{\"note\":\"test\"}" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.6: Admin Reject Non-existent Product" "$status" "404" "$body"
+
+# 36.7 PATCH /admin/products/{id}/request-changes non-existent (404)
+res=$(send_request "PATCH" "/admin/products/00000000-0000-0000-0000-000000000000/request-changes" "{\"note\":\"test\"}" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.7: Admin Request Changes Non-existent Product" "$status" "404" "$body"
+
+# 36.8 DELETE /admin/products/{id} non-existent (404)
+res=$(send_request "DELETE" "/admin/products/00000000-0000-0000-0000-000000000000" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.8: Admin Delete Non-existent Product" "$status" "404" "$body"
+
+# 36.9 GET /admin/support-tickets/{id} non-existent (404)
+res=$(send_request "GET" "/admin/support-tickets/00000000-0000-0000-0000-000000000000" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.9: Admin Get Non-existent Ticket" "$status" "404" "$body"
+
+# 36.10 POST /admin/support-tickets/{id}/reply non-existent ticket (404)
+res=$(send_request "POST" "/admin/support-tickets/00000000-0000-0000-0000-000000000000/reply" "\"test message\"" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.10: Admin Reply to Non-existent Ticket" "$status" "404" "$body"
+
+# 36.11 PATCH /admin/support-tickets/{id}/close non-existent (404)
+res=$(send_request "PATCH" "/admin/support-tickets/00000000-0000-0000-0000-000000000000/close" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.11: Admin Close Non-existent Ticket" "$status" "404" "$body"
+
+# 36.12 GET /admin/users/{id}/activity-log non-existent (404)
+res=$(send_request "GET" "/admin/users/00000000-0000-0000-0000-000000000000/activity-log" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.12: Admin Activity Log Non-existent User" "$status" "404" "$body"
+
+# 36.13 GET /admin/stores/{id}/activity-log non-existent (404)
+res=$(send_request "GET" "/admin/stores/00000000-0000-0000-0000-000000000000/activity-log" "" "$ADMIN_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.13: Admin Activity Log Non-existent Store" "$status" "404" "$body"
+
+# 36.14 PATCH /admin/users/{id}/status as Customer (403)
+res=$(send_request "PATCH" "/admin/users/$CUSTOMER_USER_ID/status" "{\"status\":\"Banned\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.14: Admin Update User Status as Customer (Forbidden)" "$status" "403" "$body"
+
+# 36.15 GET /admin/disputes as Customer (403)
+res=$(send_request "GET" "/admin/disputes" "" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.15: Admin Get Disputes as Customer (Forbidden)" "$status" "403" "$body"
+
+# 36.16 PATCH /admin/disputes/{id}/resolve as Customer (403)
+res=$(send_request "PATCH" "/admin/disputes/00000000-0000-0000-0000-000000000000/resolve" "{\"adminNote\":\"test\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "36.16: Admin Resolve Dispute as Customer (Forbidden)" "$status" "403" "$body"
+
+fi  # end admin token guard
 # ==============================================================================
 # TEST RUN SUMMARY
 # ==============================================================================
