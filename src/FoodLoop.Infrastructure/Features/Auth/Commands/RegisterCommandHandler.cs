@@ -147,7 +147,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
             throw;
         }
 
-        await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName, cancellationToken);
+        // Send role-appropriate email:
+        // - Customers are active immediately -> welcome email
+        // - Merchants/Charities are pending admin review -> pending review notification
+        if (isBusinessOrCharityRole)
+        {
+            var orgName = request.BusinessName!.Trim();
+            await _emailService.SendPendingReviewEmailAsync(user.Email!, user.FullName, orgName, cancellationToken);
+        }
+        else
+        {
+            await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName, cancellationToken);
+        }
 
         return Result<AuthResponse>.Ok(new AuthResponse
         {
