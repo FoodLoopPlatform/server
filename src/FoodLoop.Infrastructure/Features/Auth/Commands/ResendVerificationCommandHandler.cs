@@ -26,7 +26,8 @@ public class ResendVerificationCommandHandler : IRequestHandler<ResendVerificati
         var user = await _userManager.FindByEmailAsync(command.Email);
 
         // Always return success to avoid leaking whether an email is registered.
-        if (user == null || user.Status != UserStatus.PendingVerification)
+        // Send welcome email to any registered user regardless of status.
+        if (user == null)
             return Result.Ok();
 
         await _emailService.SendWelcomeEmailAsync(user.Email!, user.FullName, cancellationToken);
