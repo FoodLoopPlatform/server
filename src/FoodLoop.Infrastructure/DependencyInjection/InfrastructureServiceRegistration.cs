@@ -173,7 +173,17 @@ public static class InfrastructureServiceRegistration
             services.AddSingleton(provider =>
             {
                 var options = provider.GetRequiredService<IOptions<CloudinaryOptions>>().Value;
-                var cloudinary = new Cloudinary(new Account(options.Url));
+
+                // CLOUDINARY_URL format: cloudinary://apiKey:apiSecret@cloudName
+                // Account(string url) does NOT exist in SDK v1.x — must parse and pass separately.
+                var uri = new Uri(options.Url);
+                var userInfo = uri.UserInfo.Split(':', 2);
+                var apiKey    = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+                var apiSecret = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+                var cloudName = uri.Host;
+
+                var account = new Account(cloudName, apiKey, apiSecret);
+                var cloudinary = new Cloudinary(account);
                 cloudinary.Api.Secure = true;
                 return cloudinary;
             });
