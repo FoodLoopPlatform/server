@@ -40,6 +40,13 @@ public class BrevoEmailService : IEmailService
 
     public bool IsDevStub => false;
 
+    public Task SendWelcomeEmailAsync(string toEmail, string fullName, CancellationToken cancellationToken = default)
+    {
+        var subject = "Welcome to FoodLoop!";
+        var body = $"Hello {fullName},\n\nWelcome to FoodLoop! Your account has been registered successfully.\n\nThank you,\nFoodLoop Team";
+        return SendEmailAsync(toEmail, subject, body, cancellationToken);
+    }
+
     public Task SendPasswordResetEmailAsync(string toEmail, string resetToken, CancellationToken cancellationToken = default)
     {
         var subject = "FoodLoop - Reset Your Password";
@@ -47,10 +54,18 @@ public class BrevoEmailService : IEmailService
         return SendEmailAsync(toEmail, subject, body, cancellationToken);
     }
 
-    public Task SendWelcomeEmailAsync(string toEmail, string fullName, CancellationToken cancellationToken = default)
+    public Task SendApprovalEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
     {
-        var subject = "Welcome to FoodLoop!";
-        var body = $"Hello {fullName},\n\nWelcome to FoodLoop! Your account has been registered successfully.\n\nThank you,\nFoodLoop Team";
+        var subject = "FoodLoop - Your Account Has Been Approved!";
+        var body = $"Hello {fullName},\n\nCongratulations! Your organization \"{organizationName}\" has been verified and approved on FoodLoop.\n\nYou can now log in and start using all merchant features.\n\nThank you,\nFoodLoop Team";
+        return SendEmailAsync(toEmail, subject, body, cancellationToken);
+    }
+
+    public Task SendRejectionEmailAsync(string toEmail, string fullName, string organizationName, string? adminNote, CancellationToken cancellationToken = default)
+    {
+        var noteSection = string.IsNullOrWhiteSpace(adminNote) ? string.Empty : $"\n\nAdmin note: {adminNote}";
+        var subject = "FoodLoop - Account Verification Update";
+        var body = $"Hello {fullName},\n\nWe have reviewed your application for \"{organizationName}\" and unfortunately it was not approved at this time.{noteSection}\n\nPlease review your submitted documents and resubmit. If you have questions, contact our support team.\n\nThank you,\nFoodLoop Team";
         return SendEmailAsync(toEmail, subject, body, cancellationToken);
     }
 
@@ -70,26 +85,28 @@ public class BrevoEmailService : IEmailService
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var client = _httpClientFactory.CreateClient("brevo");
-            client.DefaultRequestHeaders.Clear();
-            client.DefaultRequestHeaders.Add("api-key", _apiKey);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var response = await client.PostAsync(BrevoApiUrl, content, cancellationToken);
+            // Use per-request headers to avoid thread-safety issues with DefaultRequestHeaders
+            using var request = new HttpRequestMessage(HttpMethod.Post, BrevoApiUrl);
+            request.Headers.Add("api-key", _apiKey);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Content = content;
+
+            var response = await client.SendAsync(request, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Email sent successfully to {Email} via Brevo API", toEmail);
+                _logger.LogInformation("Email sent to {Email}: {Subject}", toEmail, subject);
             }
             else
             {
                 var error = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Brevo API returned {Status} sending to {Email}: {Error}",
-                    (int)response.StatusCode, toEmail, error);
+                _logger.LogError("Brevo API {Status} for {Email}: {Error}", (int)response.StatusCode, toEmail, error);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {Email} via Brevo API", toEmail);
+            _logger.LogError(ex, "Failed to send email to {Email}", toEmail);
         }
     }
 }
