@@ -45,7 +45,6 @@ public class GetStorePricingOverviewQueryHandler : IRequestHandler<GetStorePrici
             {
                 Id = p.Id,
                 Title = p.Title,
-                TitleAr = p.TitleAr,
                 OriginalPrice = p.OriginalPrice,
                 DiscountedPrice = p.DiscountedPrice,
                 DiscountPercentage = discountPercentage,

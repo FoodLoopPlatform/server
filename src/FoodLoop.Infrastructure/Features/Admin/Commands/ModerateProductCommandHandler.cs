@@ -95,7 +95,6 @@ public class ModerateProductCommandHandler
             CategoryId = product.CategoryId,
             CategoryName = product.Category?.Name ?? string.Empty,
             Title = product.Title,
-            TitleAr = product.TitleAr,
             OriginalPrice = product.OriginalPrice,
             DiscountedPrice = product.DiscountedPrice,
             QuantityAvailable = product.QuantityAvailable,

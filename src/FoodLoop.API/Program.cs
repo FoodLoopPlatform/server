@@ -4,6 +4,7 @@ using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Hubs;
 using FoodLoop.API.Middleware;
 using FoodLoop.API.Options;
+using FoodLoop.API.Swagger;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Globalization;
@@ -58,13 +59,13 @@ builder.Services.AddHealthChecks();
 // regardless of where AddLocalization() is called from.
 builder.Services.AddLocalization();
 
-var supportedCultures = new[] { new CultureInfo("en"), new CultureInfo("ar") };
+var supportedCultures = new[] { new CultureInfo("ar"), new CultureInfo("en") };
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("en");
+    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("ar");
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
-    // Resolution order: Accept-Language header → query string ?culture=ar → default "en"
+    // Resolution order: Accept-Language header → query string ?culture=ar → default "ar"
     options.ApplyCurrentCultureToResponseHeaders = true;
 });
 
@@ -84,6 +85,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "FoodLoop API", Version = "v1" });
+
+    // Accept-Language header — lets callers switch between "ar" (default) and "en"
+    // directly from the Swagger UI "Try it out" panel.
+    options.OperationFilter<AcceptLanguageHeaderFilter>();
 
     var jwtScheme = new OpenApiSecurityScheme
     {

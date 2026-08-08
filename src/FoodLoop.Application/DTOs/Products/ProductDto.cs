@@ -10,9 +10,7 @@ public class ProductDto
     public Guid CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
-    public string? TitleAr { get; set; }
     public string? Description { get; set; }
-    public string? DescriptionAr { get; set; }
     public decimal OriginalPrice { get; set; }
     public decimal DiscountedPrice { get; set; }
     public int QuantityAvailable { get; set; }

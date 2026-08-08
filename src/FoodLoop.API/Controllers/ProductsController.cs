@@ -46,9 +46,7 @@ public class ProductsController : ControllerBase
             OwnerId,
             request.CategoryId,
             request.Title,
-            request.TitleAr,
             request.Description,
-            request.DescriptionAr,
             request.OriginalPrice,
             request.DiscountedPrice,
             request.QuantityAvailable,
@@ -110,9 +108,7 @@ public class ProductsController : ControllerBase
             id,
             request.CategoryId,
             request.Title,
-            request.TitleAr,
             request.Description,
-            request.DescriptionAr,
             request.OriginalPrice,
             request.DiscountedPrice,
             request.QuantityAvailable,
@@ -273,9 +269,7 @@ public class CreateProductRequest
     [Required, MinLength(2), MaxLength(200)]
     public string Title { get; set; } = null!;
 
-    public string? TitleAr { get; set; }
     public string? Description { get; set; }
-    public string? DescriptionAr { get; set; }
 
     [Required, Range(0.0, 1000000.0)]
     public decimal OriginalPrice { get; set; }
@@ -294,9 +288,7 @@ public class UpdateProductRequest
 {
     public Guid? CategoryId { get; set; }
     public string? Title { get; set; }
-    public string? TitleAr { get; set; }
     public string? Description { get; set; }
-    public string? DescriptionAr { get; set; }
     public decimal? OriginalPrice { get; set; }
     public decimal? DiscountedPrice { get; set; }
     public int? QuantityAvailable { get; set; }

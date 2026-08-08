@@ -40,7 +40,6 @@ public class GetRiskAnalysisQueryHandler : IRequestHandler<GetRiskAnalysisQuery,
             {
                 Id = p.Id,
                 Title = p.Title,
-                TitleAr = p.TitleAr,
                 OriginalPrice = p.OriginalPrice,
                 DiscountedPrice = p.DiscountedPrice,
                 QuantityAvailable = p.QuantityAvailable,

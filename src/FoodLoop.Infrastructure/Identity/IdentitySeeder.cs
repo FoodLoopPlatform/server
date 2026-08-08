@@ -1,4 +1,4 @@
-using FoodLoop.Domain.Entities;
+﻿using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Options;
 using FoodLoop.Infrastructure.Persistence;
@@ -407,9 +407,7 @@ public static class IdentitySeeder
                             OrganizationId = orgId,
                             CategoryId = catId,
                             Title = title,
-                            TitleAr = GetJsonString(element, "TitleAr"),
                             Description = GetJsonString(element, "Description"),
-                            DescriptionAr = GetJsonString(element, "DescriptionAr"),
                             OriginalPrice = GetJsonDecimal(element, "OriginalPrice") ?? 0,
                             DiscountedPrice = GetJsonDecimal(element, "DiscountedPrice") ?? 0,
                             QuantityAvailable = GetJsonInt(element, "QuantityAvailable") ?? 0,
@@ -913,9 +911,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = fruitsCategory.Id,
-                    Title = "Organic Bananas",
-                    TitleAr = "Ù…ÙˆØ² Ø¹Ø¶ÙˆÙŠ",
-                    Description = "Sweet import organic bananas",
+                    Title = "Organic Bananas",                    Description = "Sweet import organic bananas",
                     OriginalPrice = 10,
                     DiscountedPrice = 5,
                     QuantityAvailable = 20,
@@ -930,9 +926,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = bakeryCategory.Id,
-                    Title = "Fresh Whole Wheat Toast",
-                    TitleAr = "ØªÙˆØ³Øª Ø¨Ù†ÙŠ Ø·Ø§Ø²Ø¬",
-                    Description = "Soft bakery toast slices",
+                    Title = "Fresh Whole Wheat Toast",                    Description = "Soft bakery toast slices",
                     OriginalPrice = 15,
                     DiscountedPrice = 8,
                     QuantityAvailable = 10,
@@ -947,9 +941,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = dairyCategory.Id,
-                    Title = "Greek Yogurt",
-                    TitleAr = "Ø²Ø¨Ø§Ø¯ÙŠ ÙŠÙˆÙ†Ø§Ù†ÙŠ",
-                    Description = "Thick high-protein yogurt",
+                    Title = "Greek Yogurt",                    Description = "Thick high-protein yogurt",
                     OriginalPrice = 25,
                     DiscountedPrice = 15,
                     QuantityAvailable = 30,
@@ -967,9 +959,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = fruitsCategory.Id,
-                    Title = "Unreviewed Red Apples",
-                    TitleAr = "ØªÙØ§Ø­ Ø£Ø­Ù…Ø± ØºÙŠØ± Ù…Ø±Ø§Ø¬Ø¹",
-                    Description = "Imported apples requiring moderation review",
+                    Title = "Unreviewed Red Apples",                    Description = "Imported apples requiring moderation review",
                     OriginalPrice = 30,
                     DiscountedPrice = 15,
                     QuantityAvailable = 50,
@@ -994,9 +984,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = bakeryCategory.Id,
-                    Title = "Unreviewed Butter Croissant",
-                    TitleAr = "ÙƒØ±ÙˆØ§Ø³ÙˆÙ† Ø²Ø¨Ø¯Ø© ØºÙŠØ± Ù…Ø±Ø§Ø¬Ø¹",
-                    Description = "Fresh croissant needing status verification",
+                    Title = "Unreviewed Butter Croissant",                    Description = "Fresh croissant needing status verification",
                     OriginalPrice = 12,
                     DiscountedPrice = 6,
                     QuantityAvailable = 15,
@@ -1063,9 +1051,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = fruitsCategory.Id,
-                    Title = "Red Apple Bag",
-                    TitleAr = "ÙƒÙŠØ³ ØªÙØ§Ø­ Ø£Ø­Ù…Ø±",
-                    OriginalPrice = 40,
+                    Title = "Red Apple Bag",                    OriginalPrice = 40,
                     DiscountedPrice = 20,
                     QuantityAvailable = 15,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(6)),
@@ -1079,9 +1065,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = bakeryCategory.Id,
-                    Title = "Croissant Box",
-                    TitleAr = "Ø¹Ù„Ø¨Ø© ÙƒØ±ÙˆØ§Ø³ÙˆÙ†",
-                    OriginalPrice = 30,
+                    Title = "Croissant Box",                    OriginalPrice = 30,
                     DiscountedPrice = 18,
                     QuantityAvailable = 12,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
@@ -1095,9 +1079,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = dairyCategory.Id,
-                    Title = "Cheddar Cheese Block",
-                    TitleAr = "Ù‚Ø§Ù„Ø¨ Ø¬Ø¨Ù† Ø´ÙŠØ¯Ø±",
-                    OriginalPrice = 80,
+                    Title = "Cheddar Cheese Block",                    OriginalPrice = 80,
                     DiscountedPrice = 45,
                     QuantityAvailable = 8,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
@@ -1111,9 +1093,7 @@ public static class IdentitySeeder
                 {
                     OrganizationId = organization.Id,
                     CategoryId = mealsCategory.Id,
-                    Title = "Beef Lasagna Ready Meal",
-                    TitleAr = "ÙˆØ¬Ø¨Ø© Ù„Ø§Ø²Ø§Ù†ÙŠØ§ Ù„Ø­Ù… Ø¬Ø§Ù‡Ø²Ø©",
-                    OriginalPrice = 120,
+                    Title = "Beef Lasagna Ready Meal",                    OriginalPrice = 120,
                     DiscountedPrice = 60,
                     QuantityAvailable = 5,
                     ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),

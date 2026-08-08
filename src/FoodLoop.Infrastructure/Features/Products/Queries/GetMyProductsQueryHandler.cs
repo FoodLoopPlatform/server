@@ -50,7 +50,7 @@ public class GetMyProductsQueryHandler : IRequestHandler<GetMyProductsQuery, IRe
         if (!string.IsNullOrWhiteSpace(query.SearchTerm))
         {
             var search = query.SearchTerm.Trim().ToLower();
-            dbQuery = dbQuery.Where(l => l.Title.ToLower().Contains(search) || (l.TitleAr != null && l.TitleAr.ToLower().Contains(search)));
+            dbQuery = dbQuery.Where(l => l.Title.ToLower().Contains(search));
         }
 
         var products = await dbQuery

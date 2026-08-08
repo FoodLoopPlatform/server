@@ -46,7 +46,6 @@ public class GetPendingLowConfProductsQueryHandler
             CategoryId = l.CategoryId,
             CategoryName = l.Category?.Name ?? string.Empty,
             Title = l.Title,
-            TitleAr = l.TitleAr,
             OriginalPrice = l.OriginalPrice,
             DiscountedPrice = l.DiscountedPrice,
             QuantityAvailable = l.QuantityAvailable,

@@ -14,9 +14,7 @@ public class Product : BaseEntity, ISoftDelete
     public Category? Category { get; set; }
 
     public string Title { get; set; } = string.Empty;
-    public string? TitleAr { get; set; }
     public string? Description { get; set; }
-    public string? DescriptionAr { get; set; }
 
     public decimal OriginalPrice { get; set; }
     public decimal DiscountedPrice { get; set; }

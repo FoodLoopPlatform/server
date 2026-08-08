@@ -11,7 +11,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.ToTable("Products");
 
         builder.Property(p => p.Title).HasMaxLength(200).IsRequired();
-        builder.Property(p => p.TitleAr).HasMaxLength(200);
         builder.Property(p => p.OriginalPrice).HasPrecision(10, 2);
         builder.Property(p => p.DiscountedPrice).HasPrecision(10, 2);
         builder.Property(p => p.ModerationNote).HasMaxLength(1000);
