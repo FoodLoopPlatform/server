@@ -47,8 +47,10 @@ public class SmtpEmailService : IEmailService
 
         using var client = new SmtpClient(_options.Host, _options.Port)
         {
+            UseDefaultCredentials = false,   // must be false before setting Credentials
             Credentials = new NetworkCredential(_options.Username, _options.Password),
-            EnableSsl = true
+            EnableSsl = true,
+            DeliveryMethod = SmtpDeliveryMethod.Network
         };
 
         using var mailMessage = new MailMessage
