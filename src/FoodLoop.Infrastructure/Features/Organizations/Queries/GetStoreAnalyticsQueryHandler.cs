@@ -58,12 +58,11 @@ public class GetStoreAnalyticsQueryHandler : IRequestHandler<GetStoreAnalyticsQu
         var savingsImpact = completedItems.Sum(i => i.Quantity * (i.Product!.OriginalPrice - i.UnitPrice));
 
         var topProducts = completedItems
-            .GroupBy(i => new { i.ProductId, i.Product!.Title, i.Product!.TitleAr })
+            .GroupBy(i => new { i.ProductId, i.Product!.Title })
             .Select(g => new TopProductDto
             {
                 Id = g.Key.ProductId,
                 Title = g.Key.Title,
-                TitleAr = g.Key.TitleAr,
                 QuantitySold = g.Sum(x => x.Quantity),
                 RevenueGenerated = g.Sum(x => x.Quantity * x.UnitPrice)
             })

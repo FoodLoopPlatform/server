@@ -44,9 +44,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
         }
 
         if (command.Title != null) product.Title = command.Title;
-        if (command.TitleAr != null) product.TitleAr = command.TitleAr;
         if (command.Description != null) product.Description = command.Description;
-        if (command.DescriptionAr != null) product.DescriptionAr = command.DescriptionAr;
 
         var origPrice = command.OriginalPrice ?? product.OriginalPrice;
         var discPrice = command.DiscountedPrice ?? product.DiscountedPrice;

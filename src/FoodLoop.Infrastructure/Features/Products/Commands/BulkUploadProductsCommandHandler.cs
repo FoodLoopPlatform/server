@@ -74,9 +74,7 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
             }
 
             var title = GetCsvValue(headers, values, "title");
-            var titleAr = GetCsvValue(headers, values, "titlear");
             var desc = GetCsvValue(headers, values, "description");
-            var descAr = GetCsvValue(headers, values, "descriptionar");
             var origPriceStr = GetCsvValue(headers, values, "originalprice");
             var discPriceStr = GetCsvValue(headers, values, "discountedprice");
             var qtyStr = GetCsvValue(headers, values, "quantityavailable");
@@ -124,9 +122,7 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
                 CategoryId = category.Id,
                 Category = category,
                 Title = title,
-                TitleAr = titleAr,
                 Description = desc,
-                DescriptionAr = descAr,
                 OriginalPrice = originalPrice,
                 DiscountedPrice = discountedPrice,
                 QuantityAvailable = quantity,

@@ -17,7 +17,6 @@ public class TopProductDto
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
-    public string? TitleAr { get; set; }
     public int QuantitySold { get; set; }
     public decimal RevenueGenerated { get; set; }
 }

@@ -78,7 +78,6 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<AdminOrganizationDto>.Ok(organization));
     }
 
-    // â”€â”€ User management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// GET /admin/users â€” lists all users with optional filtering.

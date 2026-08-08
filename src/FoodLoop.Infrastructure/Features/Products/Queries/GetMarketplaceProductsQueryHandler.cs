@@ -43,9 +43,7 @@ public class GetMarketplaceProductsQueryHandler : IRequestHandler<GetMarketplace
         {
             var search = request.SearchTerm.Trim().ToLower();
             query = query.Where(p => p.Title.ToLower().Contains(search) 
-                || (p.TitleAr != null && p.TitleAr.ToLower().Contains(search))
                 || (p.Description != null && p.Description.ToLower().Contains(search))
-                || (p.DescriptionAr != null && p.DescriptionAr.ToLower().Contains(search))
                 || p.Organization!.Name.ToLower().Contains(search));
         }
 
@@ -88,9 +86,7 @@ public class GetMarketplaceProductsQueryHandler : IRequestHandler<GetMarketplace
                 CategoryId = p.CategoryId,
                 CategoryName = p.Category?.Name ?? string.Empty,
                 Title = p.Title,
-                TitleAr = p.TitleAr,
                 Description = p.Description,
-                DescriptionAr = p.DescriptionAr,
                 OriginalPrice = p.OriginalPrice,
                 DiscountedPrice = p.DiscountedPrice,
                 QuantityAvailable = p.QuantityAvailable,

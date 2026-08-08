@@ -9,9 +9,7 @@ public class AdminProductDto
     public string StoreName { get; set; } = string.Empty;
     public Guid CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
-    public string Title { get; set; } = string.Empty;
-    public string? TitleAr { get; set; }
-    public decimal OriginalPrice { get; set; }
+    public string Title { get; set; } = string.Empty;    public decimal OriginalPrice { get; set; }
     public decimal DiscountedPrice { get; set; }
     public int QuantityAvailable { get; set; }
     public DateOnly ExpirationDate { get; set; }
