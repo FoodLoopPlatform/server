@@ -22,4 +22,13 @@
     <ProjectReference Include="..\FoodLoop.Infrastructure\FoodLoop.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Deploy .env to the publish output so runtime env vars are available on the server -->
+    <Content Include="..\..\..\.env" Condition="Exists('..\..\..\.env')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <Link>.env</Link>
+    </Content>
+  </ItemGroup>
+
 </Project>
