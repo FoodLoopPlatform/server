@@ -26,7 +26,6 @@ public class CloudinaryFileStorageService : IFileStorageService
             var publicId = $"{folder}/{Guid.NewGuid()}_{fileNameWithoutExt}";
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-            // PDFs and other non-image files must use RawUploadParams
             var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg" };
             bool isImage = Array.Exists(imageExtensions, e => e == ext);
 
@@ -47,23 +46,24 @@ public class CloudinaryFileStorageService : IFileStorageService
             }
             else
             {
-                // PDFs and other raw files — set ResourceType=Raw on ImageUploadParams
-                var uploadParams = new ImageUploadParams
+                // PDFs and other non-image files — must use UploadAsync(RawUploadParams, resourceType, ct)
+                var uploadParams = new RawUploadParams
                 {
                     File = new FileDescription(file.FileName, file.Content),
                     PublicId = publicId,
-                    Overwrite = true,
-                    Type = "upload"
+                    Overwrite = true
                 };
-                // resource_type must be "raw" for non-image files
-                uploadParams.AddCustomParam("resource_type", "raw");
-                var result = await _cloudinary.UploadAsync(uploadParams, cancellationToken);
+                var result = await _cloudinary.UploadAsync(uploadParams, "raw", cancellationToken);
                 if (result.Error != null)
                     throw new InvalidOperationException($"Cloudinary upload failed: {result.Error.Message}");
                 secureUrl = result.SecureUrl.ToString();
             }
 
             return secureUrl;
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
