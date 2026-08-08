@@ -30,4 +30,22 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!--
+      Override the auto-generated manifest resource names so IStringLocalizerFactory
+      can find them. The SDK includes .resx by default but names them using the file
+      path which produces double-prefixed names. ManifestResourceName forces the
+      exact name the runtime looks for.
+    -->
+    <EmbeddedResource
+      Update="Resources\FoodLoop.Infrastructure.Resources.Messages.resx"
+      ManifestResourceName="FoodLoop.Infrastructure.Resources.Messages" />
+    <EmbeddedResource
+      Update="Resources\FoodLoop.Infrastructure.Resources.Messages.ar.resx"
+      ManifestResourceName="FoodLoop.Infrastructure.Resources.Messages.ar" />
+    <EmbeddedResource
+      Update="Resources\FoodLoop.Infrastructure.Resources.Messages.en.resx"
+      ManifestResourceName="FoodLoop.Infrastructure.Resources.Messages.en" />
+  </ItemGroup>
+
 </Project>
