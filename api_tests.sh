@@ -491,7 +491,7 @@ CATEGORY_ID=$(get_json_value "$body" "id")
 echo "[INFO] Loaded Dynamic Category ID: $CATEGORY_ID"
 
 # Scenario 4.1: Add Product (Happy Path)
-PRD_PAYLOAD="{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"Artisan Sourdough Loaf $RANDOM_VAL\",\"titleAr\":\"خبز ساوردو يدوي $RANDOM_VAL\",\"description\":\"Crispy sourdough bread.\",\"descriptionAr\":\"خبز مخبوز طازج.\",\"originalPrice\":15.00,\"discountedPrice\":7.50,\"quantityAvailable\":10,\"expirationDate\":\"2026-08-15\"}"
+PRD_PAYLOAD="{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"Artisan Sourdough Loaf $RANDOM_VAL\",\"description\":\"Crispy sourdough bread.\",\"originalPrice\":15.00,\"discountedPrice\":7.50,\"quantityAvailable\":10,\"expirationDate\":\"2026-08-15\"}"
 res=$(send_request "POST" "/stores/me/products" "$PRD_PAYLOAD" "$MERCHANT_TOKEN")
 status=${res%%|*}
 body=${res#*|}
@@ -1882,6 +1882,199 @@ status=${res%%|*}; body=${res#*|}
 assert_status "36.16: Admin Resolve Dispute as Customer (Forbidden)" "$status" "403" "$body"
 
 fi  # end admin token guard
+
+# ==============================================================================
+# SECTION 37: STORES - REMAINING MISSING SCENARIOS
+# ==============================================================================
+echo -e "\n--- Testing Stores Remaining Scenarios ---"
+
+# 37.1 PATCH /stores/me with invalid OpeningHours JSON (400)
+res=$(curl.exe -s -k -w "\n%{http_code}" -X PATCH -H "Authorization: Bearer $MERCHANT_TOKEN" -F "OpeningHours=not-valid-json" "$BASE_URL/stores/me")
+status=$(echo "$res" | tail -n 1)
+assert_status "37.1: Update Store With Invalid OpeningHours JSON" "$status" "400" ""
+
+# 37.2 PATCH /stores/me/location unauthenticated (401)
+res=$(send_request "PATCH" "/stores/me/location" "{\"latitude\":30.0,\"longitude\":31.0,\"city\":\"Cairo\"}" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "37.2: Update Store Location Unauthenticated" "$status" "401" "$body"
+
+# 37.3 PATCH /stores/me/location as Customer (403)
+res=$(send_request "PATCH" "/stores/me/location" "{\"latitude\":30.0,\"longitude\":31.0,\"city\":\"Cairo\"}" "$CUSTOMER_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "37.3: Update Store Location as Customer (Forbidden)" "$status" "403" "$body"
+
+# 37.4 PATCH /stores/me/orders/{id}/status non-existent order (400 or 404)
+res=$(send_request "PATCH" "/stores/me/orders/00000000-0000-0000-0000-000000000000/status" "{\"status\":\"Completed\"}" "$MERCHANT_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "37.4: Update Status Non-existent Order" "$status" "400" "$body"
+
+# 37.5 PATCH /stores/me/orders/{id}/status invalid status string (400)
+if [ -n "$ORDER_ID" ]; then
+  res=$(send_request "PATCH" "/stores/me/orders/$ORDER_ID/status" "{\"status\":\"InvalidStatus\"}" "$MERCHANT_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "37.5: Update Order With Invalid Status String" "$status" "400" "$body"
+fi
+
+# 37.6 POST /stores/me/donations non-existent charity (404)
+if [ -n "$PRODUCT_ID" ]; then
+  res=$(send_request "POST" "/stores/me/donations" "{\"recipientOrganizationId\":\"00000000-0000-0000-0000-000000000000\",\"productId\":\"$PRODUCT_ID\",\"quantity\":1}" "$MERCHANT_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "37.6: Donate to Non-existent Charity" "$status" "404" "$body"
+fi
+
+# 37.7 PATCH /stores/me/ai-settings daysBeforeExpiry < 1 (400)
+res=$(send_request "PATCH" "/stores/me/ai-settings" "{\"aiAutoDiscountEnabled\":true,\"aiAutoDiscountPercent\":20,\"aiAutoDiscountDaysBeforeExpiry\":0,\"aiAutoPricingEnabled\":false}" "$MERCHANT_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "37.7: Update AI Settings With Zero Days Before Expiry" "$status" "400" "$body"
+
+# ==============================================================================
+# SECTION 38: PRODUCTS - REMAINING MISSING SCENARIOS
+# ==============================================================================
+echo -e "\n--- Testing Products Remaining Scenarios ---"
+
+# 38.1 GET /stores/me/products with searchTerm filter
+res=$(send_request "GET" "/stores/me/products?searchTerm=Sourdough" "" "$MERCHANT_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "38.1: List Products With SearchTerm Filter" "$status" "200" "$body"
+
+# 38.2 GET /stores/me/products with categoryId filter
+res=$(send_request "GET" "/stores/me/products?categoryId=$CATEGORY_ID" "" "$MERCHANT_TOKEN")
+status=${res%%|*}; body=${res#*|}
+assert_status "38.2: List Products With Category Filter" "$status" "200" "$body"
+
+# 38.3 PATCH /stores/me/products/{id} with negative price (400)
+if [ -n "$PRODUCT_ID" ]; then
+  res=$(curl.exe -s -k -w "\n%{http_code}" -X PATCH -H "Authorization: Bearer $MERCHANT_TOKEN" -F "OriginalPrice=-10.00" "$BASE_URL/stores/me/products/$PRODUCT_ID")
+  status=$(echo "$res" | tail -n 1)
+  assert_status "38.3: Update Product With Negative Price" "$status" "400" ""
+fi
+
+# 38.4 DELETE /stores/me/products/{id}/images/{imageId} non-existent imageId (404)
+if [ -n "$PRODUCT_ID" ]; then
+  res=$(send_request "DELETE" "/stores/me/products/$PRODUCT_ID/images/00000000-0000-0000-0000-000000000000" "" "$MERCHANT_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "38.4: Delete Non-existent Product Image" "$status" "404" "$body"
+fi
+
+# ==============================================================================
+# SECTION 39: MARKETPLACE - REMAINING MISSING SCENARIOS
+# ==============================================================================
+echo -e "\n--- Testing Marketplace Remaining Scenarios ---"
+
+# 39.1 GET /marketplace/products sortBy=discount
+res=$(send_request "GET" "/marketplace/products?sortBy=discount" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "39.1: Marketplace Products Sorted by Discount" "$status" "200" "$body"
+
+# 39.2 GET /marketplace/products sortBy=expiration
+res=$(send_request "GET" "/marketplace/products?sortBy=expiration" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "39.2: Marketplace Products Sorted by Expiration" "$status" "200" "$body"
+
+# 39.3 GET /marketplace/products sortBy=price_asc
+res=$(send_request "GET" "/marketplace/products?sortBy=price_asc&minPrice=1" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "39.3: Marketplace Products Sorted by Price Ascending" "$status" "200" "$body"
+
+# 39.4 GET /marketplace/products sortBy=price_desc
+res=$(send_request "GET" "/marketplace/products?sortBy=price_desc" "" "")
+status=${res%%|*}; body=${res#*|}
+assert_status "39.4: Marketplace Products Sorted by Price Descending" "$status" "200" "$body"
+
+# ==============================================================================
+# SECTION 40: ORDERS - REMAINING MISSING SCENARIOS
+# ==============================================================================
+echo -e "\n--- Testing Orders Remaining Scenarios ---"
+
+# 40.1 GET /orders/{id} with another user's order ID (404)
+if [ -n "$ORDER_ID" ] && [ -n "$MERCHANT_TOKEN" ]; then
+  res=$(send_request "GET" "/orders/$ORDER_ID" "" "$MERCHANT_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "40.1: Get Order Belonging to Different User" "$status" "404" "$body"
+fi
+
+# 40.2 GET /orders/{id}/tracking for another user's order (404)
+if [ -n "$ORDER_ID" ] && [ -n "$MERCHANT_TOKEN" ]; then
+  res=$(send_request "GET" "/orders/$ORDER_ID/tracking" "" "$MERCHANT_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "40.2: Get Tracking for Order of Different User" "$status" "404" "$body"
+fi
+
+# ==============================================================================
+# SECTION 41: REVIEWS - REMAINING MISSING SCENARIOS
+# ==============================================================================
+echo -e "\n--- Testing Reviews Remaining Scenarios ---"
+
+# 41.1 GET /stores/{id}/reviews with pagination params
+if [ -n "$ORGANIZATION_ID" ]; then
+  res=$(send_request "GET" "/stores/$ORGANIZATION_ID/reviews?pageNumber=1&pageSize=5" "" "")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "41.1: List Store Reviews With Pagination" "$status" "200" "$body"
+fi
+
+# 41.2 POST /reviews rating = 0 (400 - out of valid range)
+if [ -n "$ORDER_ID" ]; then
+  res=$(send_request "POST" "/reviews" "{\"orderId\":\"$ORDER_ID\",\"rating\":0}" "$CUSTOMER_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "41.2: Post Review With Zero Rating" "$status" "400" "$body"
+fi
+
+# ==============================================================================
+# SECTION 42: ADMIN - REMAINING MISSING SCENARIOS
+# ==============================================================================
+echo -e "\n--- Testing Admin Remaining Scenarios ---"
+
+if [ -n "$ADMIN_TOKEN" ]; then
+  # 42.1 GET /admin/stores/pending is AllowAnonymous - verify 200 without token
+  res=$(send_request "GET" "/admin/stores/pending" "" "")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.1: Get Pending Stores Without Auth (AllowAnonymous)" "$status" "200" "$body"
+
+  # 42.2 GET /admin/stores/{id} is AllowAnonymous - verify 200 without token
+  res=$(send_request "GET" "/admin/stores/$ORGANIZATION_ID" "" "")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.2: Get Store For Review Without Auth (AllowAnonymous)" "$status" "200" "$body"
+
+  # 42.3 GET /admin/users with searchTerm filter
+  res=$(send_request "GET" "/admin/users?searchTerm=admin" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.3: Admin List Users With SearchTerm Filter" "$status" "200" "$body"
+
+  # 42.4 GET /admin/reviews filtered by organizationId
+  res=$(send_request "GET" "/admin/reviews?organizationId=$ORGANIZATION_ID" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.4: Admin List Reviews Filtered by OrganizationId" "$status" "200" "$body"
+
+  # 42.5 GET /admin/products filtered by organizationId
+  res=$(send_request "GET" "/admin/products?organizationId=$ORGANIZATION_ID" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.5: Admin List Products Filtered by OrganizationId" "$status" "200" "$body"
+
+  # 42.6 GET /admin/support-tickets with priority filter
+  res=$(send_request "GET" "/admin/support-tickets?priority=High" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.6: Admin List Tickets Filtered by Priority" "$status" "200" "$body"
+
+  # 42.7 PATCH /admin/users/{id}/status with invalid status value (400)
+  res=$(send_request "PATCH" "/admin/users/$CUSTOMER_USER_ID/status" "{\"status\":\"InvalidStatus\"}" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.7: Admin Update User Status With Invalid Value" "$status" "400" "$body"
+
+  # 42.8 PATCH /admin/users/{id}/status non-existent user (404)
+  res=$(send_request "PATCH" "/admin/users/00000000-0000-0000-0000-000000000000/status" "{\"status\":\"Active\"}" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.8: Admin Update Status Non-existent User" "$status" "404" "$body"
+
+  # 42.9 GET /admin/analytics/summary unauthenticated (401)
+  res=$(send_request "GET" "/admin/analytics/summary" "" "")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.9: Admin Analytics Summary Unauthenticated" "$status" "401" "$body"
+
+  # 42.10 GET /admin/disputes with pagination
+  res=$(send_request "GET" "/admin/disputes?pageNumber=1&pageSize=5" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.10: Admin List Disputes With Pagination" "$status" "200" "$body"
+fi
 # ==============================================================================
 # TEST RUN SUMMARY
 # ==============================================================================
