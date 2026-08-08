@@ -62,11 +62,28 @@ builder.Services.AddLocalization();
 var supportedCultures = new[] { new CultureInfo("ar"), new CultureInfo("en") };
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("ar");
-    options.SupportedCultures = supportedCultures;
+    // UICulture drives string resource lookup (message translations).
+    // Culture drives number/date parsing — keep it InvariantCulture so decimal
+    // form fields like "6.00" always parse correctly regardless of Accept-Language.
+    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture(
+        culture: CultureInfo.InvariantCulture,
+        uiCulture: new CultureInfo("ar"));
+    options.SupportedCultures = new[] { CultureInfo.InvariantCulture };
     options.SupportedUICultures = supportedCultures;
-    // Resolution order: Accept-Language header → query string ?culture=ar → default "ar"
+    // Resolution order: Accept-Language header → default "ar"
     options.ApplyCurrentCultureToResponseHeaders = true;
+    options.RequestCultureProviders.Insert(0, new Microsoft.AspNetCore.Localization.CustomRequestCultureProvider(ctx =>
+    {
+        // Map Accept-Language to UICulture only; always use InvariantCulture for parsing.
+        var acceptLang = ctx.Request.Headers["Accept-Language"].ToString();
+        var uiCulture = acceptLang.StartsWith("en", StringComparison.OrdinalIgnoreCase)
+            ? new CultureInfo("en")
+            : new CultureInfo("ar");
+        var result = new Microsoft.AspNetCore.Localization.ProviderCultureResult(
+            CultureInfo.InvariantCulture.Name,
+            uiCulture.Name);
+        return Task.FromResult<Microsoft.AspNetCore.Localization.ProviderCultureResult?>(result);
+    }));
 });
 
 // ---- Services ----------------------------------------------------------
