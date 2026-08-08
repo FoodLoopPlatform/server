@@ -126,9 +126,26 @@ public static class InfrastructureServiceRegistration
                 }
             });
 
-        // Conditional Email Service registration (SMTP vs DevStub)
+        // Email service registration — priority order:
+        // 1. Brevo HTTP API (BREVO_API_KEY set) — no IP whitelist, works from any host
+        // 2. SMTP (SMTP_HOST set) — requires IP whitelist on some providers
+        // 3. NullEmailService — logs a warning, does not send
+        var brevoApiKey = configuration["BREVO_API_KEY"] ?? Environment.GetEnvironmentVariable("BREVO_API_KEY");
         var smtpHost = configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? configuration["Smtp:Host"];
-        if (!string.IsNullOrEmpty(smtpHost))
+
+        if (!string.IsNullOrEmpty(brevoApiKey))
+        {
+            var fromEmail = configuration["BREVO_FROM_EMAIL"] ?? Environment.GetEnvironmentVariable("BREVO_FROM_EMAIL") ?? "noreply@foodloop.com";
+            var fromName  = configuration["BREVO_FROM_NAME"]  ?? Environment.GetEnvironmentVariable("BREVO_FROM_NAME")  ?? "FoodLoop";
+            services.AddHttpClient("brevo");
+            services.AddScoped<IEmailService>(sp => new BrevoEmailService(
+                brevoApiKey,
+                fromEmail,
+                fromName,
+                sp.GetRequiredService<IHttpClientFactory>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BrevoEmailService>>()));
+        }
+        else if (!string.IsNullOrEmpty(smtpHost))
         {
             services.AddScoped<IEmailService, SmtpEmailService>();
         }
