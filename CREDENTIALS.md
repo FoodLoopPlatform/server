@@ -1,12 +1,23 @@
-# FoodLoop Test Accounts & Credentials Reference
+# FoodLoop Test Accounts & Database Seeding Reference
 
-This document contains the complete list of seeded accounts and credentials for the FoodLoop platform across all user roles (Administrator, Merchants/Stores, Charities/NGOs, and Customers).
+This document provides a comprehensive reference of all seeded accounts, credentials, and dataset entities in the FoodLoop database.
 
-> **Web Login Portal**: [https://web-nine-ivory-36.vercel.app/login](https://web-nine-ivory-36.vercel.app/login)
+> **Web Application Login URL**: [https://web-nine-ivory-36.vercel.app/login](https://web-nine-ivory-36.vercel.app/login)
 
 ---
 
-## 1. System Administrator
+## 1. User Accounts & Credentials Summary
+
+| Role | Count | Default Password | Notes |
+| :--- | :---: | :--- | :--- |
+| **System Admin** | 1 | `Admin@123` | Full access to moderation, analytics, disputes, user bans |
+| **Merchants (Stores)** | 10 | `Password@123` | Verified organization owners with products and analytics |
+| **Charities (NGOs)** | 5 | `Password@123` | Verified non-profit organizations receiving donations |
+| **Customers** | 25 | `Password@123` | Active shoppers with orders, addresses, reviews, favorites |
+
+---
+
+## 2. System Administrator
 
 | Role | Full Name | Email | Password | Phone |
 | :--- | :--- | :--- | :--- | :--- |
@@ -14,17 +25,17 @@ This document contains the complete list of seeded accounts and credentials for 
 
 ---
 
-## 2. Merchants & Supermarket Stores
+## 3. Merchants & Supermarket Stores (10 Stores)
 
-All merchant accounts own a verified organization with listed products, store locations, opening hours, and cover photos.
+All merchant stores are verified, configured with locations, cover photos, opening hours, AI auto-discount settings, and catalog listings.
 
-| Store / Brand Name | Manager Name | Email | Password | Category | Location | Phone |
+| Brand / Store Name | Manager Name | Login Email | Password | Category | Area / City | Phone |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Spinneys Supermarket** | Spinneys Egypt Manager | `merchant.spinneys@example.com` | `Password@123` | Supermarket | Zamalek, Cairo | `+201020000001` |
 | **Carrefour Hypermarket** | Carrefour Store Lead | `merchant.carrefour@example.com` | `Password@123` | Supermarket | Maadi, Cairo | `+201020000002` |
 | **Seoudi Supermarket** | Seoudi Operations Head | `merchant.seoudi@example.com` | `Password@123` | Supermarket | Dokki, Giza | `+201020000003` |
 | **Metro Market** | Metro Market Officer | `merchant.metro@example.com` | `Password@123` | Supermarket | Heliopolis, Cairo | `+201020000004` |
-| **Gourmet Egypt** | Gourmet Fresh Lead | `merchant.gourmet@example.com` | `Password@123` | Grocery Chain | New Cairo | `+201020000005` |
+| **Gourmet Egypt** | Gourmet Fresh Lead | `merchant.gourmet@example.com` | `Password@123` | Grocery Chain | New Cairo, Cairo | `+201020000005` |
 | **The Bakery Shop (TBS)** | TBS Bakery Artisan | `merchant.tbs@example.com` | `Password@123` | Bakery | Zamalek, Cairo | `+201020000006` |
 | **Fresh Food Market** | Fresh Food Market Mgr | `merchant.freshfood@example.com` | `Password@123` | Supermarket | Sheikh Zayed, Giza | `+201020000007` |
 | **Alfa Market** | Alfa Market Supervisor | `merchant.alfa@example.com` | `Password@123` | Supermarket | Mohandessin, Giza | `+201020000008` |
@@ -33,11 +44,11 @@ All merchant accounts own a verified organization with listed products, store lo
 
 ---
 
-## 3. Charities & Non-Profit Organizations (NGOs)
+## 4. Charities & Non-Profit Organizations (5 NGOs)
 
 All charity accounts are verified non-profit organizations capable of receiving surplus food donations from merchant stores.
 
-| Charity / NGO Name | Representative | Email | Password | Headquarters | Phone |
+| Charity / NGO Name | Representative | Login Email | Password | Headquarters Area | Phone |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Egyptian Food Bank (بنك الطعام)** | Egyptian Food Bank Lead | `charity.foodbank@example.com` | `Password@123` | New Cairo, Cairo | `+201030000001` |
 | **Resala Charity (جمعية رسالة)** | Resala NGO Director | `charity.resala@example.com` | `Password@123` | Faisal, Giza | `+201030000002` |
@@ -47,11 +58,9 @@ All charity accounts are verified non-profit organizations capable of receiving 
 
 ---
 
-## 4. Customers / App Consumers
+## 5. Customers / App Consumers (25 Customers)
 
-All customer accounts come preloaded with saved addresses, orders, reviews, and favorites.
-
-| Customer Name | Email | Password | Governorate | Primary District | Phone |
+| Customer Name | Login Email | Password | Governorate | Primary District | Phone |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Ahmed Hassan** | `ahmed.hassan@example.com` | `Password@123` | Cairo | Zamalek | `+201040000001` |
 | **Sara Mahmoud** | `sara.mahmoud@example.com` | `Password@123` | Giza | Dokki | `+201040000002` |
@@ -81,13 +90,85 @@ All customer accounts come preloaded with saved addresses, orders, reviews, and 
 
 ---
 
-## 5. Quick Seeding Command
+## 6. Seeded Product Categories (8 Categories)
 
-To re-seed or refresh this data at any point:
+| Category Name (EN) | Category Name (AR) | Sample Seeded Items |
+| :--- | :--- | :--- |
+| **Bakery** | مخبوزات | Sourdough Bread, Butter Croissants, Whole Wheat Toast, Cinnamon Rolls |
+| **Dairy & Eggs** | ألبان وبيض | Organic Milk 1L, Greek Yogurt 500g, Eggs Carton (30), Feta Cheese 250g |
+| **Fruits & Vegetables** | خضار وفواكه | Organic Bananas 1kg, Gala Apples 1kg, Baby Spinach 300g, Tomatoes 1.5kg |
+| **Meat & Poultry** | لحوم ودواجن | Fresh Chicken Breast 1kg, Lean Minced Beef 500g |
+| **Prepared Meals** | وجبات جاهزة | Roasted Chicken & Rice, Penne Arrabbiata, Beef Kofta & Tahini Platter |
+| **Beverages** | مشروبات | Cold Pressed Orange Juice 1L, Unsweetened Almond Milk 1L |
+| **Canned & Pantry** | معلبات ومؤن | Canned Chickpeas, Tuna Chunks, Tomato Paste, Olive Oil |
+| **Desserts & Sweets** | حلويات | Belgian Chocolate Mousse Cup, Mixed Fresh Fruit Tartlet |
+
+---
+
+## 7. Seeded Database Entities Overview
+
+When the database is populated via `scripts/seed_db.sh`, the following entities and relations are generated:
+
+### 🛍️ Products & Inventory (70 Products)
+- **7 products per store** across 10 merchant stores.
+- Every product includes:
+  - High-resolution product display image.
+  - Price audit history record (`PriceHistories`) showing price progression.
+  - AI OCR Recognition Log (`AIRecognitionResults`) with extracted text, expiration date, and high confidence score ($> 0.88$).
+  - Realistic expiration dates (1 to 12 days ahead).
+  - Discounted prices ($30\%$ to $60\%$ off original retail price).
+
+### 🏠 Customer Saved Addresses (35 Addresses)
+- Primary default **Home** addresses in Zamalek, Maadi, Dokki, Heliopolis, New Cairo, etc.
+- Secondary **Company / Office** addresses for customers.
+- Accurate GPS coordinates (`Latitude`, `Longitude`) and building/apartment numbers.
+
+### 📦 Orders, Line Items & Payments (40 Orders)
+- Multi-item customer orders across various stores.
+- Status distribution: `Completed` (with credit card payments and transaction references), `Confirmed`, and `Pending`.
+- Linked payments with transaction references (`TXN_xxxxxxx`).
+
+### ⭐ Store Ratings & Customer Reviews (18 Reviews)
+- Real customer reviews for completed orders with 4-star and 5-star ratings.
+- Arabic and English customer feedback comments.
+
+### ❤️ Customer Favorites (75 Favorites)
+- Pre-populated favorite product bookmarks per customer account.
+
+### 🤝 Surplus Donations (12 Donations)
+- Direct surplus food donations from merchant stores (Spinneys, Carrefour, Seoudi, etc.) to verified charities (Egyptian Food Bank, Resala, Orman, Misr El Kheir, Baheya).
+- Marked with status `Delivered`.
+
+### 🔔 Notifications Feed (30 Notifications)
+- Customer notification feed with special surplus deals and order confirmation updates.
+
+### 💬 Support Tickets & Conversations (10 Tickets)
+- Support tickets opened by customer accounts with two-way conversation history (Customer inquiry and Admin response).
+
+### ⚖️ Product Reports & Disputes (4 Reports)
+- Unresolved and resolved product issue dispute reports for admin review.
+
+### 📜 System Audit Trail Logs (20 Records)
+- Audit log records tracking store verifications, approvals, and profile updates.
+
+---
+
+## 8. Database Management Scripts
+
+### Reset Database (Clean Wipe)
+Wipes all tables safely with foreign key constraint handling:
+```bash
+bash scripts/reset_db.sh
+```
+
+### Seed Database (Full Large Dataset)
+Wipes and seeds the entire database with all 25+ tables and 41 users:
 ```bash
 bash scripts/seed_db.sh
 ```
-To wipe all tables:
+
+### Run Full Test Suite
+Runs the 260 integration test assertions across all 42 modules:
 ```bash
-bash scripts/reset_db.sh
+bash api_tests.sh
 ```
