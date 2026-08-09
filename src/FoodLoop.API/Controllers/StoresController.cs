@@ -1,7 +1,7 @@
 using FoodLoop.API.Common;
-using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
+using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.DTOs.Organizations;
 using FoodLoop.Application.DTOs.Orders;
 using FoodLoop.Application.Features.Organizations.Commands;
@@ -256,6 +256,20 @@ public class StoresController : ControllerBase
         var command = new DonateSurplusCommand(OwnerId, request.RecipientOrganizationId, request.ProductId, request.Quantity, request.Note);
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<DonationDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /stores/me/disputes — list reports and disputes filed against products in this store.
+    /// </summary>
+    [HttpGet("me/disputes")]
+    public async Task<IActionResult> GetStoreDisputes(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool? isResolved = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetStoreDisputesQuery(OwnerId, pageNumber, pageSize, isResolved), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<DisputeDto>>.Ok(result));
     }
 }
 

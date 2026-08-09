@@ -1,4 +1,4 @@
-﻿using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Admin;
@@ -340,6 +340,14 @@ public class AdminController : ControllerBase
     {
         var result = await _mediator.Send(new GetDisputesQuery(pageNumber, pageSize, isResolved), cancellationToken);
         return Ok(ApiResponse<System.Collections.Generic.IReadOnlyList<DisputeDto>>.Ok(result));
+    }
+
+    /// <summary>GET /admin/disputes/{id} — get a single dispute detail by ID.</summary>
+    [HttpGet("disputes/{id:guid}")]
+    public async Task<IActionResult> GetDisputeById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetDisputeByIdQuery(id), cancellationToken);
+        return Ok(ApiResponse<DisputeDto>.Ok(result));
     }
 
     /// <summary>PATCH /admin/disputes/{id}/resolve — mark a product report as resolved.</summary>

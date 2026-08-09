@@ -55,6 +55,18 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<SupportTicketDto>.Ok(result));
     }
 
+    /// <summary>GET /users/me/reports — list product issue reports submitted by current user.</summary>
+    [HttpGet("me/reports")]
+    public async Task<IActionResult> GetMyReports(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool? isResolved = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetMyReportsQuery(UserId, pageNumber, pageSize, isResolved), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<DisputeDto>>.Ok(result));
+    }
+
     /// <summary>PATCH /users/me/preferences — updates notification and application settings.</summary>
     [HttpPatch("me/preferences")]
     public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesRequest request, CancellationToken cancellationToken)

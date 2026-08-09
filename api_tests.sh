@@ -1292,11 +1292,35 @@ if [ -n "$ADMIN_TOKEN" ]; then
     body=${res#*|}
     assert_status "21.4: Admin List Resolved Disputes" "$status" "200" "$body"
 
-    # Scenario 21.5: Resolve non-existent dispute (404)
+    # Scenario 21.5: Get dispute by ID (Happy Path)
+    if [ -n "$DISPUTE_ID" ]; then
+        res=$(send_request "GET" "/admin/disputes/$DISPUTE_ID" "" "$ADMIN_TOKEN")
+        status=${res%%|*}
+        body=${res#*|}
+        assert_status "21.5: Admin Get Dispute By ID" "$status" "200" "$body"
+    fi
+
+    # Scenario 21.6: Get my submitted reports as Customer
+    if [ -n "$CUSTOMER_TOKEN" ]; then
+        res=$(send_request "GET" "/users/me/reports" "" "$CUSTOMER_TOKEN")
+        status=${res%%|*}
+        body=${res#*|}
+        assert_status "21.6: Customer Get My Submitted Reports" "$status" "200" "$body"
+    fi
+
+    # Scenario 21.7: Get store product disputes as Merchant
+    if [ -n "$MERCHANT_TOKEN" ]; then
+        res=$(send_request "GET" "/stores/me/disputes" "" "$MERCHANT_TOKEN")
+        status=${res%%|*}
+        body=${res#*|}
+        assert_status "21.7: Merchant Get Store Disputes" "$status" "200" "$body"
+    fi
+
+    # Scenario 21.8: Resolve non-existent dispute (404)
     res=$(send_request "PATCH" "/admin/disputes/00000000-0000-0000-0000-000000000000/resolve" "{\"adminNote\":\"test\"}" "$ADMIN_TOKEN")
     status=${res%%|*}
     body=${res#*|}
-    assert_status "21.5: Resolve Non-existent Dispute" "$status" "404" "$body"
+    assert_status "21.8: Resolve Non-existent Dispute" "$status" "404" "$body"
 fi
 
 # ==============================================================================
