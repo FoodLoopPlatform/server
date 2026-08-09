@@ -36,9 +36,7 @@ public class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateOrganizati
         var req = command.Request;
 
         if (req.Name != null) organization.Name = req.Name.Trim();
-        if (req.NameAr != null) organization.NameAr = req.NameAr.Trim();
         if (req.Description != null) organization.Description = req.Description;
-        if (req.DescriptionAr != null) organization.DescriptionAr = req.DescriptionAr;
         if (req.BusinessCategory.HasValue) organization.BusinessCategory = req.BusinessCategory;
 
         if (req.LogoFile != null)
@@ -49,6 +47,16 @@ public class UpdateStoreProfileCommandHandler : IRequestHandler<UpdateOrganizati
         else if (req.Logo != null)
         {
             organization.Logo = req.Logo;
+        }
+
+        if (req.CoverPhotoFile != null)
+        {
+            var coverUrl = await _fileStorage.SaveAsync(req.CoverPhotoFile, $"organizations/{organization.Id}", cancellationToken);
+            organization.CoverPhoto = coverUrl;
+        }
+        else if (req.CoverPhoto != null)
+        {
+            organization.CoverPhoto = req.CoverPhoto;
         }
 
         if (req.Phone != null) organization.Phone = req.Phone;

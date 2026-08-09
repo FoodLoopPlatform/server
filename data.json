@@ -1,123 +1,77 @@
 {
   "success": true,
-  "data": {
-    "user": {
-      "id": "0788d7d7-84d1-4aa6-b8a1-08deedf141d3",
-      "fullName": "Organic Shop Owner",
-      "email": "merchant.organic@example.com",
-      "phoneNumber": null,
-      "profileImage": null,
-      "language": "en",
-      "status": "Active",
-      "orderUpdatesEnabled": true,
-      "marketingNotificationsEnabled": false,
-      "roles": [
-        "Merchant"
-      ],
-      "createdAt": "2026-07-30T04:15:57.5312731+00:00"
-    },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwNzg4ZDdkNy04NGQxLTRhYTYtYjhhMS0wOGRlZWRmMTQxZDMiLCJlbWFpbCI6Im1lcmNoYW50Lm9yZ2FuaWNAZXhhbXBsZS5jb20iLCJqdGkiOiJmMzRlYTBiZC01N2NlLTRjYzctOTIwNS0yZjhmMjMxNGViNmMiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjA3ODhkN2Q3LTg0ZDEtNGFhNi1iOGExLTA4ZGVlZGYxNDFkMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6Ik1lcmNoYW50IiwiZXhwIjoxNzg1Mzg2OTg0LCJpc3MiOiJGb29kTG9vcC5BUEkiLCJhdWQiOiJGb29kTG9vcC5DbGllbnRzIn0.vMJCOYeFh18gC2a2CCo8CI9IXADMwwJF4M4AhyNYveo",
-    "refreshToken": "WqqkfvemqsiH2kcosQ54D05n42jdBX0Cg0fqW8iOHrfnmY/mQOn4JUXfQ0VPh//UhZAj/Kklr2B8c86YAQLEEA==",
-    "accessTokenExpiresAt": "2026-07-30T04:49:44.9695979+00:00"
-  },
-  "message": null,
-  "errors": []
-}
-
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "c5ac2a65-8be0-4c4f-b1a4-08deecf46c93",
-      "fullName": "System Administrator",
-      "email": "admin@foodloop.com",
-      "phoneNumber": null,
-      "profileImage": null,
-      "language": "en",
-      "status": "Active",
-      "orderUpdatesEnabled": true,
-      "marketingNotificationsEnabled": false,
-      "roles": [
-        "Admin"
-      ],
-      "createdAt": "2026-07-28T22:06:06.7492953+00:00"
-    },
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjNWFjMmE2NS04YmUwLTRjNGYtYjFhNC0wOGRlZWNmNDZjOTMiLCJlbWFpbCI6ImFkbWluQGZvb2Rsb29wLmNvbSIsImp0aSI6IjljYWVjMjY1LWVjN2QtNGY0Yi05N2YzLWJjODM0MjRhMTI2MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWVpZGVudGlmaWVyIjoiYzVhYzJhNjUtOGJlMC00YzRmLWIxYTQtMDhkZWVjZjQ2YzkzIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3ODUzODYzODQsImlzcyI6IkZvb2RMb29wLkFQSSIsImF1ZCI6IkZvb2RMb29wLkNsaWVudHMifQ.9ONW1_S-taFIIdupvMvCWrjBiQ6LViXrwKf2x-92TDE",
-    "refreshToken": "GjbbZmWdVsfjemVGZ49hkkKANiRtRrrj603ZzCciM6Dwn4hxbOKHuBkMao0UL5U2x9oDqrecBGTnCjLwOm3I/g==",
-    "accessTokenExpiresAt": "2026-07-30T04:39:44.1799466+00:00"
-  },
-  "message": null,
-  "errors": []
-}
-
-
-{
-  "success": true,
   "data": [
     {
-      "id": "11111111-1111-1111-1111-111111111111",
-      "name": "Bakery",
-      "nameAr": "مخبوزات",
-      "icon": null
+      "id": "da8b9e92-ecc9-479a-a774-43f74a4f7bee",
+      "organizationId": "c4d97e55-d356-4789-a1ec-f2633f400e0f",
+      "categoryId": "74da2114-856a-497b-ad03-9a9b557383a5",
+      "categoryName": "Meals",
+      "title": "طرشي",
+      "description": "طرشي مشكل",
+      "originalPrice": 20,
+      "discountedPrice": 10,
+      "quantityAvailable": 1,
+      "expirationDate": "2026-09-09",
+      "status": "PendingModeration",
+      "images": [
+        {
+          "id": "b3c6a181-d1b8-44d3-a229-0531a38136e5",
+          "imageUrl": "https://res.cloudinary.com/wyvhh4u1/image/upload/v1786236414/listings/da8b9e92-ecc9-479a-a774-43f74a4f7bee/ptpiazqyhbgmdfp2fxjx.png",
+          "displayOrder": 0
+        },
+        {
+          "id": "b5922b8b-3c4b-49ce-a1b5-29b6cb2f8544",
+          "imageUrl": "https://res.cloudinary.com/wyvhh4u1/image/upload/v1786236416/listings/da8b9e92-ecc9-479a-a774-43f74a4f7bee/pn9vtpjcqlhlvhnaf3tt.png",
+          "displayOrder": 1
+        }
+      ]
+    },
+    {
+      "id": "3c72fe8d-87eb-40f5-9466-7ec37d32b740",
+      "organizationId": "c4d97e55-d356-4789-a1ec-f2633f400e0f",
+      "categoryId": "849703db-3b01-4969-9c4d-63b44f50586f",
+      "categoryName": "Desserts",
+      "title": "كنافة كريمة",
+      "description": "كنافة كريمة متكرملة متكندرة مليانة عسل",
+      "originalPrice": 20,
+      "discountedPrice": 10,
+      "quantityAvailable": 1,
+      "expirationDate": "2026-09-09",
+      "status": "PendingModeration",
+      "images": [
+        {
+          "id": "39269b48-ffa6-465e-8825-2db046af671f",
+          "imageUrl": "https://res.cloudinary.com/wyvhh4u1/image/upload/v1786236342/listings/3c72fe8d-87eb-40f5-9466-7ec37d32b740/wqqovblohyhvnga1cqhr.png",
+          "displayOrder": 0
+        },
+        {
+          "id": "5db1b741-683a-40ba-b052-35f20ae6df5c",
+          "imageUrl": "https://res.cloudinary.com/wyvhh4u1/image/upload/v1786236343/listings/3c72fe8d-87eb-40f5-9466-7ec37d32b740/zm8s3mrdi5pxdasvirhe.png",
+          "displayOrder": 1
+        }
+      ]
+    },
+    {
+      "id": "38cc39f8-93df-499f-a89b-2dff27b7c083",
+      "organizationId": "c4d97e55-d356-4789-a1ec-f2633f400e0f",
+      "categoryId": "9bc92a00-33b0-460f-8966-7bf14d421e39",
+      "categoryName": "Bakery",
+      "title": "جبن شيدر",
+      "description": "جبن شيدر فلاحي عالي الجودة وتحدي",
+      "originalPrice": 20,
+      "discountedPrice": 10,
+      "quantityAvailable": 1,
+      "expirationDate": "2026-08-12",
+      "status": "PendingModeration",
+      "images": [
+        {
+          "id": "4c4209b3-4cec-453a-a879-2f7d4279e9b7",
+          "imageUrl": "https://res.cloudinary.com/wyvhh4u1/image/upload/v1786236018/listings/38cc39f8-93df-499f-a89b-2dff27b7c083/eth7r3vffzroeayuopm5.png",
+          "displayOrder": 0
+        }
+      ]
     }
   ],
-  "message": null,
-  "errors": []
-}
-
-{
-  "success": true,
-  "data": {
-    "id": "7001c518-e4aa-48b3-8913-9dfd092d6861",
-    "storeId": "6e956a1b-6af4-47a7-a4ad-19cb32b0f267",
-    "categoryId": "11111111-1111-1111-1111-111111111111",
-    "categoryName": "Bakery",
-    "title": "Fresh Sourdough Bread",
-    "titleAr": "خبز ساوردو طازج",
-    "description": "Crispy crust and soft crumb, organic.",
-    "descriptionAr": "مخبوزات عضوية طازجة يومياً.",
-    "originalPrice": 12.5,
-    "discountedPrice": 5,
-    "quantityAvailable": 25,
-    "expirationDate": "2026-08-15",
-    "status": "Active",
-    "images": []
-  },
-  "message": null,
-  "errors": []
-}
-
-
-
-{
-  "success": true,
-  "data": {
-    "id": "7001c518-e4aa-48b3-8913-9dfd092d6861",
-    "storeId": "6e956a1b-6af4-47a7-a4ad-19cb32b0f267",
-    "categoryId": "11111111-1111-1111-1111-111111111111",
-    "categoryName": "Bakery",
-    "title": "Fresh Sourdough Bread",
-    "titleAr": "خبز ساوردو طازج",
-    "description": "Crispy crust and soft crumb, organic.",
-    "descriptionAr": "مخبوزات عضوية طازجة يومياً.",
-    "originalPrice": 12.5,
-    "discountedPrice": 5,
-    "quantityAvailable": 25,
-    "expirationDate": "2026-08-15",
-    "status": "Active",
-    "images": [
-      {
-        "id": "27092d45-3770-48db-b3e9-a6fde74629a2",
-        "imageUrl": "/uploads/listings/7001c518-e4aa-48b3-8913-9dfd092d6861/f88ff90b-e273-40fa-95f4-b38d1c9ea3cc.png",
-        "displayOrder": 0
-      },
-      {
-        "id": "27092d45-3770-48db-b3e9-a6fde74629a2",
-        "imageUrl": "/uploads/listings/7001c518-e4aa-48b3-8913-9dfd092d6861/f88ff90b-e273-40fa-95f4-b38d1c9ea3cc.png",
-        "displayOrder": 0
-      }
-    ]
-  },
   "message": null,
   "errors": []
 }

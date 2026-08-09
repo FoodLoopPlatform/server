@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Admin;
+using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Identity;
 
@@ -10,11 +10,10 @@ internal static class AdminStoreMappings
     {
         Id = organization.Id,
         Name = organization.Name,
-        NameAr = organization.NameAr,
         Description = organization.Description,
-        DescriptionAr = organization.DescriptionAr,
         BusinessCategory = organization.BusinessCategory,
         Logo = organization.Logo,
+        CoverPhoto = organization.CoverPhoto,
         Phone = organization.Phone,
         Email = organization.Email,
         Governorate = organization.Governorate,

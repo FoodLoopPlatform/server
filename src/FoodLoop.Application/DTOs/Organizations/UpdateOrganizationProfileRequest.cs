@@ -10,12 +10,7 @@ public class UpdateOrganizationProfileRequest
     [MaxLength(150)]
     public string? Name { get; set; }
 
-    [MaxLength(150)]
-    public string? NameAr { get; set; }
-
     public string? Description { get; set; }
-
-    public string? DescriptionAr { get; set; }
 
     public BusinessCategory? BusinessCategory { get; set; }
 
@@ -24,6 +19,12 @@ public class UpdateOrganizationProfileRequest
 
     /// <summary>Logo file payload for upload.</summary>
     public FileUploadRequest? LogoFile { get; set; }
+
+    /// <summary>URL of the organization cover photo image.</summary>
+    public string? CoverPhoto { get; set; }
+
+    /// <summary>Cover photo file payload for upload.</summary>
+    public FileUploadRequest? CoverPhotoFile { get; set; }
 
     [Phone, MaxLength(20)]
     public string? Phone { get; set; }

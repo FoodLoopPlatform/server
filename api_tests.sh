@@ -430,6 +430,19 @@ status=$(echo "$res" | tail -n 1)
 body=$(echo "$res" | sed '$d')
 assert_status "3.5: Update Store Name and Category Profile" "$status" "200" "$body"
 
+# Scenario 3.5.1: Update Store Profile with CoverPhoto
+echo "FAKE COVER PHOTO CONTENT" > mock_cover.png
+res=$(curl.exe -s -k -w "\n%{http_code}" -X PATCH \
+  -H "Authorization: Bearer $MERCHANT_TOKEN" \
+  -F "Name=Spinneys Supermarket Updated $RANDOM_VAL" \
+  -F "BusinessCategory=Supermarket" \
+  -F "CoverPhoto=@mock_cover.png" \
+  "$BASE_URL/stores/me")
+rm -f mock_cover.png
+status=$(echo "$res" | tail -n 1)
+body=$(echo "$res" | sed '$d')
+assert_status "3.5.1: Update Store Profile with CoverPhoto" "$status" "200" "$body"
+
 # Scenario 3.6: Get Received Merchant Orders
 res=$(send_request "GET" "/stores/me/orders" "" "$MERCHANT_TOKEN")
 status=${res%%|*}

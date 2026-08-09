@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Organizations;
+using FoodLoop.Application.DTOs.Organizations;
 using FoodLoop.Domain.Entities;
 
 namespace FoodLoop.Infrastructure.Mappings;
@@ -9,10 +9,9 @@ internal static class StoreMappings
     {
         Id = organization.Id,
         Name = organization.Name,
-        NameAr = organization.NameAr,
         Description = organization.Description,
-        DescriptionAr = organization.DescriptionAr,
         Logo = organization.Logo,
+        CoverPhoto = organization.CoverPhoto,
         Phone = organization.Phone,
         Email = organization.Email,
         BusinessCategory = organization.BusinessCategory,

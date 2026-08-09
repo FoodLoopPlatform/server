@@ -1,4 +1,4 @@
-﻿using FoodLoop.Domain.Entities;
+using FoodLoop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,7 +9,6 @@ public class StoreConfiguration : IEntityTypeConfiguration<Organization>
     public void Configure(EntityTypeBuilder<Organization> builder)
     {
         builder.Property(s => s.Name).HasMaxLength(150).IsRequired();
-        builder.Property(s => s.NameAr).HasMaxLength(150);
         builder.Property(s => s.Governorate).HasMaxLength(100);
         builder.Property(s => s.City).HasMaxLength(100);
         builder.Property(s => s.Neighborhood).HasMaxLength(100);

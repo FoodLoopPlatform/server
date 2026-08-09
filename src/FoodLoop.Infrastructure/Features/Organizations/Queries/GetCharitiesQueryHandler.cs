@@ -39,10 +39,9 @@ public class GetCharitiesQueryHandler : IRequestHandler<GetCharitiesQuery, IRead
             {
                 Id = o.Id,
                 Name = o.Name,
-                NameAr = o.NameAr,
                 Description = o.Description,
-                DescriptionAr = o.DescriptionAr,
                 Logo = o.Logo,
+                CoverPhoto = o.CoverPhoto,
                 City = o.City,
                 Phone = o.Phone,
                 Email = o.Email,

@@ -52,7 +52,7 @@ public class StoresController : ControllerBase
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
 
-    /// <summary>PATCH /organizations/me â€” updates the organization's name, description, category, and logo (Form Data).</summary>
+    /// <summary>PATCH /organizations/me — updates the organization's name, description, category, logo, and cover photo (Form Data).</summary>
     [HttpPatch("me")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UpdateProfile([FromForm] UpdateStoreProfileFormRequest request, CancellationToken cancellationToken)
@@ -75,6 +75,24 @@ public class StoresController : ControllerBase
             };
         }
 
+        FileUploadRequest? coverPhotoUpload = null;
+        if (request.CoverPhoto != null && request.CoverPhoto.Length > 0)
+        {
+            var ext = Path.GetExtension(request.CoverPhoto.FileName).ToLowerInvariant();
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            if (!allowedExtensions.Contains(ext))
+            {
+                return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
+            }
+
+            coverPhotoUpload = new FileUploadRequest
+            {
+                Content = request.CoverPhoto.OpenReadStream(),
+                FileName = request.CoverPhoto.FileName,
+                ContentType = request.CoverPhoto.ContentType
+            };
+        }
+
         if (!string.IsNullOrWhiteSpace(request.OpeningHours))
         {
             try
@@ -90,11 +108,10 @@ public class StoresController : ControllerBase
         var appRequest = new UpdateOrganizationProfileRequest
         {
             Name = request.Name,
-            NameAr = request.NameAr,
             Description = request.Description,
-            DescriptionAr = request.DescriptionAr,
             BusinessCategory = request.BusinessCategory,
             LogoFile = logoUpload,
+            CoverPhotoFile = coverPhotoUpload,
             Phone = request.Phone,
             Email = request.Email,
             OpeningHours = request.OpeningHours
@@ -260,16 +277,13 @@ public class UpdateStoreProfileFormRequest
     [MaxLength(150)]
     public string? Name { get; set; }
 
-    [MaxLength(150)]
-    public string? NameAr { get; set; }
-
     public string? Description { get; set; }
-
-    public string? DescriptionAr { get; set; }
 
     public BusinessCategory? BusinessCategory { get; set; }
 
     public IFormFile? Logo { get; set; }
+
+    public IFormFile? CoverPhoto { get; set; }
 
     [Phone, MaxLength(20)]
     public string? Phone { get; set; }
