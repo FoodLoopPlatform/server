@@ -1,3 +1,4 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.7.11925.98
@@ -13,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodLoop.API", "src\FoodLoop.API\FoodLoop.API.csproj", "{A1E662BB-DAF8-4505-A0C8-E8E8226ADD19}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C88DD14-F956-CE84-757C-A364CCF449FC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodLoop.DbTool", "src\FoodLoop.DbTool\FoodLoop.DbTool.csproj", "{86B731C3-E5B9-4B60-9436-7EC9057FB58A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,6 +75,18 @@ Global
 		{A1E662BB-DAF8-4505-A0C8-E8E8226ADD19}.Release|x64.Build.0 = Release|Any CPU
 		{A1E662BB-DAF8-4505-A0C8-E8E8226ADD19}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1E662BB-DAF8-4505-A0C8-E8E8226ADD19}.Release|x86.Build.0 = Release|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Debug|x64.Build.0 = Debug|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Debug|x86.Build.0 = Debug|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Release|x64.ActiveCfg = Release|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Release|x64.Build.0 = Release|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Release|x86.ActiveCfg = Release|Any CPU
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -81,5 +96,6 @@ Global
 		{D5FB274B-3F8F-4A20-A094-038DA34F417A} = {904A687D-AE63-432A-AA2A-293BE32B32D1}
 		{66FF113D-C371-482C-A433-C7C19D908393} = {904A687D-AE63-432A-AA2A-293BE32B32D1}
 		{A1E662BB-DAF8-4505-A0C8-E8E8226ADD19} = {904A687D-AE63-432A-AA2A-293BE32B32D1}
+		{86B731C3-E5B9-4B60-9436-7EC9057FB58A} = {904A687D-AE63-432A-AA2A-293BE32B32D1}
 	EndGlobalSection
 EndGlobal
