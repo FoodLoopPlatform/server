@@ -57,13 +57,15 @@ public class Program
             await DataSeeder.SeedLargeDatasetAsync(db);
             return 0;
         }
+        else if (args.Contains("--verify") || args.Contains("-v"))
+        {
+            var ok = await DataVerifier.VerifyDatabaseAsync(db);
+            return ok ? 0 : 1;
+        }
         else
         {
-            Console.WriteLine("FoodLoop Database Management Tool");
-            Console.WriteLine("Usage:");
-            Console.WriteLine("  --reset, -r   Wipe and clean all tables");
-            Console.WriteLine("  --seed,  -s   Reset and populate all tables with a large-scale test dataset");
-            return 1;
+            var ok = await DataVerifier.VerifyDatabaseAsync(db);
+            return ok ? 0 : 1;
         }
     }
 }
