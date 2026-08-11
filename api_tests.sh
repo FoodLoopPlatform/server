@@ -2148,6 +2148,11 @@ if [ -n "$ADMIN_TOKEN" ]; then
   res=$(send_request "GET" "/admin/analytics/summary" "" "$ADMIN_TOKEN")
   status=${res%%|*}; body=${res#*|}
   assert_status "42.13: Admin Analytics Summary Breakdown Feeds" "$status" "200" "$body"
+
+  # 42.14 GET /admin/activity-logs/{id} get specific log detail (200/404)
+  res=$(send_request "GET" "/admin/activity-logs/00000000-0000-0000-0000-000000000000" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.14: Admin Single Activity Log Detail 404" "$status" "404" "$body"
 fi
 # ==============================================================================
 # TEST RUN SUMMARY

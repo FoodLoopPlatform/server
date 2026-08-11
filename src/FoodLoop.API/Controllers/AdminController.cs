@@ -156,7 +156,17 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(logs));
     }
 
-    // â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    /// <summary>
+    /// GET /admin/activity-logs/{id} — get a specific audit log details for the details modal.
+    /// </summary>
+    [HttpGet("activity-logs/{id:guid}")]
+    public async Task<IActionResult> GetActivityLogById(Guid id, CancellationToken cancellationToken)
+    {
+        var log = await _mediator.Send(new GetActivityLogByIdQuery(id), cancellationToken);
+        return Ok(ApiResponse<ActivityLogEntryDto>.Ok(log));
+    }
+
+    // ── Analytics ─────────────────────────────────────────────────────────────
 
     /// <summary>
     /// GET /admin/analytics/summary â€” high-level metrics for dashboard (total users, organizations, sales, savings).
