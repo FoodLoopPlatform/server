@@ -72,22 +72,39 @@ public class GeminiOcrService : IOcrService
                 DetectedProduct: "Grocery Product Item",
                 ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
                 ConfidenceScore: 0.85,
-                ExtractedText: "AI Vision analysis placeholder. Configure GEMINI_API_KEY in .env to enable live Google Gemini Vision.");
+                ExtractedText: "AI Vision analysis placeholder. Configure GEMINI_API_KEY in .env to enable live Google Gemini Vision.",
+                SuggestedDescription: "Food and grocery product item.",
+                SuggestedCategory: "Canned & Pantry",
+                PackageSize: null);
         }
 
         try
         {
-            var promptText = @"You are a specialized grocery product packaging OCR and AI recognition assistant.
+            var promptText = @"You are a specialized grocery product packaging OCR and AI recognition assistant for the FoodLoop surplus food platform.
 Analyze this food/grocery packaging image.
-Extract:
-1. 'detectedProduct': The exact brand name and product title (e.g. 'Juhayna Full Cream Milk 1L' or 'TBS Butter Croissant').
-2. 'expirationDate': The printed expiration date, best-before date, or use-by date in 'YYYY-MM-DD' ISO format. If only month/year is given, use the last day of that month. If no date is found, set to null.
-3. 'confidenceScore': Confidence score between 0.0 and 1.0 based on image clarity.
-4. 'extractedText': A string containing all recognizable text and numbers printed on the packaging label.
+Extract the following fields accurately:
+1. 'detectedProduct': The exact brand name and product title (e.g. 'Juhayna Full Cream Milk 1L' or 'Sara Lee Honey Wheat Bread' or 'Barilla Penne Rigate 500g').
+2. 'suggestedDescription': A concise, appealing product description including key highlights, flavor, or main ingredients if visible.
+3. 'suggestedCategory': Pick the BEST matching category from this exact list:
+   - Bakery
+   - Dairy & Eggs
+   - Fruits & Vegetables
+   - Meat & Poultry
+   - Prepared Meals
+   - Beverages
+   - Canned & Pantry
+   - Desserts & Sweets
+4. 'packageSize': Net weight or volume if printed (e.g. '500g', '1L', '567g', '6 Pack').
+5. 'expirationDate': The printed expiration date, best-before date, or use-by date in 'YYYY-MM-DD' ISO format. If only month/year is given, use the last day of that month. If no date is found, set to null.
+6. 'confidenceScore': Confidence score between 0.0 and 1.0 based on image clarity and text certainty.
+7. 'extractedText': A string containing all recognizable text and numbers printed on the packaging label.
 
 Return ONLY a JSON object matching this schema:
 {
   ""detectedProduct"": ""string"",
+  ""suggestedDescription"": ""string"",
+  ""suggestedCategory"": ""string"",
+  ""packageSize"": ""string or null"",
   ""expirationDate"": ""YYYY-MM-DD or null"",
   ""confidenceScore"": 0.95,
   ""extractedText"": ""string""
@@ -124,7 +141,7 @@ Return ONLY a JSON object matching this schema:
 
             var serializedBody = JsonSerializer.Serialize(requestBody);
 
-            // Verified Google GenAI endpoints (gemini-flash-latest is Google's default official model)
+            // Verified Google GenAI endpoints
             var candidateUrls = new[]
             {
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
@@ -159,7 +176,10 @@ Return ONLY a JSON object matching this schema:
                         var root = doc.RootElement;
 
                         var detectedProduct = root.TryGetProperty("detectedProduct", out var dp) ? dp.GetString() ?? "Product Item" : "Product Item";
-                        
+                        var suggestedDesc = root.TryGetProperty("suggestedDescription", out var descP) ? descP.GetString() : null;
+                        var suggestedCat = root.TryGetProperty("suggestedCategory", out var catP) ? catP.GetString() : null;
+                        var packageSize = root.TryGetProperty("packageSize", out var sizeP) ? sizeP.GetString() : null;
+
                         DateOnly? expiryDate = null;
                         if (root.TryGetProperty("expirationDate", out var expProp) && 
                             expProp.ValueKind == JsonValueKind.String && 
@@ -178,7 +198,10 @@ Return ONLY a JSON object matching this schema:
                             DetectedProduct: detectedProduct,
                             ExpirationDate: expiryDate,
                             ConfidenceScore: confidence,
-                            ExtractedText: extractedText);
+                            ExtractedText: extractedText,
+                            SuggestedDescription: suggestedDesc,
+                            SuggestedCategory: suggestedCat,
+                            PackageSize: packageSize);
                     }
                 }
                 else

@@ -9,11 +9,14 @@ public record OcrAnalysisResult(
     string DetectedProduct,
     DateOnly? ExpirationDate,
     double ConfidenceScore,
-    string ExtractedText);
+    string ExtractedText,
+    string? SuggestedDescription = null,
+    string? SuggestedCategory = null,
+    string? PackageSize = null);
 
 /// <summary>
 /// Abstraction for AI / Vision OCR engine (Google Gemini Vision).
-/// Analyzes product packaging images to extract product title, brand, and expiration date.
+/// Analyzes product packaging images to extract product title, brand, expiration date, category, and description.
 /// </summary>
 public interface IOcrService
 {

@@ -33,7 +33,10 @@ public class GetOcrResultQueryHandler : IRequestHandler<GetOcrResultQuery, OcrRe
         return new OcrResultDto
         {
             ProductId = product.Id,
-            DetectedProduct = r.DetectedProduct,
+            DetectedProduct = r.DetectedProduct ?? product.Title,
+            SuggestedDescription = product.Description,
+            SuggestedCategory = product.Category?.Name,
+            SuggestedCategoryId = product.CategoryId != Guid.Empty ? product.CategoryId : null,
             ConfidenceScore = r.ConfidenceScore,
             ExtractedExpiryDate = r.ExtractedExpiryDate,
             ExtractedText = r.ExtractedText,

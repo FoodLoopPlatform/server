@@ -98,7 +98,26 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        // 3. Log audit event
+        // 3. Resolve suggested category from the database
+        Guid? matchedCategoryId = null;
+        string? matchedCategoryName = analysis.SuggestedCategory;
+
+        if (!string.IsNullOrWhiteSpace(analysis.SuggestedCategory))
+        {
+            var categories = await _db.Categories.ToListAsync(cancellationToken);
+            var matched = categories.FirstOrDefault(c => 
+                c.Name.Equals(analysis.SuggestedCategory, StringComparison.OrdinalIgnoreCase) ||
+                c.NameAr.Equals(analysis.SuggestedCategory, StringComparison.OrdinalIgnoreCase) ||
+                analysis.SuggestedCategory.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
+            
+            if (matched != null)
+            {
+                matchedCategoryId = matched.Id;
+                matchedCategoryName = matched.Name;
+            }
+        }
+
+        // 4. Log audit event
         await _auditLogService.LogAsync(
             request.OwnerId,
             org.Id,
@@ -112,6 +131,10 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
         {
             ProductId = product.Id,
             DetectedProduct = result.DetectedProduct,
+            SuggestedDescription = analysis.SuggestedDescription ?? product.Description,
+            SuggestedCategory = matchedCategoryName,
+            SuggestedCategoryId = matchedCategoryId ?? (product.CategoryId != Guid.Empty ? product.CategoryId : null),
+            PackageSize = analysis.PackageSize,
             ConfidenceScore = result.ConfidenceScore,
             ExtractedExpiryDate = result.ExtractedExpiryDate,
             ExtractedText = result.ExtractedText,
