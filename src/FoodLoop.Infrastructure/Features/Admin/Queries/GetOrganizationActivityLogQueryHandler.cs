@@ -47,10 +47,14 @@ public class GetStoreActivityLogQueryHandler
             {
                 Id = l.Id,
                 UserId = l.UserId,
+                UserName = owner != null ? owner.FullName : "Merchant",
+                ActorType = "Merchant",
                 OrganizationId = l.OrganizationId,
+                OrganizationName = organization.Name,
                 EventType = l.EventType,
                 Title = l.Title,
                 Description = l.Description,
+                Severity = "Low",
                 IpAddress = l.IpAddress,
                 OccurredAt = l.CreatedAt
             })

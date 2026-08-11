@@ -42,10 +42,13 @@ public class GetUserActivityLogQueryHandler
             {
                 Id = l.Id,
                 UserId = l.UserId,
+                UserName = user.FullName,
+                ActorType = "User",
                 OrganizationId = l.OrganizationId,
                 EventType = l.EventType,
                 Title = l.Title,
                 Description = l.Description,
+                Severity = "Low",
                 IpAddress = l.IpAddress,
                 OccurredAt = l.CreatedAt
             })
