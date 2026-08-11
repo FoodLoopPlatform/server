@@ -55,18 +55,40 @@ public class GetPlatformActivityLogsQueryHandler : IRequestHandler<GetPlatformAc
             .Select(o => new { o.Id, o.Name })
             .ToDictionaryAsync(o => o.Id, o => o.Name, cancellationToken);
 
-        return logs.Select(l => new ActivityLogEntryDto
+        return logs.Select(l =>
         {
-            Id = l.Id,
-            UserId = l.UserId,
-            UserName = l.UserId.HasValue && usersMap.TryGetValue(l.UserId.Value, out var uName) ? uName : null,
-            OrganizationId = l.OrganizationId,
-            OrganizationName = l.OrganizationId.HasValue && orgsMap.TryGetValue(l.OrganizationId.Value, out var oName) ? oName : null,
-            EventType = l.EventType,
-            Title = l.Title,
-            Description = l.Description,
-            IpAddress = l.IpAddress,
-            OccurredAt = l.CreatedAt
+            var isAi = l.EventType.Contains("Ai", System.StringComparison.OrdinalIgnoreCase) || !l.UserId.HasValue;
+            var actor = isAi ? "الذكاء الاصطناعي للنظام (System AI)" : (l.UserId.HasValue && usersMap.TryGetValue(l.UserId.Value, out var uName) ? uName : "System");
+            
+            var severity = "Low";
+            if (l.EventType.Contains("Banned", System.StringComparison.OrdinalIgnoreCase) || 
+                l.EventType.Contains("Deleted", System.StringComparison.OrdinalIgnoreCase) ||
+                l.EventType.Contains("Dispute", System.StringComparison.OrdinalIgnoreCase))
+            {
+                severity = "High";
+            }
+            else if (l.EventType.Contains("Moderated", System.StringComparison.OrdinalIgnoreCase) ||
+                     l.EventType.Contains("Reported", System.StringComparison.OrdinalIgnoreCase) ||
+                     l.EventType.Contains("Status", System.StringComparison.OrdinalIgnoreCase))
+            {
+                severity = "Medium";
+            }
+
+            return new ActivityLogEntryDto
+            {
+                Id = l.Id,
+                UserId = l.UserId,
+                UserName = actor,
+                ActorType = isAi ? "System AI" : "Admin",
+                OrganizationId = l.OrganizationId,
+                OrganizationName = l.OrganizationId.HasValue && orgsMap.TryGetValue(l.OrganizationId.Value, out var oName) ? oName : null,
+                EventType = l.EventType,
+                Title = l.Title,
+                Description = l.Description,
+                Severity = severity,
+                IpAddress = l.IpAddress,
+                OccurredAt = l.CreatedAt
+            };
         }).ToList();
     }
 }
