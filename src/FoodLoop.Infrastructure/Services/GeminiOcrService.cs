@@ -124,14 +124,14 @@ Return ONLY a JSON object matching this schema:
 
             var serializedBody = JsonSerializer.Serialize(requestBody);
 
-            // Candidate endpoints to handle different Gemini model alias names and API versions
+            // Clean candidate endpoints (without query string pollution so Auth Keys and Standard Keys work)
             var candidateUrls = new[]
             {
-                $"https://generativelanguage.googleapis.com/v1beta/models/{configuredModel}:generateContent?key={apiKey}",
-                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={apiKey}",
-                $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={apiKey}",
-                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={apiKey}",
-                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={apiKey}"
+                $"https://generativelanguage.googleapis.com/v1beta/models/{configuredModel}:generateContent",
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+                $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
             };
 
             HttpResponseMessage? lastResponse = null;
@@ -143,7 +143,13 @@ Return ONLY a JSON object matching this schema:
                 {
                     Content = new StringContent(serializedBody, Encoding.UTF8, "application/json")
                 };
+
+                // Support both new Google Auth Keys (AQ.) and standard keys (AIzaSy)
                 request.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
+                if (apiKey.StartsWith("AQ.", StringComparison.OrdinalIgnoreCase))
+                {
+                    request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {apiKey}");
+                }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (response.IsSuccessStatusCode)
@@ -187,19 +193,12 @@ Return ONLY a JSON object matching this schema:
                 }
             }
 
-            // If all candidates failed, query ListModels to diagnose available models for this API Key
-            var listModelsUrl = $"https://generativelanguage.googleapis.com/v1beta/models?key={apiKey}";
-            using var listRequest = new HttpRequestMessage(HttpMethod.Get, listModelsUrl);
-            listRequest.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
-            var listResponse = await _httpClient.SendAsync(listRequest, cancellationToken);
-            var listBody = await listResponse.Content.ReadAsStringAsync(cancellationToken);
-
-            _logger.LogError("All Gemini candidate endpoints failed. ListModels Response ({Status}): {Body}", listResponse.StatusCode, listBody);
+            _logger.LogError("All Gemini candidate endpoints failed. Last Status: {StatusCode}, Error: {ErrorBody}", lastResponse?.StatusCode, lastErrorBody);
             return new OcrAnalysisResult(
                 DetectedProduct: "Grocery Product Item",
                 ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
                 ConfidenceScore: 0.75,
-                ExtractedText: $"Gemini Diagnostic (ListModels {listResponse.StatusCode}): {listBody}");
+                ExtractedText: $"Gemini API Error ({lastResponse?.StatusCode}): {lastErrorBody}");
         }
         catch (Exception ex)
         {
