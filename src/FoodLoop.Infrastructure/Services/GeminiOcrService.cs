@@ -187,12 +187,19 @@ Return ONLY a JSON object matching this schema:
                 }
             }
 
-            _logger.LogError("All Gemini model endpoints failed. Last Status: {StatusCode}, Error: {ErrorBody}", lastResponse?.StatusCode, lastErrorBody);
+            // If all candidates failed, query ListModels to diagnose available models for this API Key
+            var listModelsUrl = $"https://generativelanguage.googleapis.com/v1beta/models?key={apiKey}";
+            using var listRequest = new HttpRequestMessage(HttpMethod.Get, listModelsUrl);
+            listRequest.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
+            var listResponse = await _httpClient.SendAsync(listRequest, cancellationToken);
+            var listBody = await listResponse.Content.ReadAsStringAsync(cancellationToken);
+
+            _logger.LogError("All Gemini candidate endpoints failed. ListModels Response ({Status}): {Body}", listResponse.StatusCode, listBody);
             return new OcrAnalysisResult(
                 DetectedProduct: "Grocery Product Item",
                 ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
                 ConfidenceScore: 0.75,
-                ExtractedText: $"Gemini API Error ({lastResponse?.StatusCode}): {lastErrorBody}");
+                ExtractedText: $"Gemini Diagnostic (ListModels {listResponse.StatusCode}): {listBody}");
         }
         catch (Exception ex)
         {
