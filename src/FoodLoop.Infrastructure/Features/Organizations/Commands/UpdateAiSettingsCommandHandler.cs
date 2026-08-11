@@ -23,10 +23,39 @@ public class UpdateAiSettingsCommandHandler : IRequestHandler<UpdateAiSettingsCo
         if (request.AiAutoDiscountDaysBeforeExpiry < 1)
             throw new System.ArgumentException("AiAutoDiscountDaysBeforeExpiry must be at least 1.");
 
-        org.AiAutoDiscountEnabled = request.AiAutoDiscountEnabled;
+        if (!string.IsNullOrWhiteSpace(request.AutomationMode))
+        {
+            var mode = request.AutomationMode.Trim().ToLowerInvariant();
+            switch (mode)
+            {
+                case "autonomous":
+                case "automatic":
+                case "auto":
+                    org.AiAutoDiscountEnabled = true;
+                    org.AiAutoPricingEnabled = true;
+                    break;
+                case "assisted":
+                case "semi-autonomous":
+                    org.AiAutoDiscountEnabled = true;
+                    org.AiAutoPricingEnabled = false;
+                    break;
+                case "manual":
+                default:
+                    org.AiAutoDiscountEnabled = false;
+                    org.AiAutoPricingEnabled = false;
+                    break;
+            }
+        }
+        else
+        {
+            if (request.AiAutoDiscountEnabled.HasValue)
+                org.AiAutoDiscountEnabled = request.AiAutoDiscountEnabled.Value;
+            if (request.AiAutoPricingEnabled.HasValue)
+                org.AiAutoPricingEnabled = request.AiAutoPricingEnabled.Value;
+        }
+
         org.AiAutoDiscountPercent = request.AiAutoDiscountPercent;
         org.AiAutoDiscountDaysBeforeExpiry = request.AiAutoDiscountDaysBeforeExpiry;
-        org.AiAutoPricingEnabled = request.AiAutoPricingEnabled;
 
         _unitOfWork.Organizations.Update(org);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

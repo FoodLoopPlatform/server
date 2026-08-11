@@ -232,7 +232,8 @@ public class StoresController : ControllerBase
             request.AiAutoDiscountEnabled,
             request.AiAutoDiscountPercent,
             request.AiAutoDiscountDaysBeforeExpiry,
-            request.AiAutoPricingEnabled);
+            request.AiAutoPricingEnabled,
+            request.AutomationMode);
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<AiSettingsDto>.Ok(result));
     }
@@ -316,10 +317,13 @@ public class UpdateOrderStatusRequest
 
 public class UpdateAiSettingsRequest
 {
-    public bool AiAutoDiscountEnabled { get; set; }
+    /// <summary>Optional mode string: "manual" | "assisted" | "autonomous"</summary>
+    public string? AutomationMode { get; set; }
+
+    public bool? AiAutoDiscountEnabled { get; set; }
     [Range(0, 100)] public int AiAutoDiscountPercent { get; set; } = 20;
     [Range(1, 365)] public int AiAutoDiscountDaysBeforeExpiry { get; set; } = 3;
-    public bool AiAutoPricingEnabled { get; set; }
+    public bool? AiAutoPricingEnabled { get; set; }
 }
 
 public class DonateSurplusRequest
