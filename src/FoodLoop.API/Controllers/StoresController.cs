@@ -317,8 +317,8 @@ public class UpdateOrderStatusRequest
 
 public class UpdateAiSettingsRequest
 {
-    /// <summary>Optional mode string: "manual" | "assisted" | "autonomous"</summary>
-    public string? AutomationMode { get; set; }
+    /// <summary>Automation Mode: Manual | Assisted | Autonomous</summary>
+    public AutomationMode? AutomationMode { get; set; }
 
     public bool? AiAutoDiscountEnabled { get; set; }
     [Range(0, 100)] public int AiAutoDiscountPercent { get; set; } = 20;

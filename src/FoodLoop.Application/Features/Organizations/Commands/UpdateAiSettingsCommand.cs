@@ -1,5 +1,6 @@
-using MediatR;
 using FoodLoop.Application.DTOs.Organizations;
+using FoodLoop.Domain.Enums;
+using MediatR;
 using System;
 
 namespace FoodLoop.Application.Features.Organizations.Commands;
@@ -11,4 +12,4 @@ public record UpdateAiSettingsCommand(
     int AiAutoDiscountPercent,
     int AiAutoDiscountDaysBeforeExpiry,
     bool? AiAutoPricingEnabled,
-    string? AutomationMode = null) : IRequest<AiSettingsDto>;
+    AutomationMode? AutomationMode = null) : IRequest<AiSettingsDto>;

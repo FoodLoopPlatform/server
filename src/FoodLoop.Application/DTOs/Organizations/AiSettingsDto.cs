@@ -1,9 +1,12 @@
+using FoodLoop.Domain.Enums;
+
 namespace FoodLoop.Application.DTOs.Organizations;
 
 public class AiSettingsDto
 {
-    /// <summary>"manual" | "assisted" | "autonomous"</summary>
-    public string AutomationMode => AiAutoPricingEnabled ? "autonomous" : (AiAutoDiscountEnabled ? "assisted" : "manual");
+    public AutomationMode AutomationMode => AiAutoPricingEnabled 
+        ? AutomationMode.Autonomous 
+        : (AiAutoDiscountEnabled ? AutomationMode.Assisted : AutomationMode.Manual);
 
     public bool AiAutoDiscountEnabled { get; set; }
     public int AiAutoDiscountPercent { get; set; }

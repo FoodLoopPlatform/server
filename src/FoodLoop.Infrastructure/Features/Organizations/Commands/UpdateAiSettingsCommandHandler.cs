@@ -1,6 +1,7 @@
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Organizations;
 using FoodLoop.Application.Features.Organizations.Commands;
+using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Organizations;
 using MediatR;
 using System.Threading;
@@ -23,23 +24,19 @@ public class UpdateAiSettingsCommandHandler : IRequestHandler<UpdateAiSettingsCo
         if (request.AiAutoDiscountDaysBeforeExpiry < 1)
             throw new System.ArgumentException("AiAutoDiscountDaysBeforeExpiry must be at least 1.");
 
-        if (!string.IsNullOrWhiteSpace(request.AutomationMode))
+        if (request.AutomationMode.HasValue)
         {
-            var mode = request.AutomationMode.Trim().ToLowerInvariant();
-            switch (mode)
+            switch (request.AutomationMode.Value)
             {
-                case "autonomous":
-                case "automatic":
-                case "auto":
+                case AutomationMode.Autonomous:
                     org.AiAutoDiscountEnabled = true;
                     org.AiAutoPricingEnabled = true;
                     break;
-                case "assisted":
-                case "semi-autonomous":
+                case AutomationMode.Assisted:
                     org.AiAutoDiscountEnabled = true;
                     org.AiAutoPricingEnabled = false;
                     break;
-                case "manual":
+                case AutomationMode.Manual:
                 default:
                     org.AiAutoDiscountEnabled = false;
                     org.AiAutoPricingEnabled = false;
