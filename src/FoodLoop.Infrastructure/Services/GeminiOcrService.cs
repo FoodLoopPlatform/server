@@ -49,10 +49,10 @@ public class GeminiOcrService : IOcrService
         {
             configuredModel = Environment.GetEnvironmentVariable("GEMINI_MODEL");
         }
-        configuredModel = (configuredModel ?? "gemini-1.5-flash").Trim().Trim('"', '\'', '\r', '\n');
+        configuredModel = (configuredModel ?? "gemini-flash-latest").Trim().Trim('"', '\'', '\r', '\n');
         if (string.IsNullOrWhiteSpace(configuredModel))
         {
-            configuredModel = "gemini-1.5-flash";
+            configuredModel = "gemini-flash-latest";
         }
 
         // Read image bytes and convert to Base64
@@ -124,14 +124,13 @@ Return ONLY a JSON object matching this schema:
 
             var serializedBody = JsonSerializer.Serialize(requestBody);
 
-            // Clean candidate endpoints (without query string pollution so Auth Keys and Standard Keys work)
+            // Verified Google GenAI endpoints (gemini-flash-latest is Google's default official model)
             var candidateUrls = new[]
             {
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent",
                 $"https://generativelanguage.googleapis.com/v1beta/models/{configuredModel}:generateContent",
-                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
-                $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
-                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent"
             };
 
             HttpResponseMessage? lastResponse = null;
@@ -144,12 +143,8 @@ Return ONLY a JSON object matching this schema:
                     Content = new StringContent(serializedBody, Encoding.UTF8, "application/json")
                 };
 
-                // Support both new Google Auth Keys (AQ.) and standard keys (AIzaSy)
-                request.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
-                if (apiKey.StartsWith("AQ.", StringComparison.OrdinalIgnoreCase))
-                {
-                    request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {apiKey}");
-                }
+                // Google GenAI official header authentication
+                request.Headers.TryAddWithoutValidation("X-goog-api-key", apiKey);
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (response.IsSuccessStatusCode)
