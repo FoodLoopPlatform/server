@@ -33,11 +33,22 @@ public class GeminiOcrService : IOcrService
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        var apiKey = _configuration["Gemini:ApiKey"] 
-            ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY") 
-            ?? string.Empty;
+        var apiKey = _configuration["Gemini:ApiKey"];
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+        }
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
+        }
+        apiKey ??= string.Empty;
 
-        var model = _configuration["Gemini:Model"] ?? "gemini-1.5-flash";
+        var model = _configuration["Gemini:Model"];
+        if (string.IsNullOrWhiteSpace(model))
+        {
+            model = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? "gemini-1.5-flash";
+        }
 
         // Read image bytes and convert to Base64
         using var memoryStream = new MemoryStream();
