@@ -42,12 +42,17 @@ public class GeminiOcrService : IOcrService
         {
             apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY");
         }
-        apiKey ??= string.Empty;
+        apiKey = (apiKey ?? string.Empty).Trim().Trim('"', '\'', '\r', '\n');
 
-        var model = _configuration["Gemini:Model"];
-        if (string.IsNullOrWhiteSpace(model))
+        var configuredModel = _configuration["Gemini:Model"];
+        if (string.IsNullOrWhiteSpace(configuredModel))
         {
-            model = Environment.GetEnvironmentVariable("GEMINI_MODEL") ?? "gemini-1.5-flash";
+            configuredModel = Environment.GetEnvironmentVariable("GEMINI_MODEL");
+        }
+        configuredModel = (configuredModel ?? "gemini-1.5-flash").Trim().Trim('"', '\'', '\r', '\n');
+        if (string.IsNullOrWhiteSpace(configuredModel))
+        {
+            configuredModel = "gemini-1.5-flash";
         }
 
         // Read image bytes and convert to Base64
@@ -62,18 +67,16 @@ public class GeminiOcrService : IOcrService
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            _logger.LogWarning("Gemini:ApiKey is not configured in appsettings.json. Returning graceful fallback scan.");
+            _logger.LogWarning("Gemini:ApiKey is not configured in appsettings.json or GEMINI_API_KEY env. Returning fallback scan.");
             return new OcrAnalysisResult(
                 DetectedProduct: "Grocery Product Item",
                 ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
                 ConfidenceScore: 0.85,
-                ExtractedText: "AI Vision analysis placeholder. Configure Gemini:ApiKey to enable live Google Gemini 1.5 Flash Vision.");
+                ExtractedText: "AI Vision analysis placeholder. Configure GEMINI_API_KEY in .env to enable live Google Gemini Vision.");
         }
 
         try
         {
-            var requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
-
             var promptText = @"You are a specialized grocery product packaging OCR and AI recognition assistant.
 Analyze this food/grocery packaging image.
 Extract:
@@ -90,6 +93,8 @@ Return ONLY a JSON object matching this schema:
   ""extractedText"": ""string""
 }";
 
+            var cleanMimeType = string.IsNullOrWhiteSpace(contentType) ? "image/jpeg" : contentType.Split(';')[0].Trim();
+
             var requestBody = new
             {
                 contents = new[]
@@ -103,7 +108,7 @@ Return ONLY a JSON object matching this schema:
                             {
                                 inlineData = new
                                 {
-                                    mimeType = string.IsNullOrWhiteSpace(contentType) ? "image/jpeg" : contentType,
+                                    mimeType = cleanMimeType,
                                     data = base64Data
                                 }
                             }
@@ -117,61 +122,77 @@ Return ONLY a JSON object matching this schema:
                 }
             };
 
-            var jsonContent = new StringContent(
-                JsonSerializer.Serialize(requestBody),
-                Encoding.UTF8,
-                "application/json");
+            var serializedBody = JsonSerializer.Serialize(requestBody);
 
-            var response = await _httpClient.PostAsync(requestUrl, jsonContent, cancellationToken);
-            if (!response.IsSuccessStatusCode)
+            // Candidate endpoints to handle different Gemini model alias names and API versions
+            var candidateUrls = new[]
             {
-                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Gemini API call failed with status {StatusCode}: {ErrorBody}", response.StatusCode, errorBody);
-                return new OcrAnalysisResult(
-                    DetectedProduct: "Grocery Product Item",
-                    ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
-                    ConfidenceScore: 0.75,
-                    ExtractedText: $"OCR Service Response: {response.StatusCode}");
+                $"https://generativelanguage.googleapis.com/v1beta/models/{configuredModel}:generateContent?key={apiKey}",
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={apiKey}",
+                $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={apiKey}",
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={apiKey}",
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={apiKey}"
+            };
+
+            HttpResponseMessage? lastResponse = null;
+            string lastErrorBody = string.Empty;
+
+            foreach (var url in candidateUrls)
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = new StringContent(serializedBody, Encoding.UTF8, "application/json")
+                };
+                request.Headers.TryAddWithoutValidation("x-goog-api-key", apiKey);
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var responseJson = JsonNode.Parse(responseString);
+
+                    var textResult = responseJson?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(textResult))
+                    {
+                        using var doc = JsonDocument.Parse(textResult);
+                        var root = doc.RootElement;
+
+                        var detectedProduct = root.TryGetProperty("detectedProduct", out var dp) ? dp.GetString() ?? "Product Item" : "Product Item";
+                        
+                        DateOnly? expiryDate = null;
+                        if (root.TryGetProperty("expirationDate", out var expProp) && 
+                            expProp.ValueKind == JsonValueKind.String && 
+                            DateOnly.TryParse(expProp.GetString(), out var parsedDate))
+                        {
+                            expiryDate = parsedDate;
+                        }
+
+                        var confidence = root.TryGetProperty("confidenceScore", out var confProp) && confProp.TryGetDouble(out var conf) 
+                            ? Math.Round(conf, 2) 
+                            : 0.90;
+
+                        var extractedText = root.TryGetProperty("extractedText", out var textProp) ? textProp.GetString() ?? "" : "";
+
+                        return new OcrAnalysisResult(
+                            DetectedProduct: detectedProduct,
+                            ExpirationDate: expiryDate,
+                            ConfidenceScore: confidence,
+                            ExtractedText: extractedText);
+                    }
+                }
+                else
+                {
+                    lastResponse = response;
+                    lastErrorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                }
             }
 
-            var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
-            var responseJson = JsonNode.Parse(responseString);
-
-            var textResult = responseJson?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
-            if (string.IsNullOrWhiteSpace(textResult))
-            {
-                return new OcrAnalysisResult(
-                    DetectedProduct: "Grocery Product Item",
-                    ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
-                    ConfidenceScore: 0.80,
-                    ExtractedText: "No text candidate returned from Vision model.");
-            }
-
-            // Parse the structured JSON output from Gemini
-            using var doc = JsonDocument.Parse(textResult);
-            var root = doc.RootElement;
-
-            var detectedProduct = root.TryGetProperty("detectedProduct", out var dp) ? dp.GetString() ?? "Product Item" : "Product Item";
-            
-            DateOnly? expiryDate = null;
-            if (root.TryGetProperty("expirationDate", out var expProp) && 
-                expProp.ValueKind == JsonValueKind.String && 
-                DateOnly.TryParse(expProp.GetString(), out var parsedDate))
-            {
-                expiryDate = parsedDate;
-            }
-
-            var confidence = root.TryGetProperty("confidenceScore", out var confProp) && confProp.TryGetDouble(out var conf) 
-                ? Math.Round(conf, 2) 
-                : 0.90;
-
-            var extractedText = root.TryGetProperty("extractedText", out var textProp) ? textProp.GetString() ?? "" : "";
-
+            _logger.LogError("All Gemini model endpoints failed. Last Status: {StatusCode}, Error: {ErrorBody}", lastResponse?.StatusCode, lastErrorBody);
             return new OcrAnalysisResult(
-                DetectedProduct: detectedProduct,
-                ExpirationDate: expiryDate,
-                ConfidenceScore: confidence,
-                ExtractedText: extractedText);
+                DetectedProduct: "Grocery Product Item",
+                ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
+                ConfidenceScore: 0.75,
+                ExtractedText: $"Gemini API Error ({lastResponse?.StatusCode}): {lastErrorBody}");
         }
         catch (Exception ex)
         {
@@ -180,7 +201,7 @@ Return ONLY a JSON object matching this schema:
                 DetectedProduct: "Grocery Product Item",
                 ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
                 ConfidenceScore: 0.70,
-                ExtractedText: $"OCR Error: {ex.Message}");
+                ExtractedText: $"OCR Exception: {ex.Message}");
         }
     }
 }
