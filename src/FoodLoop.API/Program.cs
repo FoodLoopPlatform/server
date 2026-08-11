@@ -183,9 +183,10 @@ app.UseRequestLocalization();
 // {
     app.UseSwagger();
     app.UseSwaggerUI();
-// }
-
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseStaticFiles(); // serves /uploads/** (see LocalFileStorageService)
 

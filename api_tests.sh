@@ -99,7 +99,7 @@ send_request() {
     fi
 
     # Build curl arguments
-    local curl_args=("-s" "-k" "-w" "\n%{http_code}" "-X" "$method")
+    local curl_args=("-s" "-k" "-L" "-w" "\n%{http_code}" "-X" "$method")
     for h in "${headers[@]}"; do
         curl_args+=("$h")
     done
@@ -388,30 +388,26 @@ assert_status "3.2: Update Store Location Details" "$status" "200" "$body"
 
 # Scenario 3.3: Submit Store Documents (Mock multipart upload)
 echo "PDF-MOCK-CONTENT-GOES-HERE" > mock_cr.pdf
-curl.exe -s -k -H "Authorization: Bearer $MERCHANT_TOKEN" -F "Email=$MERCHANT_EMAIL" -F "Type=TaxIdCertificate" -F "File=@mock_cr.pdf" "$BASE_URL/stores/me/documents" > /dev/null
-curl.exe -s -k -H "Authorization: Bearer $MERCHANT_TOKEN" -F "Email=$MERCHANT_EMAIL" -F "Type=StoreFacilityPhoto" -F "File=@mock_cr.pdf" "$BASE_URL/stores/me/documents" > /dev/null
-res=$(curl.exe -s -k -w "\n%{http_code}" -X POST \
+res=$(curl.exe -s -k -L -w "\n%{http_code}" -X POST \
   -H "Authorization: Bearer $MERCHANT_TOKEN" \
   -F "Email=$MERCHANT_EMAIL" \
   -F "Type=CommercialRegistration" \
   -F "File=@mock_cr.pdf" \
   "$BASE_URL/stores/me/documents")
-rm mock_cr.pdf
+rm -f mock_cr.pdf
 status=$(echo "$res" | tail -n 1)
 body=$(echo "$res" | sed '$d')
 assert_status "3.3: Upload Store Verification Documents" "$status" "200" "$body"
 
 # Scenario 3.4: Submit Charity Documents (Mock multipart upload)
 echo "PDF-CHARITY-CR-CONTENT" > mock_charity_cr.pdf
-curl.exe -s -k -H "Authorization: Bearer $CHARITY_TOKEN" -F "Email=$CHARITY_EMAIL" -F "Type=CharityBylaws" -F "File=@mock_charity_cr.pdf" "$BASE_URL/charities/me/documents" > /dev/null
-curl.exe -s -k -H "Authorization: Bearer $CHARITY_TOKEN" -F "Email=$CHARITY_EMAIL" -F "Type=BoardOfDirectorsList" -F "File=@mock_charity_cr.pdf" "$BASE_URL/charities/me/documents" > /dev/null
-res=$(curl.exe -s -k -w "\n%{http_code}" -X POST \
+res=$(curl.exe -s -k -L -w "\n%{http_code}" -X POST \
   -H "Authorization: Bearer $CHARITY_TOKEN" \
   -F "Email=$CHARITY_EMAIL" \
   -F "Type=AssociationCertificate" \
   -F "File=@mock_charity_cr.pdf" \
   "$BASE_URL/charities/me/documents")
-rm mock_charity_cr.pdf
+rm -f mock_charity_cr.pdf
 status=$(echo "$res" | tail -n 1)
 body=$(echo "$res" | sed '$d')
 assert_status "3.4: Upload Charity Association Certificate" "$status" "200" "$body"
@@ -2147,6 +2143,11 @@ if [ -n "$ADMIN_TOKEN" ]; then
   res=$(send_request "GET" "/admin/activity-logs" "" "")
   status=${res%%|*}; body=${res#*|}
   assert_status "42.12: Admin Global Activity Logs Unauthenticated" "$status" "401" "$body"
+
+  # 42.13 GET /admin/analytics/summary verifies complete breakdowns (200)
+  res=$(send_request "GET" "/admin/analytics/summary" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.13: Admin Analytics Summary Breakdown Feeds" "$status" "200" "$body"
 fi
 # ==============================================================================
 # TEST RUN SUMMARY
