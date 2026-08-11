@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Commands;
@@ -21,10 +21,12 @@ namespace FoodLoop.Infrastructure.Features.Products.Commands;
 public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProductsCommand, IReadOnlyList<ProductDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
 
-    public BulkUploadProductsCommandHandler(IUnitOfWork unitOfWork)
+    public BulkUploadProductsCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
     }
 
     public async Task<IReadOnlyList<ProductDto>> Handle(BulkUploadProductsCommand command, CancellationToken cancellationToken)
@@ -140,6 +142,15 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            command.OwnerId,
+            organization.Id,
+            "ProductsBulkImported",
+            "Bulk Products Uploaded",
+            $"Merchant imported {resultProducts.Count} products via CSV file.",
+            null,
+            cancellationToken);
 
         return resultProducts.Select(l => l.ToDto()).ToList();
     }

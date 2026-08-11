@@ -13,8 +13,13 @@ namespace FoodLoop.Infrastructure.Features.Admin.Commands;
 public class ResolveDisputeCommandHandler : IRequestHandler<ResolveDisputeCommand, DisputeDto>
 {
     private readonly ApplicationDbContext _db;
+    private readonly FoodLoop.Application.Common.Interfaces.IAuditLogService _auditLogService;
 
-    public ResolveDisputeCommandHandler(ApplicationDbContext db) => _db = db;
+    public ResolveDisputeCommandHandler(ApplicationDbContext db, FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService)
+    {
+        _db = db;
+        _auditLogService = auditLogService;
+    }
 
     public async Task<DisputeDto> Handle(ResolveDisputeCommand request, CancellationToken cancellationToken)
     {
@@ -28,6 +33,15 @@ public class ResolveDisputeCommandHandler : IRequestHandler<ResolveDisputeComman
         report.ResolvedAt = DateTimeOffset.UtcNow;
         _db.ProductReports.Update(report);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            request.AdminId,
+            report.Product?.OrganizationId,
+            "DisputeResolved",
+            "Product Dispute Resolved",
+            $"Admin resolved dispute for product '{report.Product?.Title}'. Resolution note: {request.AdminNote}",
+            null,
+            cancellationToken);
 
         // Reload reporter name
         var reporter = await _db.Users.FindAsync(new object[] { report.ReportedBy }, cancellationToken);

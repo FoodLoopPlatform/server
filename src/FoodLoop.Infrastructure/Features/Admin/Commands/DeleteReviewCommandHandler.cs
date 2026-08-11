@@ -11,10 +11,12 @@ namespace FoodLoop.Infrastructure.Features.Admin.Commands;
 public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand>
 {
     private readonly ApplicationDbContext _context;
+    private readonly FoodLoop.Application.Common.Interfaces.IAuditLogService _auditLogService;
 
-    public DeleteReviewCommandHandler(ApplicationDbContext context)
+    public DeleteReviewCommandHandler(ApplicationDbContext context, FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService)
     {
         _context = context;
+        _auditLogService = auditLogService;
     }
 
     public async Task Handle(DeleteReviewCommand request, CancellationToken cancellationToken)
@@ -29,6 +31,15 @@ public class DeleteReviewCommandHandler : IRequestHandler<DeleteReviewCommand>
 
         _context.Reviews.Remove(review);
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            review.UserId,
+            review.OrganizationId,
+            "ReviewModerated",
+            "Customer Review Removed",
+            $"Administrator removed review (Rating: {review.Rating}/5) for organization '{review.OrganizationId}'.",
+            null,
+            cancellationToken);
     }
 }
 

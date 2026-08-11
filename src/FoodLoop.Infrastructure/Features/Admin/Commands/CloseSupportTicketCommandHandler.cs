@@ -12,10 +12,12 @@ namespace FoodLoop.Infrastructure.Features.Admin.Commands;
 public class CloseSupportTicketCommandHandler : IRequestHandler<CloseSupportTicketCommand>
 {
     private readonly ApplicationDbContext _context;
+    private readonly FoodLoop.Application.Common.Interfaces.IAuditLogService _auditLogService;
 
-    public CloseSupportTicketCommandHandler(ApplicationDbContext context)
+    public CloseSupportTicketCommandHandler(ApplicationDbContext context, FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService)
     {
         _context = context;
+        _auditLogService = auditLogService;
     }
 
     public async Task Handle(CloseSupportTicketCommand request, CancellationToken cancellationToken)
@@ -32,6 +34,15 @@ public class CloseSupportTicketCommandHandler : IRequestHandler<CloseSupportTick
         ticket.UpdatedAt = System.DateTimeOffset.UtcNow;
         
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            ticket.UserId,
+            null,
+            "SupportTicketClosed",
+            "Support Ticket Closed",
+            $"Administrator closed support ticket category '{ticket.Category}'.",
+            null,
+            cancellationToken);
     }
 }
 

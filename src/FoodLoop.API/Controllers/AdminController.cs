@@ -139,6 +139,23 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(log));
     }
 
+    /// <summary>
+    /// GET /admin/activity-logs — global platform-wide activity and audit log feed with search & filtering.
+    /// </summary>
+    [HttpGet("activity-logs")]
+    public async Task<IActionResult> GetPlatformActivityLogs(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? eventType = null,
+        [FromQuery] Guid? userId = null,
+        [FromQuery] Guid? organizationId = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var logs = await _mediator.Send(new GetPlatformActivityLogsQuery(searchTerm, eventType, userId, organizationId, pageNumber, pageSize), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ActivityLogEntryDto>>.Ok(logs));
+    }
+
     // â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>

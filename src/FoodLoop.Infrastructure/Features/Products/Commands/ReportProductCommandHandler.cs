@@ -12,8 +12,13 @@ namespace FoodLoop.Infrastructure.Features.Products.Commands;
 public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand, Unit>
 {
     private readonly ApplicationDbContext _db;
+    private readonly FoodLoop.Application.Common.Interfaces.IAuditLogService _auditLogService;
 
-    public ReportProductCommandHandler(ApplicationDbContext db) => _db = db;
+    public ReportProductCommandHandler(ApplicationDbContext db, FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService)
+    {
+        _db = db;
+        _auditLogService = auditLogService;
+    }
 
     public async Task<Unit> Handle(ReportProductCommand request, CancellationToken cancellationToken)
     {
@@ -34,6 +39,15 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
 
         _db.ProductReports.Add(report);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.LogAsync(
+            request.ReportedBy,
+            product.OrganizationId,
+            "ProductReported",
+            "Product Reported by Customer",
+            $"Customer reported product '{product.Title}'. Reason: {request.Reason}.",
+            null,
+            cancellationToken);
 
         return Unit.Value;
     }

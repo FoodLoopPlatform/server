@@ -12,8 +12,13 @@ namespace FoodLoop.Infrastructure.Features.Organizations.Commands;
 public class UpdateAiSettingsCommandHandler : IRequestHandler<UpdateAiSettingsCommand, AiSettingsDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
 
-    public UpdateAiSettingsCommandHandler(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+    public UpdateAiSettingsCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
+    {
+        _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
+    }
 
     public async Task<AiSettingsDto> Handle(UpdateAiSettingsCommand request, CancellationToken cancellationToken)
     {
@@ -56,6 +61,16 @@ public class UpdateAiSettingsCommandHandler : IRequestHandler<UpdateAiSettingsCo
 
         _unitOfWork.Organizations.Update(org);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var modeLabel = org.AiAutoPricingEnabled ? "Autonomous" : (org.AiAutoDiscountEnabled ? "Assisted" : "Manual");
+        await _auditLogService.LogAsync(
+            request.OwnerId,
+            org.Id,
+            "AiSettingsUpdated",
+            "Store AI Automation Settings Updated",
+            $"Updated store AI automation mode to '{modeLabel}' (Discount: {org.AiAutoDiscountPercent}%, Days before expiry: {org.AiAutoDiscountDaysBeforeExpiry}).",
+            null,
+            cancellationToken);
 
         return new AiSettingsDto
         {

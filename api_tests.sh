@@ -2137,6 +2137,16 @@ if [ -n "$ADMIN_TOKEN" ]; then
   res=$(send_request "GET" "/admin/disputes?pageNumber=1&pageSize=5" "" "$ADMIN_TOKEN")
   status=${res%%|*}; body=${res#*|}
   assert_status "42.10: Admin List Disputes With Pagination" "$status" "200" "$body"
+
+  # 42.11 GET /admin/activity-logs global feed (200)
+  res=$(send_request "GET" "/admin/activity-logs?pageNumber=1&pageSize=10" "" "$ADMIN_TOKEN")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.11: Admin Global Platform Activity Logs Feed" "$status" "200" "$body"
+
+  # 42.12 GET /admin/activity-logs unauthenticated (401)
+  res=$(send_request "GET" "/admin/activity-logs" "" "")
+  status=${res%%|*}; body=${res#*|}
+  assert_status "42.12: Admin Global Activity Logs Unauthenticated" "$status" "401" "$body"
 fi
 # ==============================================================================
 # TEST RUN SUMMARY

@@ -45,9 +45,13 @@ public class GetCharityActivityLogQueryHandler
             .Take(20)
             .Select(l => new ActivityLogEntryDto
             {
+                Id = l.Id,
+                UserId = l.UserId,
+                OrganizationId = l.OrganizationId,
                 EventType = l.EventType,
                 Title = l.Title,
                 Description = l.Description,
+                IpAddress = l.IpAddress,
                 OccurredAt = l.CreatedAt
             })
             .ToListAsync(cancellationToken);
