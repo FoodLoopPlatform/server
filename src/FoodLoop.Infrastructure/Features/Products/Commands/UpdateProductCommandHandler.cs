@@ -74,7 +74,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
         if (command.ExpirationDate.HasValue)
         {
             product.ExpirationDate = command.ExpirationDate.Value;
-            product.ExpiryVerificationState = "Manual";
+            product.ExpiryVerificationState = ExpiryVerificationState.Manual;
         }
 
         if (!string.IsNullOrWhiteSpace(command.Status))

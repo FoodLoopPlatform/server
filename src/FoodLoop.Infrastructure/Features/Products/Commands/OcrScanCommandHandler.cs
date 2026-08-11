@@ -3,6 +3,7 @@ using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Domain.Entities;
+using FoodLoop.Domain.Enums;
 using FoodLoop.Infrastructure.Features.Organizations;
 using FoodLoop.Infrastructure.Persistence;
 using MediatR;
@@ -96,7 +97,7 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
             _db.AIRecognitionResults.Update(result);
         }
 
-        product.ExpiryVerificationState = confidence < 0.8 ? "AiLowConfidence" : "AiVerified";
+        product.ExpiryVerificationState = confidence < 0.8 ? ExpiryVerificationState.AiLowConfidence : ExpiryVerificationState.AiVerified;
         await _db.SaveChangesAsync(cancellationToken);
 
         // 3. Resolve suggested category from the database

@@ -91,7 +91,7 @@ public class GetMarketplaceProductsQueryHandler : IRequestHandler<GetMarketplace
                 DiscountedPrice = p.DiscountedPrice,
                 QuantityAvailable = p.QuantityAvailable,
                 ExpirationDate = p.ExpirationDate,
-                ExpiryVerificationState = p.ExpiryVerificationState ?? "Manual",
+                ExpiryVerificationState = p.ExpiryVerificationState.ToString(),
                 Status = p.Status.ToString(),
                 Latitude = p.Organization?.Latitude,
                 Longitude = p.Organization?.Longitude,

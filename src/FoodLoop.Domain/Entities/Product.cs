@@ -30,7 +30,7 @@ public class Product : BaseEntity, ISoftDelete
     public ICollection<PriceHistory> PriceHistories { get; set; } = new List<PriceHistory>();
     public ICollection<ProductReport> Reports { get; set; } = new List<ProductReport>();
     public AIRecognitionResult? AIRecognitionResult { get; set; }
-    public string ExpiryVerificationState { get; set; } = "Manual";
+    public ExpiryVerificationState ExpiryVerificationState { get; set; } = ExpiryVerificationState.Manual;
 
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid? DeletedBy { get; set; }

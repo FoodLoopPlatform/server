@@ -50,7 +50,7 @@ public class GetPendingLowConfProductsQueryHandler
             DiscountedPrice = l.DiscountedPrice,
             QuantityAvailable = l.QuantityAvailable,
             ExpirationDate = l.ExpirationDate,
-            ExpiryVerificationState = l.ExpiryVerificationState ?? "Manual",
+            ExpiryVerificationState = l.ExpiryVerificationState.ToString(),
             Status = l.Status.ToString(),
             AIConfidenceScore = l.AIRecognitionResult?.ConfidenceScore,
             ModerationNote = l.ModerationNote,

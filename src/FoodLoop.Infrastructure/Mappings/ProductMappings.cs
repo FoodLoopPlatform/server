@@ -19,7 +19,7 @@ internal static class ProductMappings
         DiscountedPrice = product.DiscountedPrice,
         QuantityAvailable = product.QuantityAvailable,
         ExpirationDate = product.ExpirationDate,
-        ExpiryVerificationState = product.ExpiryVerificationState ?? "Manual",
+        ExpiryVerificationState = product.ExpiryVerificationState.ToString(),
         Status = product.Status.ToString(),
         Images = product.Images != null 
             ? product.Images.Select(i => new ProductImageDto
