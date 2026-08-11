@@ -18,12 +18,21 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
     private readonly ApplicationDbContext _db;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _storage;
+    private readonly IOcrService _ocrService;
+    private readonly IAuditLogService _auditLogService;
 
-    public OcrScanCommandHandler(ApplicationDbContext db, IUnitOfWork unitOfWork, IFileStorageService storage)
+    public OcrScanCommandHandler(
+        ApplicationDbContext db,
+        IUnitOfWork unitOfWork,
+        IFileStorageService storage,
+        IOcrService ocrService,
+        IAuditLogService auditLogService)
     {
         _db = db;
         _unitOfWork = unitOfWork;
         _storage = storage;
+        _ocrService = ocrService;
+        _auditLogService = auditLogService;
     }
 
     public async Task<OcrResultDto> Handle(OcrScanCommand request, CancellationToken cancellationToken)
@@ -35,14 +44,33 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
             .FirstOrDefaultAsync(p => p.Id == request.ProductId && p.OrganizationId == org.Id && !p.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Product", request.ProductId);
 
-        // Save the uploaded image
-        await _storage.SaveAsync(request.Image, $"ocr/{product.Id}", cancellationToken);
+        // 1. Buffer the image stream so it can be read multiple times without ObjectDisposedException
+        using var memoryStream = new MemoryStream();
+        await request.Image.Content.CopyToAsync(memoryStream, cancellationToken);
+        var imageBytes = memoryStream.ToArray();
 
-        // Simulate AI OCR analysis — in production swap with real AI service call
-        var random = new Random(product.Id.GetHashCode());
-        var confidence = Math.Round(0.55 + random.NextDouble() * 0.44, 2);
-        var detectedName = product.Title;
-        var extractedExpiry = product.ExpirationDate;
+        using (var storageStream = new MemoryStream(imageBytes))
+        {
+            var storageRequest = new FoodLoop.Application.Common.Models.FileUploadRequest
+            {
+                FileName = request.Image.FileName,
+                ContentType = request.Image.ContentType,
+                Content = storageStream
+            };
+            await _storage.SaveAsync(storageRequest, $"ocr/{product.Id}", cancellationToken);
+        }
+
+        // 2. Perform real AI Vision analysis via Google Gemini Vision
+        using var ocrStream = new MemoryStream(imageBytes);
+        var analysis = await _ocrService.AnalyzeProductImageAsync(
+            ocrStream,
+            request.Image.ContentType,
+            cancellationToken);
+
+        var detectedName = !string.IsNullOrWhiteSpace(analysis.DetectedProduct) ? analysis.DetectedProduct : product.Title;
+        var extractedExpiry = analysis.ExpirationDate ?? product.ExpirationDate;
+        var confidence = analysis.ConfidenceScore;
+        var extractedText = analysis.ExtractedText;
 
         var result = product.AIRecognitionResult;
         if (result == null)
@@ -53,7 +81,7 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
                 DetectedProduct = detectedName,
                 ConfidenceScore = confidence,
                 ExtractedExpiryDate = extractedExpiry,
-                ExtractedText = $"Detected: {detectedName}. Expiry: {extractedExpiry}",
+                ExtractedText = extractedText,
                 Reviewed = false
             };
             _db.AIRecognitionResults.Add(result);
@@ -63,12 +91,22 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
             result.DetectedProduct = detectedName;
             result.ConfidenceScore = confidence;
             result.ExtractedExpiryDate = extractedExpiry;
-            result.ExtractedText = $"Detected: {detectedName}. Expiry: {extractedExpiry}";
+            result.ExtractedText = extractedText;
             result.Reviewed = false;
             _db.AIRecognitionResults.Update(result);
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        // 3. Log audit event
+        await _auditLogService.LogAsync(
+            request.OwnerId,
+            org.Id,
+            "ProductOcrScanned",
+            "AI Vision Packaging Scanned",
+            $"Scanned product packaging for '{product.Title}'. Detected: '{detectedName}', Confidence: {confidence:P0}.",
+            null,
+            cancellationToken);
 
         return new OcrResultDto
         {
