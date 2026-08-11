@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace FoodLoop.Application.DTOs.Products;
@@ -15,6 +15,7 @@ public class ProductDto
     public decimal DiscountedPrice { get; set; }
     public int QuantityAvailable { get; set; }
     public DateOnly ExpirationDate { get; set; }
+    public string ExpiryVerificationState { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public IReadOnlyList<ProductImageDto> Images { get; set; } = Array.Empty<ProductImageDto>();
 }

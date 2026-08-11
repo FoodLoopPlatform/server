@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Admin;
+using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
@@ -59,6 +59,7 @@ public class GetAdminProductsQueryHandler : IRequestHandler<GetAdminProductsQuer
             DiscountedPrice = l.DiscountedPrice,
             QuantityAvailable = l.QuantityAvailable,
             ExpirationDate = l.ExpirationDate,
+            ExpiryVerificationState = l.ExpiryVerificationState ?? "Manual",
             Status = l.Status.ToString(),
             AIConfidenceScore = l.AIRecognitionResult?.ConfidenceScore,
             ModerationNote = l.ModerationNote,

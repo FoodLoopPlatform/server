@@ -69,6 +69,7 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
 
             _unitOfWork.Repository<AIRecognitionResult>().Add(aiResult);
             product.AIRecognitionResult = aiResult;
+            product.ExpiryVerificationState = confidenceScore < 0.8 ? "AiLowConfidence" : "AiVerified";
 
             // If confidence is low, set to PendingModeration; otherwise set Active
             if (confidenceScore < 0.8)

@@ -60,6 +60,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             DiscountedPrice = command.DiscountedPrice,
             QuantityAvailable = command.QuantityAvailable,
             ExpirationDate = command.ExpirationDate,
+            ExpiryVerificationState = "Manual",
             Status = ProductStatus.Active
         };
 

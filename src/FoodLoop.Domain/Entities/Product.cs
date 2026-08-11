@@ -1,4 +1,4 @@
-﻿using FoodLoop.Domain.Common;
+using FoodLoop.Domain.Common;
 using FoodLoop.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -30,6 +30,7 @@ public class Product : BaseEntity, ISoftDelete
     public ICollection<PriceHistory> PriceHistories { get; set; } = new List<PriceHistory>();
     public ICollection<ProductReport> Reports { get; set; } = new List<ProductReport>();
     public AIRecognitionResult? AIRecognitionResult { get; set; }
+    public string ExpiryVerificationState { get; set; } = "Manual";
 
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid? DeletedBy { get; set; }

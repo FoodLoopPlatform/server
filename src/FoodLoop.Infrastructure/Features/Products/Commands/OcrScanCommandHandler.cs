@@ -96,6 +96,7 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
             _db.AIRecognitionResults.Update(result);
         }
 
+        product.ExpiryVerificationState = confidence < 0.8 ? "AiLowConfidence" : "AiVerified";
         await _db.SaveChangesAsync(cancellationToken);
 
         // 3. Resolve suggested category from the database

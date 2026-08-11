@@ -1,4 +1,4 @@
-﻿using FoodLoop.Application.DTOs.Products;
+using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Domain.Entities;
 using System;
 using System.Linq;
@@ -19,6 +19,7 @@ internal static class ProductMappings
         DiscountedPrice = product.DiscountedPrice,
         QuantityAvailable = product.QuantityAvailable,
         ExpirationDate = product.ExpirationDate,
+        ExpiryVerificationState = product.ExpiryVerificationState ?? "Manual",
         Status = product.Status.ToString(),
         Images = product.Images != null 
             ? product.Images.Select(i => new ProductImageDto

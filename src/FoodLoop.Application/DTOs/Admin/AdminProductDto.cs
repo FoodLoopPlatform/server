@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace FoodLoop.Application.DTOs.Admin;
 
@@ -13,6 +13,7 @@ public class AdminProductDto
     public decimal DiscountedPrice { get; set; }
     public int QuantityAvailable { get; set; }
     public DateOnly ExpirationDate { get; set; }
+    public string ExpiryVerificationState { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public double? AIConfidenceScore { get; set; }
     public string? ModerationNote { get; set; }

@@ -99,6 +99,7 @@ public class ModerateProductCommandHandler
             DiscountedPrice = product.DiscountedPrice,
             QuantityAvailable = product.QuantityAvailable,
             ExpirationDate = product.ExpirationDate,
+            ExpiryVerificationState = product.ExpiryVerificationState ?? "Manual",
             Status = product.Status.ToString(),
             AIConfidenceScore = product.AIRecognitionResult?.ConfidenceScore,
             ModerationNote = product.ModerationNote,
