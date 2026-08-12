@@ -227,6 +227,10 @@ if [ -n "$RESET_TOKEN" ] && [ "$RESET_TOKEN" != "null" ]; then
     status=${res%%|*}
     body=${res#*|}
     assert_status "1.6: Reset Password With Token" "$status" "200" "$body"
+    
+    # Re-login to get fresh tokens since password reset invalidates the security stamp
+    res=$(send_request "POST" "/auth/login" "$LOGIN_PAYLOAD")
+    M_REFRESH_TOKEN=$(get_json_value "${res#*|}" "refreshToken")
 else
     BAD_RESET_PAYLOAD="{\"email\":\"$MERCHANT_EMAIL\",\"token\":\"invalid-token-12345\",\"newPassword\":\"Password@123\"}"
     res=$(send_request "POST" "/auth/reset-password" "$BAD_RESET_PAYLOAD")

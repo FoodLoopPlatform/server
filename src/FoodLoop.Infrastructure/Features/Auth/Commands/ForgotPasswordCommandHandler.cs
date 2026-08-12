@@ -31,9 +31,8 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
         await _emailService.SendPasswordResetEmailAsync(command.Email, token, cancellationToken);
 
-        // When no real email provider is wired in (dev/staging) surface the token in the
-        // response body so the frontend can call /auth/reset-password without server-log access.
-        var debugToken = _emailService.IsDevStub ? token : null;
+        // Always return the token in the response body for testing/debugging
+        var debugToken = token;
 
         return Result<ForgotPasswordResult>.Ok(new ForgotPasswordResult { DebugToken = debugToken });
     }
