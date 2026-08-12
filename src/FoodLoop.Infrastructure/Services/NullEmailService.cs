@@ -22,7 +22,8 @@ public class NullEmailService : IEmailService
 
     public Task SendPasswordResetEmailAsync(string toEmail, string resetToken, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("[DEV EMAIL] Password reset for {Email}. Token: {Token}", toEmail, resetToken);
+        var resetLink = $"https://web-nine-ivory-36.vercel.app/reset-password?token={System.Uri.EscapeDataString(resetToken)}&email={System.Uri.EscapeDataString(toEmail)}";
+        _logger.LogInformation("[DEV EMAIL] Password reset for {Email}. Link: {Link}", toEmail, resetLink);
         return Task.CompletedTask;
     }
 
