@@ -52,7 +52,8 @@ public class BrevoEmailService : IEmailService
     public Task SendPasswordResetEmailAsync(string toEmail, string resetToken, CancellationToken cancellationToken = default)
     {
         var subject = "FoodLoop - Reset Your Password";
-        var body = $"Hello,\n\nUse this token to reset your password:\n\n{resetToken}\n\nThis token expires shortly. If you did not request a password reset, ignore this email.\n\nOnce reset, you can log in to your account here:\n{LoginUrl}\n\nThank you,\nFoodLoop Team";
+        var resetLink = $"https://web-nine-ivory-36.vercel.app/reset-password?token={Uri.EscapeDataString(resetToken)}&email={Uri.EscapeDataString(toEmail)}";
+        var body = $"Hello,\n\nTo reset your password, please click the link below or copy it into your browser:\n\n{resetLink}\n\nThis link expires shortly. If you did not request a password reset, ignore this email.\n\nThank you,\nFoodLoop Team";
         return SendEmailAsync(toEmail, subject, body, cancellationToken);
     }
 
