@@ -1224,12 +1224,12 @@ assert_status "19.3: Report Product Unauthenticated" "$status" "401" "$body"
 echo -e "\n--- Testing OCR Verification ---"
 
 if [ -n "$PRODUCT_ID" ]; then
-    # Scenario 20.1: Submit OCR scan (Happy Path)
+    # Scenario 20.1: Submit OCR scan via Image Upload (Happy Path)
     create_valid_png mock_ocr.png
-    res=$(curl.exe -s -k -w "\n%{http_code}" -X POST \
+    res=$(curl.exe -s -k -L -w "\n%{http_code}" -X POST \
       -H "Authorization: Bearer $MERCHANT_TOKEN" \
       -F "File=@mock_ocr.png" \
-      "$BASE_URL/stores/me/products/$PRODUCT_ID/ocr")
+      "$BASE_URL/stores/me/products/$PRODUCT_ID/images")
     rm -f mock_ocr.png
     status=$(echo "$res" | tail -n 1)
     body=$(echo "$res" | sed '$d')
@@ -1655,19 +1655,19 @@ assert_status "28.4: Get Price History as Customer (Forbidden)" "$status" "403" 
 # ==============================================================================
 echo -e "\n--- Testing OCR Auth/Role Gaps ---"
 
-# 29.1 POST /stores/me/products/{id}/ocr as Customer (403)
+# 29.1 POST /stores/me/products/{id}/images as Customer (403)
 create_valid_png tmp_ocr.png
-res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $CUSTOMER_TOKEN" -F "File=@tmp_ocr.png" "$BASE_URL/stores/me/products/$PRODUCT_ID/ocr")
+res=$(curl.exe -s -k -L -w "\n%{http_code}" -X POST -H "Authorization: Bearer $CUSTOMER_TOKEN" -F "File=@tmp_ocr.png" "$BASE_URL/stores/me/products/$PRODUCT_ID/images")
 rm -f tmp_ocr.png
 status=$(echo "$res" | tail -n 1)
-assert_status "29.1: Submit OCR as Customer (Forbidden)" "$status" "403" ""
+assert_status "29.1: Submit Image as Customer (Forbidden)" "$status" "403" ""
 
-# 29.2 POST /stores/me/products/{id}/ocr invalid file type (400)
+# 29.2 POST /stores/me/products/{id}/images invalid file type (400)
 echo "PDF" > tmp_ocr.pdf
-res=$(curl.exe -s -k -w "\n%{http_code}" -X POST -H "Authorization: Bearer $MERCHANT_TOKEN" -F "File=@tmp_ocr.pdf" "$BASE_URL/stores/me/products/$PRODUCT_ID/ocr")
+res=$(curl.exe -s -k -L -w "\n%{http_code}" -X POST -H "Authorization: Bearer $MERCHANT_TOKEN" -F "File=@tmp_ocr.pdf" "$BASE_URL/stores/me/products/$PRODUCT_ID/images")
 rm -f tmp_ocr.pdf
 status=$(echo "$res" | tail -n 1)
-assert_status "29.2: Submit OCR Invalid File Type" "$status" "400" ""
+assert_status "29.2: Submit Image Invalid File Type" "$status" "400" ""
 
 # 29.3 GET /stores/me/products/{id}/ocr-result as Customer (403)
 res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/ocr-result" "" "$CUSTOMER_TOKEN")

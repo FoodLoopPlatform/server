@@ -1,5 +1,6 @@
 using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Products;
 using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Domain.Entities;
@@ -20,12 +21,18 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorage;
     private readonly IAuditLogService _auditLogService;
+    private readonly IOcrService _ocrService;
 
-    public UploadProductImageCommandHandler(IUnitOfWork unitOfWork, IFileStorageService fileStorage, IAuditLogService auditLogService)
+    public UploadProductImageCommandHandler(
+        IUnitOfWork unitOfWork,
+        IFileStorageService fileStorage,
+        IAuditLogService auditLogService,
+        IOcrService ocrService)
     {
         _unitOfWork = unitOfWork;
         _fileStorage = fileStorage;
         _auditLogService = auditLogService;
+        _ocrService = ocrService;
     }
 
     public async Task<ProductDto> Handle(UploadProductImageCommand command, CancellationToken cancellationToken)
@@ -39,7 +46,21 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
             .FirstOrDefaultAsync(l => l.Id == command.ProductId && l.OrganizationId == organization.Id && !l.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Product", command.ProductId);
 
-        var imageUrl = await _fileStorage.SaveAsync(command.File, $"listings/{product.Id}", cancellationToken);
+        using var memoryStream = new MemoryStream();
+        await command.File.Content.CopyToAsync(memoryStream, cancellationToken);
+        var imageBytes = memoryStream.ToArray();
+
+        string imageUrl;
+        using (var storageStream = new MemoryStream(imageBytes))
+        {
+            var fileUploadRequest = new FileUploadRequest
+            {
+                FileName = command.File.FileName,
+                ContentType = command.File.ContentType,
+                Content = storageStream
+            };
+            imageUrl = await _fileStorage.SaveAsync(fileUploadRequest, $"listings/{product.Id}", cancellationToken);
+        }
 
         var displayOrder = product.Images.Any() ? product.Images.Max(i => i.DisplayOrder) + 1 : 0;
 
@@ -52,27 +73,71 @@ public class UploadProductImageCommandHandler : IRequestHandler<UploadProductIma
 
         _unitOfWork.Repository<ProductImage>().Add(productImage);
 
-        // Simulate AI recognition scan on the first uploaded image
+        // Run real AI OCR scanner on the first uploaded image
         if (product.AIRecognitionResult == null)
         {
-            var random = new Random();
-            var confidence = 0.5 + (random.NextDouble() * 0.48); // Generate between 0.50 and 0.98
-            var confidenceScore = Math.Round(confidence, 2);
+            using var ocrStream = new MemoryStream(imageBytes);
+            var analysis = await _ocrService.AnalyzeProductImageAsync(
+                ocrStream,
+                command.File.ContentType,
+                cancellationToken);
+
+            var detectedName = !string.IsNullOrWhiteSpace(analysis.DetectedProduct) ? analysis.DetectedProduct : product.Title;
+            var extractedExpiry = analysis.ExpirationDate ?? product.ExpirationDate;
+            var confidence = analysis.ConfidenceScore;
+            var extractedText = analysis.ExtractedText;
 
             var aiResult = new AIRecognitionResult
             {
                 ProductId = product.Id,
-                DetectedProduct = product.Title,
-                ConfidenceScore = confidenceScore,
+                DetectedProduct = detectedName,
+                ConfidenceScore = confidence,
+                ExtractedExpiryDate = extractedExpiry,
+                ExtractedText = extractedText,
                 Reviewed = false
             };
 
             _unitOfWork.Repository<AIRecognitionResult>().Add(aiResult);
             product.AIRecognitionResult = aiResult;
-            product.ExpiryVerificationState = confidenceScore < 0.8 ? ExpiryVerificationState.AiLowConfidence : ExpiryVerificationState.AiVerified;
+            product.ExpiryVerificationState = confidence < 0.8 ? ExpiryVerificationState.AiLowConfidence : ExpiryVerificationState.AiVerified;
+
+            // Auto-fill empty or placeholder fields on the product
+            if (product.Title == "New Product" || product.Title == "Draft Product" || string.IsNullOrWhiteSpace(product.Title))
+            {
+                product.Title = detectedName;
+            }
+
+            if (string.IsNullOrWhiteSpace(product.Description))
+            {
+                product.Description = analysis.SuggestedDescription;
+            }
+
+            if (product.ExpirationDate == default || product.ExpirationDate == DateOnly.FromDateTime(DateTime.Today))
+            {
+                if (analysis.ExpirationDate.HasValue)
+                {
+                    product.ExpirationDate = analysis.ExpirationDate.Value;
+                }
+            }
+
+            // Resolve and auto-fill category if needed
+            if (product.CategoryId == Guid.Empty && !string.IsNullOrWhiteSpace(analysis.SuggestedCategory))
+            {
+                var categories = await _unitOfWork.Repository<Category>().Query().ToListAsync(cancellationToken);
+                var matched = categories.FirstOrDefault(c => 
+                    c.Name.Equals(analysis.SuggestedCategory, StringComparison.OrdinalIgnoreCase) ||
+                    c.NameAr.Equals(analysis.SuggestedCategory, StringComparison.OrdinalIgnoreCase) ||
+                    analysis.SuggestedCategory.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
+                
+                if (matched != null)
+                {
+                    product.CategoryId = matched.Id;
+                    product.Category = matched;
+                }
+            }
 
             // If confidence is low, set to PendingModeration; otherwise set Active
-            if (confidenceScore < 0.8)
+            if (confidence < 0.8)
             {
                 product.Status = ProductStatus.PendingModeration;
             }

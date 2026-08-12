@@ -1,4 +1,4 @@
-﻿using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Products;
@@ -230,25 +230,7 @@ public class ProductsController : ControllerBase
         return Ok(ApiResponse<ProductDto>.Ok(product));
     }
 
-    /// <summary>
-    /// POST /stores/me/products/{id}/ocr — submit image for AI/OCR analysis.
-    /// </summary>
-    [HttpPost("{id:guid}/ocr")]
-    [RequestSizeLimit(10_000_000)]
-    public async Task<IActionResult> SubmitOcr(Guid id, IFormFile file, CancellationToken cancellationToken)
-    {
-        if (file == null || file.Length == 0)
-            return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
 
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        if (!new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(ext))
-            return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
-
-        await using var stream = file.OpenReadStream();
-        var upload = new FileUploadRequest { Content = stream, FileName = file.FileName, ContentType = file.ContentType };
-        var result = await _mediator.Send(new OcrScanCommand(OwnerId, id, upload), cancellationToken);
-        return Ok(ApiResponse<OcrResultDto>.Ok(result));
-    }
 
     /// <summary>
     /// GET /stores/me/products/{id}/ocr-result — poll the latest OCR result.
