@@ -1,4 +1,5 @@
-﻿using FoodLoop.Application.DTOs.Products;
+using FoodLoop.Application.DTOs.Products;
+using FoodLoop.Domain.Enums;
 using MediatR;
 using System;
 
@@ -12,6 +13,9 @@ public record CreateProductCommand(
     decimal OriginalPrice,
     decimal DiscountedPrice,
     int QuantityAvailable,
-    DateOnly ExpirationDate) : IRequest<ProductDto>;
+    DateOnly ExpirationDate,
+    ExpiryVerificationState? ExpiryVerificationState = null,
+    double? OcrConfidence = null,
+    string? OcrText = null) : IRequest<ProductDto>;
 
 

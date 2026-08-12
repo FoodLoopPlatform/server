@@ -50,7 +50,10 @@ public class ProductsController : ControllerBase
             request.OriginalPrice,
             request.DiscountedPrice,
             request.QuantityAvailable,
-            request.ExpirationDate);
+            request.ExpirationDate,
+            request.ExpiryVerificationState,
+            request.OcrConfidence,
+            request.OcrText);
 
         var product = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<ProductDto>.Ok(product));
@@ -174,6 +177,38 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
+    /// POST /organizations/me/products/ocr-scan — run Gemini OCR scan on a product image statelessly.
+    /// </summary>
+    [HttpPost("ocr-scan")]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> StatelessOcrScan(IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(ApiResponse.Fail(_loc["FileRequired"]));
+        }
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+        if (!allowedExtensions.Contains(ext))
+        {
+            return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
+        }
+
+        await using var stream = file.OpenReadStream();
+        var uploadRequest = new FileUploadRequest
+        {
+            Content = stream,
+            FileName = file.FileName,
+            ContentType = file.ContentType
+        };
+
+        var command = new StatelessOcrScanCommand(OwnerId, uploadRequest);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<OcrResultDto>.Ok(result));
+    }
+
+    /// <summary>
     /// POST /organizations/me/products/bulk Ã¢â‚¬â€ upload products in bulk via CSV.
     /// </summary>
     [HttpPost("bulk")]
@@ -264,6 +299,10 @@ public class CreateProductRequest
 
     [Required]
     public DateOnly ExpirationDate { get; set; }
+
+    public ExpiryVerificationState? ExpiryVerificationState { get; set; }
+    public double? OcrConfidence { get; set; }
+    public string? OcrText { get; set; }
 }
 
 public class UpdateProductRequest

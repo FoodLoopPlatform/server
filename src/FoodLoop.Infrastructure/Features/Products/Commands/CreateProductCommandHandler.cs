@@ -50,6 +50,9 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             throw new ArgumentException("Quantity available cannot be negative.");
         }
 
+        var state = command.ExpiryVerificationState ?? ExpiryVerificationState.Manual;
+        var status = state == ExpiryVerificationState.AiLowConfidence ? ProductStatus.PendingModeration : ProductStatus.Active;
+
         var product = new Product
         {
             OrganizationId = organization.Id,
@@ -60,12 +63,28 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             DiscountedPrice = command.DiscountedPrice,
             QuantityAvailable = command.QuantityAvailable,
             ExpirationDate = command.ExpirationDate,
-            ExpiryVerificationState = ExpiryVerificationState.Manual,
-            Status = ProductStatus.Active
+            ExpiryVerificationState = state,
+            Status = status
         };
 
         _unitOfWork.Repository<Product>().Add(product);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (state == ExpiryVerificationState.AiVerified || state == ExpiryVerificationState.AiLowConfidence)
+        {
+            var aiResult = new AIRecognitionResult
+            {
+                ProductId = product.Id,
+                DetectedProduct = product.Title,
+                ConfidenceScore = command.OcrConfidence ?? 0.0,
+                ExtractedExpiryDate = product.ExpirationDate,
+                ExtractedText = command.OcrText,
+                Reviewed = false
+            };
+            _unitOfWork.Repository<AIRecognitionResult>().Add(aiResult);
+            product.AIRecognitionResult = aiResult;
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         await _auditLogService.LogAsync(
             command.OwnerId,

@@ -25,6 +25,14 @@ teardown() {
             send_request "DELETE" "/stores/me/products/$PRODUCT_ID" "" "$MERCHANT_TOKEN" >/dev/null || true
         fi
     fi
+    if [ -n "$OCR_PRODUCT_ID" ]; then
+        echo "[CLEANUP] Deleting OCR Product ID: $OCR_PRODUCT_ID"
+        if [ -n "$ADMIN_TOKEN" ]; then
+            send_request "DELETE" "/admin/products/$OCR_PRODUCT_ID" "" "$ADMIN_TOKEN" >/dev/null || true
+        elif [ -n "$MERCHANT_TOKEN" ]; then
+            send_request "DELETE" "/stores/me/products/$OCR_PRODUCT_ID" "" "$MERCHANT_TOKEN" >/dev/null || true
+        fi
+    fi
 
     # 3. Delete address if created
     if [ -n "$ADDRESS_ID" ] && [ -n "$CUSTOMER_TOKEN" ]; then
@@ -1223,40 +1231,51 @@ body=${res#*|}
 assert_status "19.3: Report Product Unauthenticated" "$status" "401" "$body"
 
 # ==============================================================================
-# SECTION 20: OCR VERIFICATION (/stores/me/products/{id}/ocr)
+# SECTION 20: OCR VERIFICATION (/stores/me/products/ocr-scan and /stores/me/products/{id}/ocr-result)
 # ==============================================================================
 echo -e "\n--- Testing OCR Verification ---"
 
-if [ -n "$PRODUCT_ID" ]; then
-    # Scenario 20.1: Submit OCR scan via Image Upload (Happy Path)
-    create_valid_png mock_ocr.png
-    res=$(curl.exe -s -k -L -w "\n%{http_code}" -X POST \
-      -H "Authorization: Bearer $MERCHANT_TOKEN" \
-      -F "File=@mock_ocr.png" \
-      "$BASE_URL/stores/me/products/$PRODUCT_ID/images")
-    rm -f mock_ocr.png
-    status=$(echo "$res" | tail -n 1)
-    body=$(echo "$res" | sed '$d')
-    assert_status "20.1: Submit Product Image for OCR Analysis" "$status" "200" "$body"
+# Scenario 20.1: Submit Stateless OCR scan (Happy Path)
+create_valid_png mock_ocr.png
+res=$(curl.exe -s -k -L -w "\n%{http_code}" -X POST \
+  -H "Authorization: Bearer $MERCHANT_TOKEN" \
+  -F "file=@mock_ocr.png" \
+  "$BASE_URL/stores/me/products/ocr-scan")
+rm -f mock_ocr.png
+status=$(echo "$res" | tail -n 1)
+body=$(echo "$res" | sed '$d')
+assert_status "20.1: Submit Product Image for Stateless OCR Analysis" "$status" "200" "$body"
 
-    # Scenario 20.2: Poll OCR result (Happy Path)
-    res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/ocr-result" "" "$MERCHANT_TOKEN")
+# Extract some properties to verify OCR results
+OCR_CONFIDENCE=$(get_json_value "$body" "confidenceScore")
+
+# Scenario 20.2: Create product using OCR results metadata (Happy Path)
+OCR_PRODUCT_PAYLOAD="{\"categoryId\":\"$CATEGORY_ID\",\"title\":\"OCR Scanned Product\",\"description\":\"Scanned via stateless AI endpoint.\",\"originalPrice\":99.99,\"discountedPrice\":79.99,\"quantityAvailable\":50,\"expirationDate\":\"2026-08-20\",\"expiryVerificationState\":\"AiVerified\",\"ocrConfidence\":0.95,\"ocrText\":\"EXP 2026-08-20\"}"
+res=$(send_request "POST" "/stores/me/products" "$OCR_PRODUCT_PAYLOAD" "$MERCHANT_TOKEN")
+status=${res%%|*}
+body=${res#*|}
+assert_status "20.2: Create Product with OCR Metadata" "$status" "200" "$body"
+OCR_PRODUCT_ID=$(get_json_value "$body" "id")
+
+if [ -n "$OCR_PRODUCT_ID" ] && [ "$OCR_PRODUCT_ID" != "null" ]; then
+    # Scenario 20.3: Poll OCR result for the created product (Happy Path)
+    res=$(send_request "GET" "/stores/me/products/$OCR_PRODUCT_ID/ocr-result" "" "$MERCHANT_TOKEN")
     status=${res%%|*}
     body=${res#*|}
-    assert_status "20.2: Poll OCR Scan Result" "$status" "200" "$body"
+    assert_status "20.3: Poll OCR Scan Result" "$status" "200" "$body"
 
-    # Scenario 20.3: Poll OCR result unauthenticated (401)
-    res=$(send_request "GET" "/stores/me/products/$PRODUCT_ID/ocr-result" "" "")
+    # Scenario 20.4: Poll OCR result unauthenticated (401)
+    res=$(send_request "GET" "/stores/me/products/$OCR_PRODUCT_ID/ocr-result" "" "")
     status=${res%%|*}
     body=${res#*|}
-    assert_status "20.3: Poll OCR Result Unauthenticated" "$status" "401" "$body"
+    assert_status "20.4: Poll OCR Result Unauthenticated" "$status" "401" "$body"
 fi
 
-# Scenario 20.4: Poll OCR result for non-existent product (404)
+# Scenario 20.5: Poll OCR result for non-existent product (404)
 res=$(send_request "GET" "/stores/me/products/00000000-0000-0000-0000-000000000000/ocr-result" "" "$MERCHANT_TOKEN")
 status=${res%%|*}
 body=${res#*|}
-assert_status "20.4: Poll OCR Result Non-existent Product" "$status" "404" "$body"
+assert_status "20.5: Poll OCR Result Non-existent Product" "$status" "404" "$body"
 
 # ==============================================================================
 # SECTION 21: ADMIN DISPUTE HANDLING (/admin/disputes)
