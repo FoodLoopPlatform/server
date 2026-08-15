@@ -140,6 +140,29 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// GET /admin/activity-logs/admin-actions — paginated feed of actions performed by admin users.
+    /// Covers: DocumentVerified, UserStatusUpdated, DisputeResolved,
+    ///         ProductModerated, ReviewModerated, SupportTicketClosed.
+    /// Supports filtering by adminUserId, eventType, dateFrom, dateTo, and free-text searchTerm.
+    /// </summary>
+    [HttpGet("activity-logs/admin-actions")]
+    public async Task<IActionResult> GetAdminActivityLogs(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? eventType = null,
+        [FromQuery] Guid? adminUserId = null,
+        [FromQuery] DateTimeOffset? dateFrom = null,
+        [FromQuery] DateTimeOffset? dateTo = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAdminActivityLogsQuery(
+            searchTerm, eventType, adminUserId, dateFrom, dateTo, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<AdminActivityLogsResultDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /admin/activity-logs — global platform-wide activity and audit log feed with search & filtering.
     /// </summary>
     [HttpGet("activity-logs")]
