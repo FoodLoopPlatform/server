@@ -21,7 +21,7 @@ namespace FoodLoop.API.Controllers;
 /// Backs the business onboarding wizard: business_signup_step_1 (registration, see
 /// AuthController) â†’ business_verification_location (step 2 location, below) â†’
 /// document_upload_step_2 (step 2 documents, below) â†’ verification_pending_step_3
-/// (status, below). Full Organization CRUD (browsing, editing a live organization, etc.) ships in Sprint 2 â€”
+/// (status, below). Full Organization CRUD (browsing, editing a live organization, etc.) ships in Sprint 2
 /// only the merchant's own draft organization is exposed here.
 /// </summary>
 [ApiController]
@@ -42,7 +42,7 @@ public class StoresController : ControllerBase
 
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-    /// <summary>GET /organizations/me â€” the caller's own organization, its location, and uploaded documents.
+    /// <summary>GET /organizations/me the caller's own organization, its location, and uploaded documents.
     /// Used to re-enter the wizard at the right step, and by verification_pending_step_3 to
     /// show current status.</summary>
     [HttpGet("me")]
@@ -129,7 +129,7 @@ public class StoresController : ControllerBase
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
     }
 
-    /// <summary>POST /organizations/me/documents â€” step 2's document upload (document_upload_step_2).
+    /// <summary>POST /organizations/me/documents step 2's document upload (document_upload_step_2).
     /// Does not require authentication: the organization is identified by the owner's registered email.
     /// Call once per slot with type = CommercialRegistration | TaxIdCertificate | StoreFacilityPhoto.</summary>
     [HttpPost("me/documents")]
