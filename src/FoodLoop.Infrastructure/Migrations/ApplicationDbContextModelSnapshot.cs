@@ -48,7 +48,7 @@ namespace FoodLoop.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
-                    b.Property<Guid>("ListingId")
+                    b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("Reviewed")
@@ -62,7 +62,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ListingId")
+                    b.HasIndex("ProductId")
                         .IsUnique();
 
                     b.ToTable("AIRecognitionResults");
@@ -139,6 +139,54 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.ToTable("Addresses");
                 });
 
+            modelBuilder.Entity("FoodLoop.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("FoodLoop.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -186,20 +234,68 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.Favorite", b =>
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Donation", b =>
                 {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ListingId")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.HasKey("UserId", "ListingId");
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex("ListingId");
+                    b.Property<Guid>("DonorOrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RecipientOrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DonorOrganizationId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("RecipientOrganizationId");
+
+                    b.ToTable("Donations");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Favorite", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("UserId", "ProductId");
+
+                    b.HasIndex("ProductId");
 
                     b.ToTable("Favorites");
                 });
@@ -299,7 +395,7 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ListingId")
+                    b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Quantity")
@@ -309,11 +405,172 @@ namespace FoodLoop.Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
 
-                    b.HasKey("OrderId", "ListingId");
+                    b.HasKey("OrderId", "ProductId");
 
-                    b.HasIndex("ListingId");
+                    b.HasIndex("ProductId");
 
                     b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdminNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AiAutoDiscountDaysBeforeExpiry")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("AiAutoDiscountEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("AiAutoDiscountPercent")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("AiAutoPricingEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<double>("AverageRating")
+                        .HasColumnType("float");
+
+                    b.Property<string>("BuildingNo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("BusinessCategory")
+                        .HasColumnType("int");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CoverPhoto")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Governorate")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Logo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Neighborhood")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("OpeningHours")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Street")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("VerificationStatus")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("VerificationStatus");
+
+                    b.ToTable("Organizations");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.OrganizationVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DocumentUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ReviewNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VerificationType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.ToTable("OrganizationVerifications", (string)null);
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Payment", b =>
@@ -361,10 +618,16 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.ToTable("Payments");
                 });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductImage", b =>
+            modelBuilder.Entity("FoodLoop.Domain.Entities.PriceHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChangeReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ChangedBy")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -373,15 +636,23 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
+                    b.Property<decimal>("NewDiscountedPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<decimal>("NewOriginalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid>("ListingId")
+                    b.Property<decimal>("OldDiscountedPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("OldOriginalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
@@ -392,12 +663,12 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ListingId");
+                    b.HasIndex("ProductId");
 
-                    b.ToTable("ProductImages");
+                    b.ToTable("PriceHistories");
                 });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductListing", b =>
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -421,9 +692,6 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DescriptionAr")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<decimal>("DiscountedPrice")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -431,8 +699,18 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<DateOnly>("ExpirationDate")
                         .HasColumnType("date");
 
+                    b.Property<int>("ExpiryVerificationState")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<string>("ModerationNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("OriginalPrice")
                         .HasPrecision(10, 2)
@@ -444,15 +722,8 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("TitleAr")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -470,11 +741,94 @@ namespace FoodLoop.Infrastructure.Migrations
 
                     b.HasIndex("ExpirationDate");
 
+                    b.HasIndex("OrganizationId");
+
                     b.HasIndex("Status");
 
-                    b.HasIndex("StoreId");
+                    b.ToTable("Products", (string)null);
+                });
 
-                    b.ToTable("ProductListings");
+            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImages");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdminNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ReportedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductReports");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.RefreshToken", b =>
@@ -547,11 +901,11 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Rating")
                         .HasColumnType("int");
-
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -567,158 +921,11 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.HasIndex("OrderId")
                         .IsUnique();
 
+                    b.HasIndex("OrganizationId");
+
                     b.HasIndex("Rating");
 
-                    b.HasIndex("StoreId");
-
                     b.ToTable("Reviews");
-                });
-
-            modelBuilder.Entity("FoodLoop.Domain.Entities.Store", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<double>("AverageRating")
-                        .HasColumnType("float");
-
-                    b.Property<string>("BuildingNo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("BusinessCategory")
-                        .HasColumnType("int");
-
-                    b.Property<string>("City")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DescriptionAr")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Governorate")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<double?>("Latitude")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Logo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double?>("Longitude")
-                        .HasColumnType("float");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("NameAr")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Neighborhood")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("OpeningHours")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Street")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("VerificationStatus")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.HasIndex("VerificationStatus");
-
-                    b.ToTable("Stores");
-                });
-
-            modelBuilder.Entity("FoodLoop.Domain.Entities.StoreVerification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("DocumentUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTimeOffset?>("ReviewedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("ReviewedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("StoreId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("VerificationType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StoreId");
-
-                    b.ToTable("StoreVerifications");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.SupportTicket", b =>
@@ -1028,13 +1235,13 @@ namespace FoodLoop.Infrastructure.Migrations
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.AIRecognitionResult", b =>
                 {
-                    b.HasOne("FoodLoop.Domain.Entities.ProductListing", "Listing")
+                    b.HasOne("FoodLoop.Domain.Entities.Product", "Product")
                         .WithOne("AIRecognitionResult")
-                        .HasForeignKey("FoodLoop.Domain.Entities.AIRecognitionResult", "ListingId")
+                        .HasForeignKey("FoodLoop.Domain.Entities.AIRecognitionResult", "ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Listing");
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Address", b =>
@@ -1046,34 +1253,72 @@ namespace FoodLoop.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.Favorite", b =>
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Donation", b =>
                 {
-                    b.HasOne("FoodLoop.Domain.Entities.ProductListing", "Listing")
+                    b.HasOne("FoodLoop.Domain.Entities.Organization", "DonorOrganization")
+                        .WithMany("DonationsGiven")
+                        .HasForeignKey("DonorOrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FoodLoop.Domain.Entities.Product", "Product")
                         .WithMany()
-                        .HasForeignKey("ListingId")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Listing");
+                    b.HasOne("FoodLoop.Domain.Entities.Organization", "RecipientOrganization")
+                        .WithMany("DonationsReceived")
+                        .HasForeignKey("RecipientOrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DonorOrganization");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("RecipientOrganization");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Favorite", b =>
+                {
+                    b.HasOne("FoodLoop.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.OrderItem", b =>
                 {
-                    b.HasOne("FoodLoop.Domain.Entities.ProductListing", "Listing")
-                        .WithMany("OrderItems")
-                        .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("FoodLoop.Domain.Entities.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Listing");
+                    b.HasOne("FoodLoop.Domain.Entities.Product", "Product")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Order");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.OrganizationVerification", b =>
+                {
+                    b.HasOne("FoodLoop.Domain.Entities.Organization", "Organization")
+                        .WithMany("Verifications")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Payment", b =>
@@ -1087,34 +1332,56 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductImage", b =>
+            modelBuilder.Entity("FoodLoop.Domain.Entities.PriceHistory", b =>
                 {
-                    b.HasOne("FoodLoop.Domain.Entities.ProductListing", "Listing")
-                        .WithMany("Images")
-                        .HasForeignKey("ListingId")
+                    b.HasOne("FoodLoop.Domain.Entities.Product", "Product")
+                        .WithMany("PriceHistories")
+                        .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Listing");
+                    b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductListing", b =>
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Product", b =>
                 {
                     b.HasOne("FoodLoop.Domain.Entities.Category", "Category")
-                        .WithMany("ProductListings")
+                        .WithMany("Products")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FoodLoop.Domain.Entities.Store", "Store")
-                        .WithMany("ProductListings")
-                        .HasForeignKey("StoreId")
+                    b.HasOne("FoodLoop.Domain.Entities.Organization", "Organization")
+                        .WithMany("Products")
+                        .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Category");
 
-                    b.Navigation("Store");
+                    b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductImage", b =>
+                {
+                    b.HasOne("FoodLoop.Domain.Entities.Product", "Product")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductReport", b =>
+                {
+                    b.HasOne("FoodLoop.Domain.Entities.Product", "Product")
+                        .WithMany("Reports")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.RefreshToken", b =>
@@ -1134,26 +1401,15 @@ namespace FoodLoop.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("FoodLoop.Domain.Entities.Store", "Store")
+                    b.HasOne("FoodLoop.Domain.Entities.Organization", "Organization")
                         .WithMany("Reviews")
-                        .HasForeignKey("StoreId")
+                        .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Order");
 
-                    b.Navigation("Store");
-                });
-
-            modelBuilder.Entity("FoodLoop.Domain.Entities.StoreVerification", b =>
-                {
-                    b.HasOne("FoodLoop.Domain.Entities.Store", "Store")
-                        .WithMany("Verifications")
-                        .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Store");
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.TicketMessage", b =>
@@ -1220,7 +1476,7 @@ namespace FoodLoop.Infrastructure.Migrations
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Category", b =>
                 {
-                    b.Navigation("ProductListings");
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.Order", b =>
@@ -1232,22 +1488,30 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Navigation("Review");
                 });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.ProductListing", b =>
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Organization", b =>
+                {
+                    b.Navigation("DonationsGiven");
+
+                    b.Navigation("DonationsReceived");
+
+                    b.Navigation("Products");
+
+                    b.Navigation("Reviews");
+
+                    b.Navigation("Verifications");
+                });
+
+            modelBuilder.Entity("FoodLoop.Domain.Entities.Product", b =>
                 {
                     b.Navigation("AIRecognitionResult");
 
                     b.Navigation("Images");
 
                     b.Navigation("OrderItems");
-                });
 
-            modelBuilder.Entity("FoodLoop.Domain.Entities.Store", b =>
-                {
-                    b.Navigation("ProductListings");
+                    b.Navigation("PriceHistories");
 
-                    b.Navigation("Reviews");
-
-                    b.Navigation("Verifications");
+                    b.Navigation("Reports");
                 });
 
             modelBuilder.Entity("FoodLoop.Domain.Entities.SupportTicket", b =>

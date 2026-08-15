@@ -15,11 +15,9 @@ public class LocalFileStorageService : IFileStorageService
 
     public LocalFileStorageService(string webRootPath)
     {
-        // Fall back to a sibling "wwwroot" of the working directory when the host
-        // provides an empty web-root path (e.g. runasp.net shared hosting).
         _webRootPath = !string.IsNullOrWhiteSpace(webRootPath)
             ? webRootPath
-            : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            : Path.Combine(AppContext.BaseDirectory, "wwwroot");
     }
 
     public async Task<string> SaveAsync(FileUploadRequest file, string folder, CancellationToken cancellationToken = default)

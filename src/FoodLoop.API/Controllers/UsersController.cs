@@ -1,7 +1,9 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
+using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.DTOs.Users;
+using FoodLoop.Application.Features.SupportTickets.Commands;
 using FoodLoop.Application.Features.Users.Commands;
 using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Domain.Enums;
@@ -43,6 +45,26 @@ public class UsersController : ControllerBase
     {
         var user = await _mediator.Send(new UpdateProfileCommand(UserId, request), cancellationToken);
         return Ok(ApiResponse<UserDto>.Ok(user));
+    }
+
+    /// <summary>POST /users/me/tickets — opens a new support ticket.</summary>
+    [HttpPost("me/tickets")]
+    public async Task<IActionResult> CreateSupportTicket([FromBody] CreateSupportTicketRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new CreateSupportTicketCommand(UserId, request.Category, request.Message, request.Priority), cancellationToken);
+        return Ok(ApiResponse<SupportTicketDto>.Ok(result));
+    }
+
+    /// <summary>GET /users/me/reports — list product issue reports submitted by current user.</summary>
+    [HttpGet("me/reports")]
+    public async Task<IActionResult> GetMyReports(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool? isResolved = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetMyReportsQuery(UserId, pageNumber, pageSize, isResolved), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<DisputeDto>>.Ok(result));
     }
 
     /// <summary>PATCH /users/me/preferences — updates notification and application settings.</summary>

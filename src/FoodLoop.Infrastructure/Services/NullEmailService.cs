@@ -22,13 +22,32 @@ public class NullEmailService : IEmailService
 
     public Task SendPasswordResetEmailAsync(string toEmail, string resetToken, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("[DEV EMAIL] Password reset for {Email}. Token: {Token}", toEmail, resetToken);
+        var resetLink = $"https://web-nine-ivory-36.vercel.app/reset-password?token={System.Uri.EscapeDataString(resetToken)}&email={System.Uri.EscapeDataString(toEmail)}";
+        _logger.LogInformation("[DEV EMAIL] Password reset for {Email}. Link: {Link}", toEmail, resetLink);
         return Task.CompletedTask;
     }
 
     public Task SendWelcomeEmailAsync(string toEmail, string fullName, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("[DEV EMAIL] Welcome {Name} <{Email}>", fullName, toEmail);
+        return Task.CompletedTask;
+    }
+
+    public Task SendPendingReviewEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[DEV EMAIL] PendingReview: {Name} <{Email}> — Organization: {Org}", fullName, toEmail, organizationName);
+        return Task.CompletedTask;
+    }
+
+    public Task SendApprovalEmailAsync(string toEmail, string fullName, string organizationName, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[DEV EMAIL] Approval: {Name} <{Email}> — Organization: {Org}", fullName, toEmail, organizationName);
+        return Task.CompletedTask;
+    }
+
+    public Task SendRejectionEmailAsync(string toEmail, string fullName, string organizationName, string? adminNote, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("[DEV EMAIL] Rejection: {Name} <{Email}> — Organization: {Org} — Note: {Note}", fullName, toEmail, organizationName, adminNote);
         return Task.CompletedTask;
     }
 }

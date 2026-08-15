@@ -3,6 +3,8 @@ using System.Text.Json;
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace FoodLoop.API.Middleware;
 
@@ -14,11 +16,15 @@ public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IHostEnvironment _env;
+    private readonly IConfiguration _config;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger, IHostEnvironment env, IConfiguration config)
     {
         _next = next;
         _logger = logger;
+        _env = env;
+        _config = config;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -39,13 +45,17 @@ public class ExceptionHandlingMiddleware
         // correct culture (set by UseRequestLocalization) is used.
         var loc = context.RequestServices.GetService<ILocalizationService>();
 
+        var includeDetails = !_env.IsProduction() || _config.GetValue<bool>("DetailedErrors");
+
         var (statusCode, message) = exception switch
         {
             NotFoundException => (HttpStatusCode.NotFound, exception.Message),
             ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, loc?["Unauthorized"] ?? "Unauthorized."),
             ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
-            _ => (HttpStatusCode.InternalServerError, loc?["UnexpectedError"] ?? "An unexpected error occurred."),
+            _ => (HttpStatusCode.InternalServerError, includeDetails
+                ? $"[{exception.GetType().Name}] {exception.Message} {(exception.InnerException != null ? "Inner: " + exception.InnerException.Message : "")}"
+                : (loc?["UnexpectedError"] ?? "An unexpected error occurred.")),
         };
 
         if (statusCode == HttpStatusCode.InternalServerError)

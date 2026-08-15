@@ -1,6 +1,7 @@
 using System.Text;
 using FoodLoop.Application;
 using FoodLoop.Application.Common.Interfaces;
+using CloudinaryDotNet;
 using FoodLoop.Infrastructure.Features.Auth;
 using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Options;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace FoodLoop.Infrastructure.DependencyInjection;
@@ -20,11 +22,13 @@ public static class InfrastructureServiceRegistration
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, string webRootPath)
     {
         var resolvedWebRoot = string.IsNullOrEmpty(webRootPath) 
-            ? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot") 
+            ? Path.Combine(AppContext.BaseDirectory, "wwwroot") 
             : webRootPath;
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+        services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -44,11 +48,15 @@ public static class InfrastructureServiceRegistration
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+        // Admin user options
+        services.AddOptions<AdminUserOptions>()
+            .Bind(configuration.GetSection(AdminUserOptions.SectionName))
+            .ValidateDataAnnotations();
+
         // JWT Bearer authentication
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+            .ValidateDataAnnotations();
 
         // AddJwtBearer's options delegate below runs outside DI, so we still need a plain
         // instance here to build TokenValidationParameters; the AddOptions<> above is what
@@ -73,6 +81,21 @@ public static class InfrastructureServiceRegistration
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
                     ClockSkew = TimeSpan.FromSeconds(30),
                 };
+
+                // Add support for SignalR query string tokens
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         services.AddAuthorization();
@@ -81,9 +104,100 @@ public static class InfrastructureServiceRegistration
         // Application service abstractions backed by Infrastructure implementations.
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IEmailService, NullEmailService>();
-        services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
+        
+        // Bind SMTP options using the ASP.NET Core Options Pattern
+        services.AddOptions<SmtpOptions>()
+            .Bind(configuration.GetSection(SmtpOptions.SectionName))
+            .Configure(options =>
+            {
+                // Fallback configuration support for flat environment/env-file variables
+                if (string.IsNullOrEmpty(options.Host))
+                {
+                    options.Host = configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? string.Empty;
+                    options.Username = configuration["SMTP_USERNAME"] ?? Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? string.Empty;
+                    options.Password = configuration["SMTP_PASSWORD"] ?? Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? string.Empty;
+                    options.FromEmail = configuration["SMTP_FROM_EMAIL"] ?? Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? string.Empty;
+
+                    var portStr = configuration["SMTP_PORT"] ?? Environment.GetEnvironmentVariable("SMTP_PORT");
+                    if (int.TryParse(portStr, out var port))
+                    {
+                        options.Port = port;
+                    }
+                }
+            });
+
+        // Email service registration — priority order:
+        // 1. Brevo HTTP API (BREVO_API_KEY set) — no IP whitelist, works from any host
+        // 2. SMTP (SMTP_HOST set) — requires IP whitelist on some providers
+        // 3. NullEmailService — logs a warning, does not send
+        var brevoApiKey = configuration["BREVO_API_KEY"] ?? Environment.GetEnvironmentVariable("BREVO_API_KEY");
+        var smtpHost = configuration["SMTP_HOST"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? configuration["Smtp:Host"];
+
+        if (!string.IsNullOrEmpty(brevoApiKey))
+        {
+            var fromEmail = configuration["BREVO_FROM_EMAIL"] ?? Environment.GetEnvironmentVariable("BREVO_FROM_EMAIL") ?? "noreply@foodloop.com";
+            var fromName  = configuration["BREVO_FROM_NAME"]  ?? Environment.GetEnvironmentVariable("BREVO_FROM_NAME")  ?? "FoodLoop";
+            services.AddHttpClient("brevo");
+            services.AddScoped<IEmailService>(sp => new BrevoEmailService(
+                brevoApiKey,
+                fromEmail,
+                fromName,
+                sp.GetRequiredService<IHttpClientFactory>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BrevoEmailService>>()));
+        }
+        else if (!string.IsNullOrEmpty(smtpHost))
+        {
+            services.AddScoped<IEmailService, SmtpEmailService>();
+        }
+        else
+        {
+            services.AddScoped<IEmailService, NullEmailService>();
+        }
+        
+        // Bind Cloudinary options using the ASP.NET Core Options Pattern
+        services.AddOptions<CloudinaryOptions>()
+            .Bind(configuration.GetSection(CloudinaryOptions.SectionName))
+            .Configure(options =>
+            {
+                // Fallback configuration support for flat environment/env-file variables
+                if (string.IsNullOrEmpty(options.Url))
+                {
+                    options.Url = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL") ?? string.Empty;
+                }
+            });
+
+        // Conditional File Storage Service registration (Cloudinary vs Local disk)
+        var cloudinaryUrl = configuration["CLOUDINARY_URL"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL") ?? configuration["Cloudinary:Url"];
+        if (!string.IsNullOrEmpty(cloudinaryUrl))
+        {
+            services.AddSingleton(provider =>
+            {
+                var options = provider.GetRequiredService<IOptions<CloudinaryOptions>>().Value;
+
+                // CLOUDINARY_URL format: cloudinary://apiKey:apiSecret@cloudName
+                // Account(string url) does NOT exist in SDK v1.x — must parse and pass separately.
+                var uri = new Uri(options.Url);
+                var userInfo = uri.UserInfo.Split(':', 2);
+                var apiKey    = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+                var apiSecret = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
+                var cloudName = uri.Host;
+
+                var account = new Account(cloudName, apiKey, apiSecret);
+                var cloudinary = new Cloudinary(account);
+                cloudinary.Api.Secure = true;
+                return cloudinary;
+            });
+            services.AddScoped<IFileStorageService, CloudinaryFileStorageService>();
+        }
+        else
+        {
+            services.AddScoped<IFileStorageService>(_ => new LocalFileStorageService(resolvedWebRoot));
+        }
+
         services.AddScoped<ILocalizationService, LocalizationService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<IRealTimeNotificationService, RealTimeNotificationService>();
+        services.AddHttpClient<IOcrService, GeminiOcrService>();
 
         // CQRS: commands/queries live in the Application assembly, handlers live here in
         // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other

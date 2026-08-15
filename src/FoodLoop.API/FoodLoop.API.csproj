@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
       <PrivateAssets>all</PrivateAssets>
@@ -19,6 +20,15 @@
   <ItemGroup>
     <ProjectReference Include="..\FoodLoop.Application\FoodLoop.Application.csproj" />
     <ProjectReference Include="..\FoodLoop.Infrastructure\FoodLoop.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Deploy .env to the publish output so runtime env vars are available on the server -->
+    <Content Include="..\..\..\.env" Condition="Exists('..\..\..\.env')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <Link>.env</Link>
+    </Content>
   </ItemGroup>
 
 </Project>

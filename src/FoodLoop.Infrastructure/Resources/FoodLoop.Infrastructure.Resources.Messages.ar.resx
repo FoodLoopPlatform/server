@@ -35,6 +35,7 @@
   <!-- Store -->
   <data name="StoreNotFound"><value>لم يتم العثور على متجر لهذا الحساب. يتم إنشاء مسودة متجر تلقائياً عند التسجيل كتاجر.</value></data>
   <data name="StoreNotFoundByEmail"><value>لم يتم العثور على متجر بهذا البريد الإلكتروني. تأكد من التسجيل كحساب تاجر.</value></data>
+  <data name="StoreNotFoundById"><value>المتجر غير موجود.</value></data>
   <data name="UnknownDocumentType"><value>نوع المستند '{0}' غير معروف. الأنواع المتاحة: {1}.</value></data>
   <data name="OwnerEmailRequired"><value>البريد الإلكتروني للمالك مطلوب لربط المستندات بالحساب.</value></data>
   <data name="FileRequired"><value>الملف مطلوب.</value></data>
@@ -60,4 +61,5 @@
   <data name="LoggedOut"><value>تم تسجيل الخروج.</value></data>
   <data name="PasswordReset"><value>تم إعادة تعيين كلمة المرور.</value></data>
   <data name="ForgotPasswordSent"><value>إذا كان البريد الإلكتروني مسجلاً، فسيتم إرسال رابط إعادة التعيين.</value></data>
+  <data name="ListingDeletedSuccessfully"><value>تم حذف المنتج بنجاح.</value></data>
 </root>
