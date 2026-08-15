@@ -39,6 +39,7 @@ public class ApplicationDbContext
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<ProductReport> ProductReports => Set<ProductReport>();
     public DbSet<Donation> Donations => Set<Donation>();
+    public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -397,7 +397,66 @@ public class AdminController : ControllerBase
         var result = await _mediator.Send(new ResolveDisputeCommand(id, AdminId, request.AdminNote), cancellationToken);
         return Ok(ApiResponse<DisputeDto>.Ok(result));
     }
+
+    // ── System Settings ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/system-settings — returns the current platform-wide operational configuration.
+    /// </summary>
+    [HttpGet("system-settings")]
+    public async Task<IActionResult> GetSystemSettings(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetSystemSettingsQuery(), cancellationToken);
+        return Ok(ApiResponse<SystemSettingsDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// POST /admin/system-settings — persist updated platform-wide operational configuration.
+    /// Saves all fields shown on the Platform Admin → System Settings screen.
+    /// </summary>
+    [HttpPost("system-settings")]
+    public async Task<IActionResult> SaveSystemSettings(
+        [FromBody] SaveSystemSettingsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SaveSystemSettingsCommand(
+            AdminId,
+            request.MaxDiscountPerCyclePercent,
+            request.DefaultPriceFloorPolicy,
+            request.NewBusinessDefaultAutomationMode,
+            request.AutoVerifyPartnerStores,
+            request.BulkProductUploadEnabled,
+            request.PlatformCommissionPercent,
+            request.ApiRequestRateLimitPerMinute);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<SystemSettingsDto>.Ok(result));
+    }
 }
 
 public class ProductModerationRequest { public string? Note { get; set; } }
 public class ResolveDisputeRequest { [System.ComponentModel.DataAnnotations.Required] public string AdminNote { get; set; } = null!; }
+
+public class SaveSystemSettingsRequest
+{
+    /// <summary>Hard ceiling on AI auto-discount per cycle. Must be 1–15.</summary>
+    [System.ComponentModel.DataAnnotations.Range(1, 15)]
+    public int MaxDiscountPerCyclePercent { get; set; } = 10;
+
+    /// <summary>DynamicAi | Fixed30Percent | Fixed50Percent</summary>
+    [System.ComponentModel.DataAnnotations.Required]
+    public string DefaultPriceFloorPolicy { get; set; } = "DynamicAi";
+
+    /// <summary>Manual | Assisted | Autonomous</summary>
+    [System.ComponentModel.DataAnnotations.Required]
+    public string NewBusinessDefaultAutomationMode { get; set; } = "Assisted";
+
+    public bool AutoVerifyPartnerStores { get; set; }
+    public bool BulkProductUploadEnabled { get; set; } = true;
+
+    [System.ComponentModel.DataAnnotations.Range(0, 100)]
+    public int PlatformCommissionPercent { get; set; } = 10;
+
+    [System.ComponentModel.DataAnnotations.Range(1, 10000)]
+    public int ApiRequestRateLimitPerMinute { get; set; } = 120;
+}
