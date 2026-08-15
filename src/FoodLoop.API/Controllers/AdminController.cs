@@ -398,6 +398,48 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<DisputeDto>.Ok(result));
     }
 
+    // ── User Notes ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// POST /admin/users/{id}/notes — send an official note or message to a user.
+    /// Non-internal notes are also delivered as a real-time push notification.
+    /// Admins can send multiple notes to the same user.
+    /// Category values: Notice | Warning | Urgent | Internal
+    /// </summary>
+    [HttpPost("users/{id:guid}/notes")]
+    public async Task<IActionResult> SendNoteToUser(
+        Guid id,
+        [FromBody] SendAdminNoteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SendAdminNoteCommand(
+            AdminId,
+            id,
+            request.Category,
+            request.Template,
+            request.Title,
+            request.Body,
+            request.IsInternal);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<AdminNoteDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /admin/users/{id}/notes — retrieve all notes sent to a specific user, newest first.
+    /// </summary>
+    [HttpGet("users/{id:guid}/notes")]
+    public async Task<IActionResult> GetUserNotes(
+        Guid id,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAdminNotesForUserQuery(id, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
+    }
+
     // ── System Settings ───────────────────────────────────────────────────
 
     /// <summary>
@@ -436,6 +478,25 @@ public class AdminController : ControllerBase
 
 public class ProductModerationRequest { public string? Note { get; set; } }
 public class ResolveDisputeRequest { [System.ComponentModel.DataAnnotations.Required] public string AdminNote { get; set; } = null!; }
+
+public class SendAdminNoteRequest
+{
+    /// <summary>Notice | Warning | Urgent | Internal</summary>
+    [System.ComponentModel.DataAnnotations.Required]
+    public string Category { get; set; } = "Notice";
+
+    /// <summary>Optional quick-template label selected from the Quick Templates strip.</summary>
+    public string? Template { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MaxLength(200)]
+    public string Title { get; set; } = null!;
+
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MaxLength(4000)]
+    public string Body { get; set; } = null!;
+
+    /// <summary>When true the note is not delivered to the user — admin record only.</summary>
+    public bool IsInternal { get; set; }
+}
 
 public class SaveSystemSettingsRequest
 {

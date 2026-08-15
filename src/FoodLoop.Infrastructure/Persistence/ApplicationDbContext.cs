@@ -40,6 +40,7 @@ public class ApplicationDbContext
     public DbSet<ProductReport> ProductReports => Set<ProductReport>();
     public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
+    public DbSet<AdminNote> AdminNotes => Set<AdminNote>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
