@@ -198,6 +198,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IRealTimeNotificationService, RealTimeNotificationService>();
         services.AddHttpClient<IOcrService, GeminiOcrService>();
+        services.AddHttpClient<IPaymentService, PaymobService>();
 
         // CQRS: commands/queries live in the Application assembly, handlers live here in
         // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other
