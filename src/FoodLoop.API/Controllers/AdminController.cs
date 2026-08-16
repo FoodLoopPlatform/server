@@ -440,6 +440,36 @@ public class AdminController : ControllerBase
         return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
     }
 
+    /// <summary>
+    /// GET /admin/stores/{id}/notes — retrieve all notes sent to a specific store's owner, newest first.
+    /// </summary>
+    [HttpGet("stores/{id:guid}/notes")]
+    public async Task<IActionResult> GetStoreNotes(
+        Guid id,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAdminNotesForStoreQuery(id, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /admin/charities/{id}/notes — retrieve all notes sent to a specific charity's owner, newest first.
+    /// </summary>
+    [HttpGet("charities/{id:guid}/notes")]
+    public async Task<IActionResult> GetCharityNotes(
+        Guid id,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAdminNotesForCharityQuery(id, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
+    }
+
     // ── System Settings ───────────────────────────────────────────────────
 
     /// <summary>
