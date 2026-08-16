@@ -21,6 +21,7 @@ public interface IApplicationDbContext
     DbSet<Payment> Payments { get; }
     DbSet<Review> Reviews { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<UserDeviceToken> UserDeviceTokens { get; }
     DbSet<SupportTicket> SupportTickets { get; }
     DbSet<TicketMessage> TicketMessages { get; }
     DbSet<AIRecognitionResult> AIRecognitionResults { get; }

@@ -86,6 +86,8 @@ appsettings.Development.local.json
 .env
 .env.*
 !.env.example
+firebase.json
+**/firebase.json
 bin/
 obj/
 *.user
