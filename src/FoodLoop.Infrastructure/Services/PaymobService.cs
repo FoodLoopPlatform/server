@@ -20,6 +20,16 @@ public class PaymobService : IPaymentService
     {
         _httpClient = httpClient;
         _config = config;
+
+        // Add headers to bypass WAF / CloudFront blocking rules
+        if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+        {
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
+        }
+        if (!_httpClient.DefaultRequestHeaders.Contains("Accept"))
+        {
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+        }
     }
 
     public async Task<string> GeneratePaymentTokenAsync(
