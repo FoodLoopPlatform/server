@@ -82,12 +82,21 @@ public class PaymentsController : ControllerBase
 
                 if (Guid.TryParse(merchantOrderIdStr, out var orderId))
                 {
-                    var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+                    var order = await _db.Orders
+                        .Include(o => o.Payment)
+                        .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
                     if (order != null && order.PaymentStatus != PaymentStatus.Paid)
                     {
                         order.PaymentStatus = PaymentStatus.Paid;
                         order.OrderStatus = OrderStatus.Confirmed; // Auto-confirm on payment success
                         order.UpdatedAt = DateTimeOffset.UtcNow;
+
+                        if (order.Payment != null)
+                        {
+                            order.Payment.Status = PaymentStatus.Paid;
+                            order.Payment.TransactionReference = id; // Paymob transaction ID
+                            order.Payment.UpdatedAt = DateTimeOffset.UtcNow;
+                        }
 
                         _db.Orders.Update(order);
                         await _db.SaveChangesAsync(cancellationToken);

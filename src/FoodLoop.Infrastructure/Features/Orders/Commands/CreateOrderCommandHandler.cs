@@ -100,15 +100,15 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
         order.TotalAmount = totalAmount;
 
-        // Auto-simulate payment paid for simplicity in MVP
-        order.PaymentStatus = PaymentStatus.Paid;
+        // Initialize payment as Pending to allow actual Paymob checkouts
+        order.PaymentStatus = PaymentStatus.Pending;
         order.Payment = new Payment
         {
             OrderId = order.Id,
             Amount = totalAmount,
-            Method = "CreditCard",
-            TransactionReference = Guid.NewGuid().ToString(),
-            Status = PaymentStatus.Paid
+            Method = "Paymob",
+            TransactionReference = string.Empty,
+            Status = PaymentStatus.Pending
         };
 
         _db.Orders.Add(order);
