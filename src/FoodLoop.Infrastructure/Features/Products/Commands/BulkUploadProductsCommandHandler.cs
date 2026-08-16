@@ -134,6 +134,18 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
 
             _unitOfWork.Repository<Product>().Add(product);
             resultProducts.Add(product);
+
+            var history = new PriceHistory
+            {
+                ProductId = product.Id,
+                OldOriginalPrice = 0,
+                OldDiscountedPrice = 0,
+                NewOriginalPrice = product.OriginalPrice,
+                NewDiscountedPrice = product.DiscountedPrice,
+                ChangeReason = "CSV import",
+                ChangedBy = command.OwnerId
+            };
+            _unitOfWork.Repository<PriceHistory>().Add(history);
         }
 
         if (!resultProducts.Any())
