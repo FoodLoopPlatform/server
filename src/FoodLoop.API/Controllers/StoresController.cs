@@ -207,6 +207,28 @@ public class StoresController : ControllerBase
     }
 
     /// <summary>
+    /// GET /stores/me/orders/{id} — get details of an order placed to this store.
+    /// </summary>
+    [HttpGet("me/orders/{id:guid}")]
+    public async Task<IActionResult> GetOrderDetail(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetOrderDetailQuery(id, OwnerId);
+        var order = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<OrderDto>.Ok(order));
+    }
+
+    /// <summary>
+    /// GET /stores/me/orders/{id}/tracking — get tracking and progress steps of an order.
+    /// </summary>
+    [HttpGet("me/orders/{id:guid}/tracking")]
+    public async Task<IActionResult> GetOrderTracking(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetOrderTrackingQuery(id, OwnerId);
+        var tracking = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<OrderTrackingDto>.Ok(tracking));
+    }
+
+    /// <summary>
     /// GET /stores/me/analytics — retrieve store-level analytics/metrics for the insights dashboard.
     /// Query param: period = today | week | month | all (default: all)
     /// </summary>
