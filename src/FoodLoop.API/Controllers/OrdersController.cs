@@ -54,6 +54,17 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// POST /orders/{id}/paymob-checkout — generate a Paymob payment session key and iframe URL for this order.
+    /// </summary>
+    [HttpPost("{id:guid}/paymob-checkout")]
+    public async Task<IActionResult> GetPaymobCheckout(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new CheckoutOrderCommand(id, UserId);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<CheckoutSessionDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /orders — get customer's order history.
     /// </summary>
     [HttpGet]
