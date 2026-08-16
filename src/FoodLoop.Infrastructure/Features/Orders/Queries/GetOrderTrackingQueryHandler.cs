@@ -25,8 +25,19 @@ public class GetOrderTrackingQueryHandler : IRequestHandler<GetOrderTrackingQuer
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
                     .ThenInclude(p => p!.Organization)
-            .FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == request.UserId, cancellationToken)
+            .FirstOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken)
             ?? throw new NotFoundException("Order", request.OrderId);
+
+        // Access check: Only the consumer who placed the order or the merchant owning items in the order can retrieve it
+        var org = await _db.Organizations.FirstOrDefaultAsync(o => o.OwnerId == request.UserId && !o.IsDeleted, cancellationToken);
+
+        var isOwner = order.UserId == request.UserId;
+        var isMerchantOfOrder = org != null && order.Items.Any(i => i.Product!.OrganizationId == org.Id);
+
+        if (!isOwner && !isMerchantOfOrder)
+        {
+            throw new UnauthorizedAccessException("You are not authorized to view this order.");
+        }
 
         var storeName = order.Items.FirstOrDefault()?.Product?.Organization?.Name ?? "Store";
         var storeLogo = order.Items.FirstOrDefault()?.Product?.Organization?.Logo;
