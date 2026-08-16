@@ -36,6 +36,7 @@ public class GetStoreAnalyticsQueryHandler : IRequestHandler<GetStoreAnalyticsQu
             _       => null   // "all" or unrecognised — no date filter
         };
 
+        // 1. Fetch Orders for store
         var ordersQuery = _db.Orders
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
@@ -47,16 +48,75 @@ public class GetStoreAnalyticsQueryHandler : IRequestHandler<GetStoreAnalyticsQu
         var orders = await ordersQuery.ToListAsync(cancellationToken);
 
         // Only completed / paid orders contribute to revenue and savings
-        var completedItems = orders
+        var completedOrders = orders
             .Where(o => o.OrderStatus == OrderStatus.Completed || o.PaymentStatus == PaymentStatus.Paid)
+            .ToList();
+
+        var completedItems = completedOrders
             .SelectMany(o => o.Items)
             .Where(i => i.Product!.OrganizationId == org.Id)
             .ToList();
 
-        var revenue      = completedItems.Sum(i => i.Quantity * i.UnitPrice);
-        var ordersCount  = orders.Count(o => o.OrderStatus == OrderStatus.Completed || o.PaymentStatus == PaymentStatus.Paid);
+        var revenue = completedItems.Sum(i => i.Quantity * i.UnitPrice);
+        var ordersCount = completedOrders.Count;
         var savingsImpact = completedItems.Sum(i => i.Quantity * (i.Product!.OriginalPrice - i.UnitPrice));
 
+        var averageOrderValue = ordersCount > 0 ? revenue / ordersCount : 0.00m;
+
+        // 2. Fetch Refunds for store orders in this period
+        var orderIds = orders.Select(o => o.Id.ToString()).ToList();
+        var refundQuery = _db.WalletTransactions
+            .AsNoTracking()
+            .Where(t => t.Type == "Refund" && t.ReferenceId != null && orderIds.Contains(t.ReferenceId));
+
+        if (since.HasValue)
+            refundQuery = refundQuery.Where(t => t.CreatedAt >= since.Value);
+
+        var refundedAmount = await refundQuery.SumAsync(t => t.Amount, cancellationToken);
+
+        // 3. Fetch Donations for store in this period
+        var donationsQuery = _db.Donations
+            .Include(d => d.Product)
+            .Where(d => d.DonorOrganizationId == org.Id);
+
+        if (since.HasValue)
+            donationsQuery = donationsQuery.Where(d => d.CreatedAt >= since.Value);
+
+        var donations = await donationsQuery.ToListAsync(cancellationToken);
+        var donatedValue = donations.Sum(d => d.Quantity * (d.Product?.DiscountedPrice ?? d.Product?.OriginalPrice ?? 0.00m));
+
+        // 4. Order status breakdown
+        var pendingCount = orders.Count(o => o.OrderStatus == OrderStatus.Pending);
+        var confirmedCount = orders.Count(o => o.OrderStatus == OrderStatus.Confirmed);
+        var preparingCount = orders.Count(o => o.OrderStatus == OrderStatus.Preparing);
+        var readyForPickupCount = orders.Count(o => o.OrderStatus == OrderStatus.ReadyForPickup);
+        var completedCount = orders.Count(o => o.OrderStatus == OrderStatus.Completed);
+        var cancelledCount = orders.Count(o => o.OrderStatus == OrderStatus.Cancelled);
+
+        // 5. Products snapshot (always current snapshot)
+        var totalProducts = await _db.Products.CountAsync(p => p.OrganizationId == org.Id && !p.IsDeleted, cancellationToken);
+        var outOfStockProducts = await _db.Products.CountAsync(p => p.OrganizationId == org.Id && !p.IsDeleted && p.QuantityAvailable == 0, cancellationToken);
+        
+        var todayDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var threeDaysFromNow = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3));
+        var expiringSoonProducts = await _db.Products.CountAsync(
+            p => p.OrganizationId == org.Id && !p.IsDeleted && p.ExpirationDate >= todayDate && p.ExpirationDate <= threeDaysFromNow, 
+            cancellationToken);
+
+        // 6. Disputes
+        var disputesQuery = _db.ProductReports
+            .Include(r => r.Product)
+            .Where(r => r.Product!.OrganizationId == org.Id);
+
+        if (since.HasValue)
+            disputesQuery = disputesQuery.Where(r => r.CreatedAt >= since.Value);
+
+        var disputes = await disputesQuery.ToListAsync(cancellationToken);
+        var totalDisputes = disputes.Count;
+        var unresolvedDisputes = disputes.Count(r => !r.IsResolved);
+        var resolvedDisputes = disputes.Count(r => r.IsResolved);
+
+        // 7. Top products
         var topProducts = completedItems
             .GroupBy(i => new { i.ProductId, i.Product!.Title })
             .Select(g => new TopProductDto
@@ -72,11 +132,31 @@ public class GetStoreAnalyticsQueryHandler : IRequestHandler<GetStoreAnalyticsQu
 
         return new StoreAnalyticsDto
         {
-            Period       = request.Period ?? "all",
-            Revenue      = revenue,
-            OrdersCount  = ordersCount,
+            Period = request.Period ?? "all",
+            Revenue = revenue,
+            OrdersCount = ordersCount,
             SavingsImpact = savingsImpact,
-            TopProducts  = topProducts
+            
+            AverageOrderValue = averageOrderValue,
+            RefundedAmount = refundedAmount,
+            DonatedValue = donatedValue,
+
+            PendingOrdersCount = pendingCount,
+            ConfirmedOrdersCount = confirmedCount,
+            PreparingOrdersCount = preparingCount,
+            ReadyForPickupOrdersCount = readyForPickupCount,
+            CompletedOrdersCount = completedCount,
+            CancelledOrdersCount = cancelledCount,
+
+            TotalProductsCount = totalProducts,
+            OutOfStockProductsCount = outOfStockProducts,
+            ExpiringSoonProductsCount = expiringSoonProducts,
+
+            TotalDisputesCount = totalDisputes,
+            UnresolvedDisputesCount = unresolvedDisputes,
+            ResolvedDisputesCount = resolvedDisputes,
+
+            TopProducts = topProducts
         };
     }
 }
