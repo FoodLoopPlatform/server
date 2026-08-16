@@ -7,7 +7,7 @@ public class PaymobOptions
     public const string SectionName = "Paymob";
 
     [Required]
-    public string BaseUrl { get; set; } = "https://accept-alpha.paymob.com";
+    public string BaseUrl { get; set; } = "https://accept.paymob.com";
 
     [Required]
     public string ApiKey { get; set; } = string.Empty;
