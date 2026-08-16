@@ -207,6 +207,20 @@ public class StoresController : ControllerBase
     }
 
     /// <summary>
+    /// POST /stores/me/orders/{id}/refund — issue a full or partial refund to the customer's wallet.
+    /// </summary>
+    [HttpPost("me/orders/{id:guid}/refund")]
+    public async Task<IActionResult> RefundOrder(
+        Guid id,
+        [FromBody] RefundOrderRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new RefundOrderCommand(id, OwnerId, request.Amount, request.Reason);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<OrderDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /stores/me/orders/{id} — get details of an order placed to this store.
     /// </summary>
     [HttpGet("me/orders/{id:guid}")]
@@ -406,5 +420,13 @@ public class ResolveStoreDisputeRequest
     [Required]
     public string MerchantNote { get; set; } = null!;
     public decimal RefundAmount { get; set; } = 0.00m;
+}
+
+public class RefundOrderRequest
+{
+    [Required, Range(0.01, 100000.00)]
+    public decimal Amount { get; set; }
+    [Required]
+    public string Reason { get; set; } = null!;
 }
 
