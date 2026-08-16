@@ -64,11 +64,10 @@ public class CheckoutOrderCommandHandler : IRequestHandler<CheckoutOrderCommand,
             user.PhoneNumber ?? "+201000000000",
             cancellationToken);
 
-        // 6. Build direct iframe checkout link
-        // Default test iframe ID is 1069687 as verified from screenshots
-        var iframeId = _config["Paymob:IframeId"] ?? "1069687";
+        // 6. Build direct Unified Checkout redirection link
+        var publicKey = _config["Paymob:PublicKey"] ?? string.Empty;
         var baseUrl = _config["Paymob:BaseUrl"] ?? "https://accept-alpha.paymob.com";
-        var checkoutUrl = $"{baseUrl}/api/acceptance/iframes/{iframeId}?payment_token={paymentToken}";
+        var checkoutUrl = $"{baseUrl}/unifiedcheckout/?publicKey={publicKey}&clientSecret={paymentToken}";
 
         return new CheckoutSessionDto
         {

@@ -55,43 +55,16 @@ public class PaymobService : IPaymentService
         }
 
         var baseUrl = _options.BaseUrl;
-
-        // Step 1: Authenticate
-        var authResponse = await _httpClient.PostAsJsonAsync($"{baseUrl}/api/auth/tokens", new { api_key = apiKey }, cancellationToken);
-        if (!authResponse.IsSuccessStatusCode)
-        {
-            var err = await authResponse.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"Paymob Auth failed: {err}");
-        }
-        var authResult = await authResponse.Content.ReadFromJsonAsync<PaymobAuthResponse>(cancellationToken: cancellationToken);
-        var token = authResult?.token ?? throw new InvalidOperationException("Paymob did not return auth token.");
-
-        // Step 2: Register Order
         var amountCents = (int)(amount * 100);
-        var orderResponse = await _httpClient.PostAsJsonAsync($"{baseUrl}/api/ecommerce/orders", new
+
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/api/v1/intention");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", apiKey);
+
+        var payload = new
         {
-            auth_token = token,
-            delivery_needed = "false",
-            amount_cents = amountCents,
+            amount = amountCents,
             currency = "EGP",
-            items = Array.Empty<object>()
-        }, cancellationToken);
-
-        if (!orderResponse.IsSuccessStatusCode)
-        {
-            var err = await orderResponse.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"Paymob Order registration failed: {err}");
-        }
-        var orderResult = await orderResponse.Content.ReadFromJsonAsync<PaymobOrderResponse>(cancellationToken: cancellationToken);
-        var paymobOrderId = orderResult?.id ?? throw new InvalidOperationException("Paymob did not return order ID.");
-
-        // Step 3: Payment Key Generation
-        var paymentKeyResponse = await _httpClient.PostAsJsonAsync($"{baseUrl}/api/acceptance/payment_keys", new
-        {
-            auth_token = token,
-            amount_cents = amountCents,
-            expiration = 3600, // 1 hour
-            order_id = paymobOrderId.ToString(),
+            payment_methods = new[] { integrationId },
             billing_data = new
             {
                 apartment = "NA",
@@ -108,20 +81,24 @@ public class PaymobService : IPaymentService
                 email = string.IsNullOrWhiteSpace(email) ? "customer@foodloop.com" : email,
                 phone_number = string.IsNullOrWhiteSpace(phoneNumber) ? "+201000000000" : phoneNumber
             },
-            currency = "EGP",
-            integration_id = integrationId,
-            lock_order_when_paid = "true"
-        }, cancellationToken);
+            extras = new
+            {
+                merchant_order_id = orderId.ToString()
+            }
+        };
 
-        if (!paymentKeyResponse.IsSuccessStatusCode)
+        request.Content = JsonContent.Create(payload);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
         {
-            var err = await paymentKeyResponse.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException($"Paymob Payment key generation failed: {err}");
+            var err = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"Paymob Intention API failed: {err}");
         }
-        var paymentKeyResult = await paymentKeyResponse.Content.ReadFromJsonAsync<PaymobPaymentKeyResponse>(cancellationToken: cancellationToken);
-        return paymentKeyResult?.token ?? throw new InvalidOperationException("Paymob did not return payment token.");
-    }
 
+        var result = await response.Content.ReadFromJsonAsync<PaymobIntentionResponse>(cancellationToken: cancellationToken);
+        return result?.client_secret ?? throw new InvalidOperationException("Paymob did not return client_secret.");
+    }
     public bool VerifyHmac(string payload, string hmacReceived)
     {
         var hmacSecret = _options.HmacSecret;
@@ -141,17 +118,7 @@ public class PaymobService : IPaymentService
     }
 }
 
-public class PaymobAuthResponse
+public class PaymobIntentionResponse
 {
-    public string token { get; set; } = string.Empty;
-}
-
-public class PaymobOrderResponse
-{
-    public long id { get; set; }
-}
-
-public class PaymobPaymentKeyResponse
-{
-    public string token { get; set; } = string.Empty;
+    public string client_secret { get; set; } = string.Empty;
 }

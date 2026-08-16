@@ -19,5 +19,8 @@ public class PaymobOptions
     public string IframeId { get; set; } = string.Empty;
 
     [Required]
+    public string PublicKey { get; set; } = string.Empty;
+
+    [Required]
     public string HmacSecret { get; set; } = string.Empty;
 }
