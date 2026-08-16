@@ -47,5 +47,11 @@ public class OrganizationRepository : Repository<Organization>, IOrganizationRep
         await DbSet
             .Include(s => s.Verifications)
             .FirstOrDefaultAsync(s => s.Id == organizationId && !s.IsDeleted, cancellationToken);
+
+    public async Task<Organization?> GetByIdWithReviewsAsync(
+        Guid organizationId, CancellationToken cancellationToken = default) =>
+        await DbSet
+            .Include(s => s.Reviews)
+            .FirstOrDefaultAsync(s => s.Id == organizationId && !s.IsDeleted, cancellationToken);
 }
 

@@ -272,6 +272,24 @@ public class StoresController : ControllerBase
         var result = await _mediator.Send(new GetStoreDisputesQuery(OwnerId, pageNumber, pageSize, isResolved), cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<DisputeDto>>.Ok(result));
     }
+
+    /// <summary>
+    /// GET /stores/{id} — public store profile endpoint.
+    /// Returns store details, location, reputation, and recent customer reviews.
+    /// Used by the Store Profile screen on the mobile app.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetStoreProfile(
+        Guid id,
+        [FromQuery] int reviewsPageNumber = 1,
+        [FromQuery] int reviewsPageSize = 5,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetStoreProfileQuery(id, reviewsPageNumber, reviewsPageSize);
+        var storeProfile = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<StoreProfileDto>.Ok(storeProfile));
+    }
 }
 
 public class UploadStoreDocumentRequest

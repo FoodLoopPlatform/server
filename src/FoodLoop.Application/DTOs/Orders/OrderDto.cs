@@ -13,6 +13,14 @@ public class OrderDto
     public string OrderStatus { get; set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// The organization (store) that fulfils this order.
+    /// Derived from the first distinct OrganizationId across all order items.
+    /// Null only if the order has no items.
+    /// </summary>
+    public Guid? StoreId { get; set; }
+
     public IReadOnlyList<OrderItemDto> Items { get; set; } = Array.Empty<OrderItemDto>();
 }
 
@@ -22,4 +30,7 @@ public class OrderItemDto
     public string ProductTitle { get; set; } = string.Empty;
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+
+    /// <summary>Organization (store) that owns this product.</summary>
+    public Guid StoreId { get; set; }
 }

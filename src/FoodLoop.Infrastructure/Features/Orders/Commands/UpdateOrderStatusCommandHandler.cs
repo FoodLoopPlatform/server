@@ -113,12 +113,14 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             PaymentStatus = order.PaymentStatus.ToString(),
             CreatedAt = order.CreatedAt,
             UpdatedAt = order.UpdatedAt,
+            StoreId = order.Items.Select(i => i.Product?.OrganizationId).FirstOrDefault(id => id.HasValue),
             Items = order.Items.Select(i => new OrderItemDto
             {
                 ProductId = i.ProductId,
                 ProductTitle = i.Product?.Title ?? string.Empty,
                 Quantity = i.Quantity,
-                UnitPrice = i.UnitPrice
+                UnitPrice = i.UnitPrice,
+                StoreId = i.Product?.OrganizationId ?? Guid.Empty
             }).ToList()
         });
     }

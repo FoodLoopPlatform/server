@@ -140,6 +140,29 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
+    /// GET /admin/activity-logs/admin-actions — paginated feed of actions performed by admin users.
+    /// Covers: DocumentVerified, UserStatusUpdated, DisputeResolved,
+    ///         ProductModerated, ReviewModerated, SupportTicketClosed.
+    /// Supports filtering by adminUserId, eventType, dateFrom, dateTo, and free-text searchTerm.
+    /// </summary>
+    [HttpGet("activity-logs/admin-actions")]
+    public async Task<IActionResult> GetAdminActivityLogs(
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? eventType = null,
+        [FromQuery] Guid? adminUserId = null,
+        [FromQuery] DateTimeOffset? dateFrom = null,
+        [FromQuery] DateTimeOffset? dateTo = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAdminActivityLogsQuery(
+            searchTerm, eventType, adminUserId, dateFrom, dateTo, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<AdminActivityLogsResultDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /admin/activity-logs — global platform-wide activity and audit log feed with search & filtering.
     /// </summary>
     [HttpGet("activity-logs")]
@@ -384,7 +407,127 @@ public class AdminController : ControllerBase
         var result = await _mediator.Send(new ResolveDisputeCommand(id, AdminId, request.AdminNote), cancellationToken);
         return Ok(ApiResponse<DisputeDto>.Ok(result));
     }
+
+    // ── User Notes ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// POST /admin/users/{id}/notes — send an official note or message to a user.
+    /// Non-internal notes are also delivered as a real-time push notification.
+    /// Admins can send multiple notes to the same user.
+    /// Category values: Notice | Warning | Urgent | Internal
+    /// </summary>
+    [HttpPost("users/{id:guid}/notes")]
+    public async Task<IActionResult> SendNoteToUser(
+        Guid id,
+        [FromBody] SendAdminNoteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SendAdminNoteCommand(
+            AdminId,
+            id,
+            request.Category,
+            request.Template,
+            request.Title,
+            request.Body,
+            request.IsInternal);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<AdminNoteDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /admin/users/{id}/notes — retrieve all notes sent to a specific user, newest first.
+    /// </summary>
+    [HttpGet("users/{id:guid}/notes")]
+    public async Task<IActionResult> GetUserNotes(
+        Guid id,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAdminNotesForUserQuery(id, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
+    }
+
+    // ── System Settings ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /admin/system-settings — returns the current platform-wide operational configuration.
+    /// </summary>
+    [HttpGet("system-settings")]
+    public async Task<IActionResult> GetSystemSettings(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetSystemSettingsQuery(), cancellationToken);
+        return Ok(ApiResponse<SystemSettingsDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// POST /admin/system-settings — persist updated platform-wide operational configuration.
+    /// Saves all fields shown on the Platform Admin → System Settings screen.
+    /// </summary>
+    [HttpPost("system-settings")]
+    public async Task<IActionResult> SaveSystemSettings(
+        [FromBody] SaveSystemSettingsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SaveSystemSettingsCommand(
+            AdminId,
+            request.MaxDiscountPerCyclePercent,
+            request.DefaultPriceFloorPolicy,
+            request.NewBusinessDefaultAutomationMode,
+            request.AutoVerifyPartnerStores,
+            request.BulkProductUploadEnabled,
+            request.PlatformCommissionPercent,
+            request.ApiRequestRateLimitPerMinute);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<SystemSettingsDto>.Ok(result));
+    }
 }
 
 public class ProductModerationRequest { public string? Note { get; set; } }
 public class ResolveDisputeRequest { [System.ComponentModel.DataAnnotations.Required] public string AdminNote { get; set; } = null!; }
+
+public class SendAdminNoteRequest
+{
+    /// <summary>Notice | Warning | Urgent | Internal</summary>
+    [System.ComponentModel.DataAnnotations.Required]
+    public string Category { get; set; } = "Notice";
+
+    /// <summary>Optional quick-template label selected from the Quick Templates strip.</summary>
+    public string? Template { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MaxLength(200)]
+    public string Title { get; set; } = null!;
+
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.MaxLength(4000)]
+    public string Body { get; set; } = null!;
+
+    /// <summary>When true the note is not delivered to the user — admin record only.</summary>
+    public bool IsInternal { get; set; }
+}
+
+public class SaveSystemSettingsRequest
+{
+    /// <summary>Hard ceiling on AI auto-discount per cycle. Must be 1–15.</summary>
+    [System.ComponentModel.DataAnnotations.Range(1, 15)]
+    public int MaxDiscountPerCyclePercent { get; set; } = 10;
+
+    /// <summary>DynamicAi | Fixed30Percent | Fixed50Percent</summary>
+    [System.ComponentModel.DataAnnotations.Required]
+    public string DefaultPriceFloorPolicy { get; set; } = "DynamicAi";
+
+    /// <summary>Manual | Assisted | Autonomous</summary>
+    [System.ComponentModel.DataAnnotations.Required]
+    public string NewBusinessDefaultAutomationMode { get; set; } = "Assisted";
+
+    public bool AutoVerifyPartnerStores { get; set; }
+    public bool BulkProductUploadEnabled { get; set; } = true;
+
+    [System.ComponentModel.DataAnnotations.Range(0, 100)]
+    public int PlatformCommissionPercent { get; set; } = 10;
+
+    [System.ComponentModel.DataAnnotations.Range(1, 10000)]
+    public int ApiRequestRateLimitPerMinute { get; set; } = 120;
+}

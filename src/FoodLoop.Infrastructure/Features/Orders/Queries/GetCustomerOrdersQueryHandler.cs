@@ -42,12 +42,14 @@ public class GetCustomerOrdersQueryHandler : IRequestHandler<GetCustomerOrdersQu
             PaymentStatus = o.PaymentStatus.ToString(),
             CreatedAt = o.CreatedAt,
             UpdatedAt = o.UpdatedAt,
+            StoreId = o.Items.Select(i => i.Product?.OrganizationId).FirstOrDefault(id => id.HasValue),
             Items = o.Items.Select(i => new OrderItemDto
             {
                 ProductId = i.ProductId,
                 ProductTitle = i.Product?.Title ?? string.Empty,
                 Quantity = i.Quantity,
-                UnitPrice = i.UnitPrice
+                UnitPrice = i.UnitPrice,
+                StoreId = i.Product?.OrganizationId ?? Guid.Empty
             }).ToList()
         }).ToList();
     }

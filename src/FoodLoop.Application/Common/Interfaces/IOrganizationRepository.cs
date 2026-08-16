@@ -19,5 +19,8 @@ public interface IOrganizationRepository : IRepository<Organization>
 
     /// <summary>A single organization by its own id, with verifications loaded â€” for admin review.</summary>
     Task<Organization?> GetByIdWithVerificationsAsync(Guid organizationId, CancellationToken cancellationToken = default);
+
+    /// <summary>A single organization by id with reviews loaded â€" for public store profile.</summary>
+    Task<Organization?> GetByIdWithReviewsAsync(Guid organizationId, CancellationToken cancellationToken = default);
 }
 

@@ -35,6 +35,7 @@
   <!-- Store -->
   <data name="StoreNotFound"><value>No store was found for this account. Business accounts get a draft store automatically at registration.</value></data>
   <data name="StoreNotFoundByEmail"><value>No store was found for the provided email. Make sure you registered as a Merchant account.</value></data>
+  <data name="StoreNotFoundById"><value>Store not found.</value></data>
   <data name="UnknownDocumentType"><value>Unknown document type '{0}'. Expected one of: {1}.</value></data>
   <data name="OwnerEmailRequired"><value>The owner email is required to link documents to an account.</value></data>
   <data name="FileRequired"><value>A file is required.</value></data>
