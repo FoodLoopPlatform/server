@@ -1,5 +1,6 @@
 using FoodLoop.Application.Common.Interfaces;
-using Microsoft.Extensions.Configuration;
+using FoodLoop.Infrastructure.Options;
+using Microsoft.Extensions.Options;
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -14,12 +15,12 @@ namespace FoodLoop.Infrastructure.Services;
 public class PaymobService : IPaymentService
 {
     private readonly HttpClient _httpClient;
-    private readonly IConfiguration _config;
+    private readonly PaymobOptions _options;
 
-    public PaymobService(HttpClient httpClient, IConfiguration config)
+    public PaymobService(HttpClient httpClient, IOptions<PaymobOptions> options)
     {
         _httpClient = httpClient;
-        _config = config;
+        _options = options.Value;
 
         // Add headers to bypass WAF / CloudFront blocking rules
         if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
@@ -41,15 +42,19 @@ public class PaymobService : IPaymentService
         string phoneNumber, 
         CancellationToken cancellationToken = default)
     {
-        var apiKey = _config["Paymob:ApiKey"] ?? throw new InvalidOperationException("Paymob API Key is not configured.");
-        var integrationIdStr = _config["Paymob:IntegrationId"] ?? throw new InvalidOperationException("Paymob Integration ID is not configured.");
-        if (!int.TryParse(integrationIdStr, out var integrationId))
+        var apiKey = _options.ApiKey;
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            throw new InvalidOperationException("Paymob API Key is not configured.");
+        }
+
+        var integrationIdStr = _options.IntegrationId;
+        if (string.IsNullOrEmpty(integrationIdStr) || !int.TryParse(integrationIdStr, out var integrationId))
         {
             throw new InvalidOperationException("Paymob Integration ID must be a valid integer.");
         }
 
-        // Base URL: Use accept-alpha.paymob.com for sandbox/test environment
-        var baseUrl = _config["Paymob:BaseUrl"] ?? "https://accept-alpha.paymob.com";
+        var baseUrl = _options.BaseUrl;
 
         // Step 1: Authenticate
         var authResponse = await _httpClient.PostAsJsonAsync($"{baseUrl}/api/auth/tokens", new { api_key = apiKey }, cancellationToken);
@@ -119,7 +124,7 @@ public class PaymobService : IPaymentService
 
     public bool VerifyHmac(string payload, string hmacReceived)
     {
-        var hmacSecret = _config["Paymob:HmacSecret"];
+        var hmacSecret = _options.HmacSecret;
         if (string.IsNullOrEmpty(hmacSecret))
         {
             return true; // If not configured, skip for local development (log a warning in real apps)

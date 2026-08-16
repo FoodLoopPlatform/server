@@ -58,6 +58,11 @@ public static class InfrastructureServiceRegistration
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateDataAnnotations();
 
+        // Paymob Options
+        services.AddOptions<PaymobOptions>()
+            .Bind(configuration.GetSection(PaymobOptions.SectionName))
+            .ValidateDataAnnotations();
+
         // AddJwtBearer's options delegate below runs outside DI, so we still need a plain
         // instance here to build TokenValidationParameters; the AddOptions<> above is what
         // makes JwtOptions validated + injectable everywhere else (e.g. JwtTokenService).
