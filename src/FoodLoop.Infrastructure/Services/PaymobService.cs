@@ -58,7 +58,7 @@ public class PaymobService : IPaymentService
         var amountCents = (int)(amount * 100);
 
         var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1/intention");
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", apiKey);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
         var payload = new
         {
