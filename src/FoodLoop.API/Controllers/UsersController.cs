@@ -11,6 +11,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using FoodLoop.Application.Features.Admin.Queries;
+
 namespace FoodLoop.API.Controllers;
 
 [ApiController]
@@ -37,6 +39,18 @@ public class UsersController : ControllerBase
     {
         var user = await _mediator.Send(new GetCurrentUserQuery(UserId), cancellationToken);
         return Ok(ApiResponse<UserDto>.Ok(user));
+    }
+
+    /// <summary>GET /users/me/notes — retrieve all notes sent to the current customer/user.</summary>
+    [HttpGet("me/notes")]
+    public async Task<IActionResult> GetMyNotes(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetMyNotesQuery(UserId, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
     }
 
     /// <summary>PATCH /users/me — updates profile information (name, picture, language).</summary>

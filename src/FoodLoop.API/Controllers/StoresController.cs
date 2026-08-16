@@ -15,13 +15,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
+using FoodLoop.Application.Features.Admin.Queries;
+
 namespace FoodLoop.API.Controllers;
 
 /// <summary>
-/// Backs the business onboarding wizard: business_signup_step_1 (registration, see
-/// AuthController) â†’ business_verification_location (step 2 location, below) â†’
-/// document_upload_step_2 (step 2 documents, below) â†’ verification_pending_step_3
-/// (status, below). Full Organization CRUD (browsing, editing a live organization, etc.) ships in Sprint 2
+/// AuthController) — business_verification_location (step 2 location, below) —
+/// document_upload_step_2 (step 2 documents, below) — verification_pending_step_3
+/// (status, below). Full Organization CRUD (browsing, editing a live organization, etc.) ships in Sprint 2 —
 /// only the merchant's own draft organization is exposed here.
 /// </summary>
 [ApiController]
@@ -42,7 +43,7 @@ public class StoresController : ControllerBase
 
     private Guid OwnerId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-    /// <summary>GET /organizations/me the caller's own organization, its location, and uploaded documents.
+    /// <summary>GET /organizations/me — the caller's own organization, its location, and uploaded documents.
     /// Used to re-enter the wizard at the right step, and by verification_pending_step_3 to
     /// show current status.</summary>
     [HttpGet("me")]
@@ -50,6 +51,18 @@ public class StoresController : ControllerBase
     {
         var organization = await _mediator.Send(new GetMyOrganizationQuery(OwnerId), cancellationToken);
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
+    }
+
+    /// <summary>GET /stores/me/notes — retrieve all notes sent to the current store owner.</summary>
+    [HttpGet("me/notes")]
+    public async Task<IActionResult> GetMyNotes(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetMyNotesQuery(OwnerId, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
     }
 
     /// <summary>PATCH /organizations/me — updates the organization's name, description, category, logo, and cover photo (Form Data).</summary>

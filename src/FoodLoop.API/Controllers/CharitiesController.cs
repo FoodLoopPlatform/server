@@ -1,9 +1,11 @@
-﻿using FoodLoop.API.Common;
+using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Common.Models;
 using FoodLoop.Application.DTOs.Organizations;
 using FoodLoop.Application.Features.Organizations.Commands;
 using FoodLoop.Application.Features.Organizations.Queries;
+using FoodLoop.Application.DTOs.Admin;
+using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -69,6 +71,21 @@ public class CharitiesController : ControllerBase
 
         var organization = await _mediator.Send(new UploadOrganizationDocumentCommand(request.Email, request.Type, uploadRequest), cancellationToken);
         return Ok(ApiResponse<OrganizationDto>.Ok(organization));
+    }
+
+    /// <summary>GET /charities/me/notes — retrieve all notes sent to the current charity coordinator.</summary>
+    [HttpGet("me/notes")]
+    [Authorize(Roles = AppRole.Charity)]
+    public async Task<IActionResult> GetMyNotes(
+        [FromServices] ICurrentUserService currentUser,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = currentUser.UserId ?? throw new UnauthorizedAccessException();
+        var query = new GetMyNotesQuery(userId, pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
     }
 }
 
