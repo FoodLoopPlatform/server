@@ -6,6 +6,8 @@ using FoodLoop.Application.Features.Organizations.Commands;
 using FoodLoop.Application.Features.Organizations.Queries;
 using FoodLoop.Application.DTOs.Admin;
 using FoodLoop.Application.Features.Admin.Queries;
+using FoodLoop.Application.DTOs.Users;
+using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -86,6 +88,19 @@ public class CharitiesController : ControllerBase
         var query = new GetMyNotesQuery(userId, pageNumber, pageSize);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
+    }
+
+    /// <summary>GET /charities/me/wallet — retrieve current charity's wallet balance and transactions.</summary>
+    [HttpGet("me/wallet")]
+    [Authorize(Roles = AppRole.Charity)]
+    public async Task<IActionResult> GetMyWallet(
+        [FromServices] ICurrentUserService currentUser,
+        CancellationToken cancellationToken = default)
+    {
+        var userId = currentUser.UserId ?? throw new UnauthorizedAccessException();
+        var query = new GetUserWalletQuery(userId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<UserWalletDto>.Ok(result));
     }
 }
 
