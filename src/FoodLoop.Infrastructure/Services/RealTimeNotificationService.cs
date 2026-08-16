@@ -14,11 +14,16 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 {
     private readonly ApplicationDbContext _db;
     private readonly IHubContext<NotificationHub, INotificationHubClient> _hubContext;
+    private readonly IFirebasePushNotificationService _firebasePushNotificationService;
 
-    public RealTimeNotificationService(ApplicationDbContext db, IHubContext<NotificationHub, INotificationHubClient> hubContext)
+    public RealTimeNotificationService(
+        ApplicationDbContext db,
+        IHubContext<NotificationHub, INotificationHubClient> hubContext,
+        IFirebasePushNotificationService firebasePushNotificationService)
     {
         _db = db;
         _hubContext = hubContext;
+        _firebasePushNotificationService = firebasePushNotificationService;
     }
 
     public async Task SendNotificationToUserAsync(
@@ -50,7 +55,10 @@ public class RealTimeNotificationService : IRealTimeNotificationService
             CreatedAt = notification.CreatedAt
         };
 
-        // Push real-time SignalR message to the specific user connection group
+        // Push real-time SignalR message to the specific user connection group.
         await _hubContext.Clients.User(userId.ToString()).ReceiveNotification(dto);
+
+        // Best-practice hybrid delivery: web via SignalR, mobile via Firebase push.
+        await _firebasePushNotificationService.SendToUserAsync(userId, title, body, type, cancellationToken);
     }
 }

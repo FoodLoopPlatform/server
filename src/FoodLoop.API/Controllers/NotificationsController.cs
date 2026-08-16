@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,5 +69,28 @@ public class NotificationsController : ControllerBase
             return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to mark all read"));
         }
         return NoContent();
+    }
+
+    /// <summary>
+    /// POST /notifications/device-token — register a mobile device token for Firebase push notifications.
+    /// </summary>
+    [HttpPost("device-token")]
+    public async Task<IActionResult> RegisterDeviceToken([FromBody] RegisterDeviceTokenRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return BadRequest(ApiResponse.Fail("Device token is required."));
+        }
+
+        await _mediator.Send(new RegisterDeviceTokenCommand(UserId, request.Token, request.Platform ?? "Mobile"), cancellationToken);
+        return Ok(ApiResponse<object?>.Ok(new { success = true }));
+    }
+
+    public sealed class RegisterDeviceTokenRequest
+    {
+        [Required]
+        public string Token { get; set; } = string.Empty;
+
+        public string? Platform { get; set; }
     }
 }
