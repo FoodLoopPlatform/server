@@ -21,8 +21,8 @@ public static class InfrastructureServiceRegistration
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, string webRootPath)
     {
-        var resolvedWebRoot = string.IsNullOrEmpty(webRootPath) 
-            ? Path.Combine(AppContext.BaseDirectory, "wwwroot") 
+        var resolvedWebRoot = string.IsNullOrEmpty(webRootPath)
+            ? Path.Combine(AppContext.BaseDirectory, "wwwroot")
             : webRootPath;
 
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -62,6 +62,10 @@ public static class InfrastructureServiceRegistration
         services.AddOptions<PaymobOptions>()
             .Bind(configuration.GetSection(PaymobOptions.SectionName))
             .ValidateDataAnnotations();
+
+        // Firebase Options
+        services.AddOptions<FirebaseOptions>()
+            .Bind(configuration.GetSection(FirebaseOptions.SectionName));
 
         // AddJwtBearer's options delegate below runs outside DI, so we still need a plain
         // instance here to build TokenValidationParameters; the AddOptions<> above is what
@@ -109,7 +113,7 @@ public static class InfrastructureServiceRegistration
         // Application service abstractions backed by Infrastructure implementations.
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        
+
         // Bind SMTP options using the ASP.NET Core Options Pattern
         services.AddOptions<SmtpOptions>()
             .Bind(configuration.GetSection(SmtpOptions.SectionName))
@@ -141,7 +145,7 @@ public static class InfrastructureServiceRegistration
         if (!string.IsNullOrEmpty(brevoApiKey))
         {
             var fromEmail = configuration["BREVO_FROM_EMAIL"] ?? Environment.GetEnvironmentVariable("BREVO_FROM_EMAIL") ?? "noreply@foodloop.com";
-            var fromName  = configuration["BREVO_FROM_NAME"]  ?? Environment.GetEnvironmentVariable("BREVO_FROM_NAME")  ?? "FoodLoop";
+            var fromName = configuration["BREVO_FROM_NAME"] ?? Environment.GetEnvironmentVariable("BREVO_FROM_NAME") ?? "FoodLoop";
             services.AddHttpClient("brevo");
             services.AddScoped<IEmailService>(sp => new BrevoEmailService(
                 brevoApiKey,
@@ -158,7 +162,7 @@ public static class InfrastructureServiceRegistration
         {
             services.AddScoped<IEmailService, NullEmailService>();
         }
-        
+
         // Bind Cloudinary options using the ASP.NET Core Options Pattern
         services.AddOptions<CloudinaryOptions>()
             .Bind(configuration.GetSection(CloudinaryOptions.SectionName))
@@ -183,7 +187,7 @@ public static class InfrastructureServiceRegistration
                 // Account(string url) does NOT exist in SDK v1.x — must parse and pass separately.
                 var uri = new Uri(options.Url);
                 var userInfo = uri.UserInfo.Split(':', 2);
-                var apiKey    = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
+                var apiKey = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : string.Empty;
                 var apiSecret = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
                 var cloudName = uri.Host;
 
@@ -201,6 +205,8 @@ public static class InfrastructureServiceRegistration
 
         services.AddScoped<ILocalizationService, LocalizationService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<IUserDeviceTokenService, UserDeviceTokenService>();
+        services.AddScoped<IFirebasePushNotificationService, FirebasePushNotificationService>();
         services.AddScoped<IRealTimeNotificationService, RealTimeNotificationService>();
         services.AddHttpClient<IOcrService, GeminiOcrService>();
         services.AddHttpClient<IPaymentService, PaymobService>();
