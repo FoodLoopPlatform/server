@@ -309,6 +309,20 @@ public class StoresController : ControllerBase
     }
 
     /// <summary>
+    /// POST /stores/me/disputes/{id}/resolve — resolve a dispute on a store product (optionally giving refund).
+    /// </summary>
+    [HttpPost("me/disputes/{id:guid}/resolve")]
+    public async Task<IActionResult> ResolveDispute(
+        Guid id,
+        [FromBody] ResolveStoreDisputeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new ResolveStoreDisputeCommand(id, OwnerId, request.MerchantNote, request.RefundAmount);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<DisputeDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /stores/{id} — public store profile endpoint.
     /// Returns store details, location, reputation, and recent customer reviews.
     /// Used by the Store Profile screen on the mobile app.
@@ -385,5 +399,12 @@ public class DonateSurplusRequest
     [Required] public Guid ProductId { get; set; }
     [Required, Range(1, 100000)] public int Quantity { get; set; }
     public string? Note { get; set; }
+}
+
+public class ResolveStoreDisputeRequest
+{
+    [Required]
+    public string MerchantNote { get; set; } = null!;
+    public decimal RefundAmount { get; set; } = 0.00m;
 }
 

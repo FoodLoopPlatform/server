@@ -22,5 +22,6 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(u => u.Status);
+        builder.Property(u => u.WalletBalance).HasPrecision(18, 2);
     }
 }

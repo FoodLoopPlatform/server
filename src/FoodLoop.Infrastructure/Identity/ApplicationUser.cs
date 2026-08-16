@@ -16,6 +16,7 @@ public class ApplicationUser : IdentityUser<Guid>
     public string Language { get; set; } = "en";
     public string? ProfileImage { get; set; }
     public UserStatus Status { get; set; } = UserStatus.Active;
+    public decimal WalletBalance { get; set; } = 0.00m;
 
     // Matches the two toggles on the profile_settings UI screen ("Order Updates" / "Latest Offers").
     public bool OrderUpdatesEnabled { get; set; } = true;

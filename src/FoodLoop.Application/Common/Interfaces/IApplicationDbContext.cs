@@ -26,6 +26,7 @@ public interface IApplicationDbContext
     DbSet<AIRecognitionResult> AIRecognitionResults { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<WalletTransaction> WalletTransactions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

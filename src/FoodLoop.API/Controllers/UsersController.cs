@@ -53,6 +53,15 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
     }
 
+    /// <summary>GET /users/me/wallet — retrieve current user's wallet balance and transactions.</summary>
+    [HttpGet("me/wallet")]
+    public async Task<IActionResult> GetMyWallet(CancellationToken cancellationToken)
+    {
+        var query = new GetUserWalletQuery(UserId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<UserWalletDto>.Ok(result));
+    }
+
     /// <summary>PATCH /users/me — updates profile information (name, picture, language).</summary>
     [HttpPatch("me")]
     public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken)

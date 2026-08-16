@@ -41,6 +41,7 @@ public class ApplicationDbContext
     public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
     public DbSet<AdminNote> AdminNotes => Set<AdminNote>();
+    public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -74,6 +75,12 @@ public class ApplicationDbContext
             entity.Property(p => p.OldDiscountedPrice).HasPrecision(18, 2);
             entity.Property(p => p.NewOriginalPrice).HasPrecision(18, 2);
             entity.Property(p => p.NewDiscountedPrice).HasPrecision(18, 2);
+        });
+
+        builder.Entity<WalletTransaction>(entity =>
+        {
+            entity.Property(w => w.Amount).HasPrecision(18, 2);
+            entity.HasIndex(w => w.UserId);
         });
 
         // Rename default Identity tables to a cleaner schema (optional but tidy).
