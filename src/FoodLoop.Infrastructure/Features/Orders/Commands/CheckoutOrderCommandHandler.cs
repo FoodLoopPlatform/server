@@ -66,7 +66,7 @@ public class CheckoutOrderCommandHandler : IRequestHandler<CheckoutOrderCommand,
 
         // 6. Build direct Unified Checkout redirection link
         var publicKey = _config["Paymob:PublicKey"] ?? string.Empty;
-        var baseUrl = _config["Paymob:BaseUrl"] ?? "https://accept-alpha.paymob.com";
+        var baseUrl = (_config["Paymob:BaseUrl"] ?? "https://accept.paymob.com").TrimEnd('/');
         var checkoutUrl = $"{baseUrl}/unifiedcheckout/?publicKey={publicKey}&clientSecret={paymentToken}";
 
         return new CheckoutSessionDto

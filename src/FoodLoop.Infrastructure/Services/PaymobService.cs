@@ -42,22 +42,22 @@ public class PaymobService : IPaymentService
         string phoneNumber, 
         CancellationToken cancellationToken = default)
     {
-        var apiKey = _options.ApiKey;
+        var apiKey = _options.ApiKey?.Trim();
         if (string.IsNullOrEmpty(apiKey))
         {
             throw new InvalidOperationException("Paymob API Key is not configured.");
         }
 
-        var integrationIdStr = _options.IntegrationId;
+        var integrationIdStr = _options.IntegrationId?.Trim();
         if (string.IsNullOrEmpty(integrationIdStr) || !int.TryParse(integrationIdStr, out var integrationId))
         {
             throw new InvalidOperationException("Paymob Integration ID must be a valid integer.");
         }
 
-        var baseUrl = _options.BaseUrl;
+        var baseUrl = NormalizeBaseUrl(_options.BaseUrl);
         var amountCents = (int)(amount * 100);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1/intention");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1/intention/");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", apiKey);
 
         var payload = new
@@ -115,6 +115,22 @@ public class PaymobService : IPaymentService
         var calculatedHmac = Convert.ToHexString(hashBytes).ToLower();
 
         return string.Equals(calculatedHmac, hmacReceived, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeBaseUrl(string? baseUrl)
+    {
+        var normalized = (baseUrl ?? "https://accept.paymob.com").Trim();
+
+        normalized = normalized.TrimEnd('/');
+
+        return normalized switch
+        {
+            "https://accept-alpha.paymob.com" => "https://accept.paymob.com",
+            "http://accept-alpha.paymob.com" => "https://accept.paymob.com",
+            "https://accept.paymob.com" => "https://accept.paymob.com",
+            "http://accept.paymob.com" => "https://accept.paymob.com",
+            _ => normalized
+        };
     }
 }
 
