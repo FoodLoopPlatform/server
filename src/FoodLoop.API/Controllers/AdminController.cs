@@ -6,6 +6,8 @@ using FoodLoop.Application.DTOs.Users;
 using FoodLoop.Application.Features.Admin.Commands;
 using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Application.Features.Users.Queries;
+using FoodLoop.Application.DTOs.Orders;
+using FoodLoop.Application.Features.Orders.Queries;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -448,6 +450,20 @@ public class AdminController : ControllerBase
         var query = new GetAdminNotesForUserQuery(id, pageNumber, pageSize);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<AdminNoteDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /admin/orders — retrieve all platform orders (Admin only).
+    /// </summary>
+    [HttpGet("orders")]
+    public async Task<IActionResult> GetAllOrders(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAllOrdersQuery(pageNumber, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<OrderDto>>.Ok(result));
     }
 
     // ── System Settings ───────────────────────────────────────────────────
