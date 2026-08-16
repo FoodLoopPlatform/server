@@ -68,6 +68,19 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         };
 
         _unitOfWork.Repository<Product>().Add(product);
+
+        var history = new PriceHistory
+        {
+            ProductId = product.Id,
+            OldOriginalPrice = 0,
+            OldDiscountedPrice = 0,
+            NewOriginalPrice = product.OriginalPrice,
+            NewDiscountedPrice = product.DiscountedPrice,
+            ChangeReason = "Initial listing",
+            ChangedBy = command.OwnerId
+        };
+        _unitOfWork.Repository<PriceHistory>().Add(history);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         if (state == ExpiryVerificationState.AiVerified || state == ExpiryVerificationState.AiLowConfidence)

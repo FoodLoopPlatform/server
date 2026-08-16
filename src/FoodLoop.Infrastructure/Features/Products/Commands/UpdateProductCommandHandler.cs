@@ -59,8 +59,26 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
             throw new ArgumentException("Discounted price cannot be greater than original price.");
         }
 
+        var oldOriginalPrice = product.OriginalPrice;
+        var oldDiscountedPrice = product.DiscountedPrice;
+
         product.OriginalPrice = origPrice;
         product.DiscountedPrice = discPrice;
+
+        if (origPrice != oldOriginalPrice || discPrice != oldDiscountedPrice)
+        {
+            var history = new PriceHistory
+            {
+                ProductId = product.Id,
+                OldOriginalPrice = oldOriginalPrice,
+                OldDiscountedPrice = oldDiscountedPrice,
+                NewOriginalPrice = origPrice,
+                NewDiscountedPrice = discPrice,
+                ChangeReason = "Manual details update",
+                ChangedBy = command.OwnerId
+            };
+            _unitOfWork.Repository<PriceHistory>().Add(history);
+        }
 
         if (command.QuantityAvailable.HasValue)
         {
