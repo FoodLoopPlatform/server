@@ -309,9 +309,9 @@ public class StoresController : ControllerBase
     }
 
     /// <summary>
-    /// POST /stores/me/disputes/{id}/resolve — resolve a dispute on a store product (optionally giving refund).
+    /// PATCH /stores/me/disputes/{id}/resolve — resolve a dispute on a store product (optionally giving refund).
     /// </summary>
-    [HttpPost("me/disputes/{id:guid}/resolve")]
+    [HttpPatch("me/disputes/{id:guid}/resolve")]
     public async Task<IActionResult> ResolveDispute(
         Guid id,
         [FromBody] ResolveStoreDisputeRequest request,
