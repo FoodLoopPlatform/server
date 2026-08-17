@@ -13,6 +13,10 @@ public class StoreConfiguration : IEntityTypeConfiguration<Organization>
         builder.Property(s => s.City).HasMaxLength(100);
         builder.Property(s => s.Neighborhood).HasMaxLength(100);
         builder.Property(s => s.Street).HasMaxLength(200);
+        builder.Property(s => s.AiOperatingMode)
+            .HasConversion<string>()
+            .HasDefaultValue(FoodLoop.Domain.Enums.AiOperatingMode.Manual)
+            .IsRequired();
 
         builder.HasQueryFilter(s => !s.IsDeleted);
 

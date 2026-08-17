@@ -1,4 +1,4 @@
-﻿using FoodLoop.Domain.Entities;
+using FoodLoop.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

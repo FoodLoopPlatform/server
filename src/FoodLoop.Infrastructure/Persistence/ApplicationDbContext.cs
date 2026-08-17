@@ -43,6 +43,9 @@ public class ApplicationDbContext
     public DbSet<SystemSettings> SystemSettings => Set<SystemSettings>();
     public DbSet<AdminNote> AdminNotes => Set<AdminNote>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
+    public DbSet<AiRiskAssessment> AiRiskAssessments => Set<AiRiskAssessment>();
+    public DbSet<AiPricingRecommendation> AiPricingRecommendations => Set<AiPricingRecommendation>();
+    public DbSet<ProductPricingEpisode> ProductPricingEpisodes => Set<ProductPricingEpisode>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
