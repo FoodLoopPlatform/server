@@ -26,7 +26,6 @@ jobs:
 
       - name: Run tests
         run: dotnet test --no-build --configuration Release
-        continue-on-error: true
 
       - name: Publish
         run: dotnet publish --configuration Release --no-build --output ./publish
