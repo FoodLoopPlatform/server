@@ -39,6 +39,8 @@ public class Organization : BaseEntity, ISoftDelete
     public string? AdminNote { get; set; }
     public double AverageRating { get; set; }
 
+    public AiOperatingMode AiOperatingMode { get; set; } = AiOperatingMode.Manual;
+
     // ── AI Automation Settings (ai_automation_settings screen) ─────────────
     /// <summary>Whether the AI auto-discount engine is enabled for this org.</summary>
     public bool AiAutoDiscountEnabled { get; set; } = false;

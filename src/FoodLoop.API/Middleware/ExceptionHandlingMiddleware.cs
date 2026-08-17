@@ -51,7 +51,7 @@ public class ExceptionHandlingMiddleware
         {
             NotFoundException => (HttpStatusCode.NotFound, exception.Message),
             ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message),
-            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, loc?["Unauthorized"] ?? "Unauthorized."),
+            UnauthorizedAccessException => (HttpStatusCode.Forbidden, loc?["Unauthorized"] ?? "Unauthorized."),
             ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
             _ => (HttpStatusCode.InternalServerError, includeDetails
                 ? $"[{exception.GetType().Name}] {exception.Message} {(exception.InnerException != null ? "Inner: " + exception.InnerException.Message : "")}"

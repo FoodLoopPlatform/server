@@ -14,6 +14,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using FoodLoop.Application.Common.Interfaces.AI;
+using FoodLoop.Infrastructure.Integrations.AiService;
+using Polly;
+using Polly.Timeout;
+using FoodLoop.Infrastructure.BackgroundServices;
 
 namespace FoodLoop.Infrastructure.DependencyInjection;
 
@@ -210,6 +215,95 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IRealTimeNotificationService, RealTimeNotificationService>();
         services.AddHttpClient<IOcrService, GeminiOcrService>();
         services.AddHttpClient<IPaymentService, PaymobService>();
+
+        // ── AI Service Client Registration ──
+        services.AddOptions<AiServiceOptions>()
+            .Bind(configuration.GetSection(AiServiceOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
+        services.AddTransient<CorrelationIdDelegatingHandler>();
+
+        // 1. Business Resilience Pipeline (Exponential backoff retry with jitter, 30s timeout, circuit breaker)
+        services.AddResiliencePipeline<string, HttpResponseMessage>("AiServiceBusinessPipeline", builder =>
+        {
+            builder.AddRetry(new Polly.Retry.RetryStrategyOptions<HttpResponseMessage>
+            {
+                MaxRetryAttempts = 3,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                Delay = TimeSpan.FromSeconds(1),
+                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutRejectedException>()
+                    .HandleResult(response => (int)response.StatusCode >= 500)
+            });
+
+            builder.AddTimeout(new Polly.Timeout.TimeoutStrategyOptions
+            {
+                Timeout = TimeSpan.FromSeconds(30)
+            });
+
+            builder.AddCircuitBreaker(new Polly.CircuitBreaker.CircuitBreakerStrategyOptions<HttpResponseMessage>
+            {
+                FailureRatio = 0.5,
+                SamplingDuration = TimeSpan.FromSeconds(60),
+                MinimumThroughput = 5,
+                BreakDuration = TimeSpan.FromSeconds(30),
+                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutRejectedException>()
+                    .HandleResult(response => (int)response.StatusCode >= 500)
+            });
+        });
+
+        // 2. Health check Resilience Pipeline (1 retry, 3s timeout, no circuit breaker)
+        services.AddResiliencePipeline<string, HttpResponseMessage>("AiServiceHealthPipeline", builder =>
+        {
+            builder.AddRetry(new Polly.Retry.RetryStrategyOptions<HttpResponseMessage>
+            {
+                MaxRetryAttempts = 1,
+                BackoffType = DelayBackoffType.Constant,
+                Delay = TimeSpan.FromSeconds(1),
+                ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutRejectedException>()
+                    .HandleResult(response => (int)response.StatusCode >= 500)
+            });
+
+            builder.AddTimeout(new Polly.Timeout.TimeoutStrategyOptions
+            {
+                Timeout = TimeSpan.FromSeconds(3)
+            });
+        });
+
+        services.AddHttpClient<IAiServiceClient, AiServiceClient>((sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+        })
+        .AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
+
+        services.AddSingleton(TimeProvider.System);
+
+        services.AddOptions<MonitoringScannerOptions>()
+            .Bind(configuration.GetSection(MonitoringScannerOptions.SectionName))
+            .ValidateDataAnnotations();
+
+        services.AddHostedService<MonitoringScannerHostedService>();
+
+        services.AddOptions<PricingBatchOptions>()
+            .Bind(configuration.GetSection(PricingBatchOptions.SectionName))
+            .ValidateDataAnnotations();
+
+        services.AddHostedService<PricingBatchHostedService>();
+
+        services.AddOptions<HistoricalIngestionOptions>()
+            .Bind(configuration.GetSection(HistoricalIngestionOptions.SectionName))
+            .ValidateDataAnnotations();
+
+        services.AddHostedService<HistoricalIngestionHostedService>();
 
         // CQRS: commands/queries live in the Application assembly, handlers live here in
         // Infrastructure (they depend on Identity's UserManager<ApplicationUser> and other

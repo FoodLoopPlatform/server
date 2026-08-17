@@ -28,6 +28,11 @@ public interface IApplicationDbContext
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<WalletTransaction> WalletTransactions { get; }
+    DbSet<AiRiskAssessment> AiRiskAssessments { get; }
+    DbSet<AiPricingRecommendation> AiPricingRecommendations { get; }
+    DbSet<SystemSettings> SystemSettings { get; }
+    DbSet<PriceHistory> PriceHistories { get; }
+    DbSet<ProductPricingEpisode> ProductPricingEpisodes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
