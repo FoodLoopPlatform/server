@@ -10,5 +10,6 @@ public interface IAiServiceClient
     Task<PricingBatchResponseDto> RecommendPricingAsync(PricingBatchRequestDto request, CancellationToken ct = default);
     Task<AiServiceHealthDto> GetHealthAsync(CancellationToken ct = default);
     Task<AiServiceReadyDto> GetReadyAsync(CancellationToken ct = default);
+    Task<AiServiceVersionDto> GetVersionAsync(CancellationToken ct = default);
     Task<HistoricalIngestionResponseDto> IngestHistoricalPricingAsync(HistoricalIngestionRequestDto request, CancellationToken ct = default);
 }

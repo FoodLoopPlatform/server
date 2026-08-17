@@ -78,10 +78,39 @@ public class ApproveAiRecommendationCommandHandler : IRequestHandler<ApproveAiRe
 
             // Verify Phase: load recommendation and product details
             var rec = await _dbContext.AiPricingRecommendations
-                .Include(r => r.Product)
                 .FirstAsync(r => r.Id == request.Id, cancellationToken);
 
-            var product = rec.Product!;
+            using var logScope = _logger.BeginScope(new System.Collections.Generic.Dictionary<string, object>
+            {
+                ["RecommendationId"] = rec.Id,
+                ["ProductId"] = rec.ProductId,
+                ["CorrelationId"] = rec.CorrelationId ?? string.Empty
+            });
+
+            var product = await _dbContext.Products
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.Id == rec.ProductId, cancellationToken);
+
+            if (product == null ||
+                rec.SnapshotOriginalPrice == null ||
+                rec.SnapshotQuantityAvailable == null ||
+                rec.SnapshotProductStatus == null ||
+                product.OriginalPrice != rec.SnapshotOriginalPrice.Value ||
+                product.QuantityAvailable != rec.SnapshotQuantityAvailable.Value ||
+                product.Status != rec.SnapshotProductStatus.Value ||
+                product.Status != ProductStatus.Active)
+            {
+                await _dbContext.AiPricingRecommendations
+                    .Where(r => r.Id == request.Id)
+                    .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, AiRecommendationStatus.Rejected)
+                                              .SetProperty(r => r.ActionReason, "Stale Recommendation - Product State Changed"),
+                                        cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogWarning("Freshness check failed on Approval for Product {ProductId}. Status set to Rejected.", rec.ProductId);
+                return Result<Unit>.Fail("Approval failed: Stale Recommendation - Product State Changed.");
+            }
 
             // Re-verify the price floor policy using the isolated calculator
             var settings = await _dbContext.SystemSettings.FirstOrDefaultAsync(cancellationToken);
@@ -112,7 +141,7 @@ public class ApproveAiRecommendationCommandHandler : IRequestHandler<ApproveAiRe
                 OldDiscountedPrice = product.DiscountedPrice,
                 NewOriginalPrice = product.OriginalPrice,
                 NewDiscountedPrice = proposedPrice,
-                ChangeReason = "AI Assisted Approval",
+                ChangeReason = $"AI Assisted Approval (Correlation: {rec.CorrelationId})",
                 ChangedBy = Guid.Empty
             };
             _dbContext.PriceHistories.Add(history);

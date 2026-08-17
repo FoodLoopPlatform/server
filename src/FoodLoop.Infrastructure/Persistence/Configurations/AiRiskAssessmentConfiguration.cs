@@ -31,6 +31,14 @@ public class AiRiskAssessmentConfiguration : IEntityTypeConfiguration<AiRiskAsse
             .HasMaxLength(64)
             .IsRequired();
 
+        builder.Property(a => a.SnapshotOriginalPrice)
+            .HasPrecision(18, 2);
+
+        builder.Property(a => a.SnapshotQuantityAvailable);
+
+        builder.Property(a => a.SnapshotProductStatus)
+            .HasConversion<string>();
+
         builder.HasOne(a => a.Product)
             .WithMany()
             .HasForeignKey(a => a.ProductId)

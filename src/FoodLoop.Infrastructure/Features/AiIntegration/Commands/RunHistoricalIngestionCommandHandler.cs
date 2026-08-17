@@ -50,12 +50,30 @@ public class RunHistoricalIngestionCommandHandler : IRequestHandler<RunHistorica
 
         var today = DateOnly.FromDateTime(_timeProvider.GetUtcNow().DateTime);
 
-        // Query all candidate products using IgnoreQueryFilters to include soft-deleted products
-        var products = await _dbContext.Products
+        // 1. Query all products that have pending (IngestedAt == null) episodes
+        var pendingEpisodesList = await _dbContext.ProductPricingEpisodes
+            .Where(pe => pe.IngestedAt == null)
+            .ToListAsync(cancellationToken);
+
+        var pendingProductIds = pendingEpisodesList.Select(pe => pe.ProductId).Distinct().ToList();
+
+        var pendingProducts = await _dbContext.Products
+            .IgnoreQueryFilters()
+            .Include(p => p.Category)
+            .Where(p => pendingProductIds.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+
+        // 2. Query all candidate products based on current product state
+        var standardProducts = await _dbContext.Products
             .IgnoreQueryFilters()
             .Include(p => p.Category)
             .Where(p => p.QuantityAvailable == 0 || p.ExpirationDate < today || p.IsDeleted)
             .ToListAsync(cancellationToken);
+
+        // Combine both sets (deduped by Product.Id)
+        var products = pendingProducts
+            .UnionBy(standardProducts, p => p.Id)
+            .ToList();
 
         if (products.Count == 0)
         {
@@ -63,7 +81,7 @@ public class RunHistoricalIngestionCommandHandler : IRequestHandler<RunHistorica
             return Result<Unit>.Ok(Unit.Value);
         }
 
-        _logger.LogInformation("Found {Count} candidate products for historical pricing check.", products.Count);
+        _logger.LogInformation("Found {Count} candidate products for historical pricing check ({PendingCount} pending correction).", products.Count, pendingProducts.Count);
 
         var settings = await _dbContext.SystemSettings.FirstOrDefaultAsync(cancellationToken);
         var floorPolicy = settings?.DefaultPriceFloorPolicy ?? PriceFloorPolicy.DynamicAi;
@@ -75,16 +93,26 @@ public class RunHistoricalIngestionCommandHandler : IRequestHandler<RunHistorica
         {
             var productIds = batch.Select(p => p.Id).ToList();
 
-            // Load all existing ingested episodes for these product IDs to enforce idempotency
-            var existingEpisodes = await _dbContext.ProductPricingEpisodes
+            // Load all existing episodes for these product IDs
+            var allEpisodes = await _dbContext.ProductPricingEpisodes
                 .Where(pe => productIds.Contains(pe.ProductId))
                 .ToListAsync(cancellationToken);
 
-            // Load all paid orders containing items for the current batch of products to calculate metrics
-            var orderItems = await _dbContext.Orders
+            var existingEpisodes = allEpisodes.Where(pe => pe.IngestedAt != null).ToList();
+
+            var paidOrders = await _dbContext.Orders
                 .Where(o => o.PaymentStatus == PaymentStatus.Paid)
-                .SelectMany(o => o.Items.Where(oi => productIds.Contains(oi.ProductId)), (o, oi) => new { oi.ProductId, oi.Quantity, o.CreatedAt })
+                .Select(o => new { o.Id, o.CreatedAt })
                 .ToListAsync(cancellationToken);
+
+            var batchItems = await _dbContext.OrderItems
+                .Where(oi => productIds.Contains(oi.ProductId))
+                .Select(oi => new { oi.ProductId, oi.OrderId, oi.Quantity })
+                .ToListAsync(cancellationToken);
+
+            var orderItems = (from oi in batchItems
+                              join o in paidOrders on oi.OrderId equals o.Id
+                              select new { oi.ProductId, oi.Quantity, o.CreatedAt }).ToList();
 
             // Load price histories for the batch of products
             var priceHistories = await _dbContext.PriceHistories
@@ -199,6 +227,15 @@ public class RunHistoricalIngestionCommandHandler : IRequestHandler<RunHistorica
                 }
                 discountPercentage = Math.Clamp(discountPercentage, 0.0, 15.0);
 
+                // Override with corrected snapshot fields if a pending correction exists
+                var pendingEpisode = allEpisodes.FirstOrDefault(pe => pe.ProductId == product.Id && pe.EventId == candidateEventId && pe.IngestedAt == null);
+                if (pendingEpisode != null)
+                {
+                    discountPercentage = pendingEpisode.DiscountPercentage;
+                    sellThroughRate = pendingEpisode.SellThroughRate;
+                    outcome = pendingEpisode.Outcome;
+                }
+
                 eventsList.Add(new HistoricalPricingEventDto(
                     EventId: candidateEventId,
                     StoreId: product.OrganizationId.ToString(),
@@ -240,23 +277,66 @@ public class RunHistoricalIngestionCommandHandler : IRequestHandler<RunHistorica
             try
             {
                 var ingestionCorrelationId = _correlationIdAccessor.GetCorrelationId();
+                using var logScope = _logger.BeginScope(new System.Collections.Generic.Dictionary<string, object>
+                {
+                    ["CorrelationId"] = ingestionCorrelationId
+                });
+
                 var ingestionRequest = new HistoricalIngestionRequestDto(eventsList);
 
-                await _aiClient.IngestHistoricalPricingAsync(ingestionRequest, cancellationToken);
+                var response = await _aiClient.IngestHistoricalPricingAsync(ingestionRequest, cancellationToken);
 
-                // Batch succeeded: set correlation id on episodes and save to DB
+                // Filter episodes to insert: only save/update those that are in response.DocumentIds (successfully upserted/accepted)
+                var successfulEpisodes = new List<ProductPricingEpisode>();
                 foreach (var episode in episodesToInsert)
                 {
-                    episode.IngestionCorrelationId = ingestionCorrelationId;
+                    var isExplicitSuccess = response.DocumentIds != null && 
+                                            (response.DocumentIds.Contains(episode.EventId) || response.DocumentIds.Contains($"doc-{episode.EventId}"));
+                    
+                    var isLegacyMockPass = (response.DocumentIds == null || response.DocumentIds.Count == 0) && response.FailedCount == 0;
+
+                    if (isExplicitSuccess || isLegacyMockPass)
+                    {
+                        var existingPending = allEpisodes.FirstOrDefault(pe => pe.ProductId == episode.ProductId && pe.EventId == episode.EventId && pe.IngestedAt == null);
+                        if (existingPending != null)
+                        {
+                            existingPending.IngestedAt = _timeProvider.GetUtcNow();
+                            existingPending.IngestionCorrelationId = ingestionCorrelationId;
+                            // Synchronize corrected snapshot fields on persistence just in case
+                            existingPending.DiscountPercentage = episode.DiscountPercentage;
+                            existingPending.SellThroughRate = episode.SellThroughRate;
+                            existingPending.Outcome = episode.Outcome;
+                            
+                            _dbContext.ProductPricingEpisodes.Update(existingPending);
+                        }
+                        else
+                        {
+                            episode.IngestionCorrelationId = ingestionCorrelationId;
+                            _dbContext.ProductPricingEpisodes.Add(episode);
+                        }
+                        successfulEpisodes.Add(episode);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Episode {EventId} was not in the successful document IDs list from ingestion response. Skipping persistence so it remains eligible for retry.", episode.EventId);
+                    }
                 }
 
-                _dbContext.ProductPricingEpisodes.AddRange(episodesToInsert);
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                if (successfulEpisodes.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
                 
-                _logger.LogInformation("Successfully ingested {Count} historical pricing episodes.", episodesToInsert.Count);
+                _logger.LogInformation("Successfully ingested {Count} historical pricing episodes. (Response counts - Accepted: {Accepted}, Upserted: {Upserted}, Failed: {Failed})", 
+                    successfulEpisodes.Count, response.AcceptedCount, response.UpsertedCount, response.FailedCount);
             }
             catch (Exception ex)
             {
+                var ingestionCorrelationId = _correlationIdAccessor.GetCorrelationId();
+                using var logScope = _logger.BeginScope(new System.Collections.Generic.Dictionary<string, object>
+                {
+                    ["CorrelationId"] = ingestionCorrelationId
+                });
                 _logger.LogError(ex, "Failed to ingest batch of historical pricing events. Episodes will remain eligible for retry.");
                 // Continue loop so subsequent batches can succeed
             }

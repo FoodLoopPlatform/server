@@ -37,14 +37,15 @@ public class AiPricingBatchTests
         _mockCorrelationAccessor.Setup(x => x.GetCorrelationId()).Returns("test-correlation-id");
     }
 
-    private RunPricingBatchCommandHandler CreateHandler(IApplicationDbContext dbContext)
+    private RunPricingBatchCommandHandler CreateHandler(IApplicationDbContext dbContext, Microsoft.Extensions.Options.IOptions<FoodLoop.Infrastructure.Options.AiServiceOptions>? options = null)
     {
         return new RunPricingBatchCommandHandler(
             dbContext,
             _mockAiClient.Object,
             _mockCorrelationAccessor.Object,
             _timeProvider,
-            _mockLogger.Object
+            _mockLogger.Object,
+            options
         );
     }
 
@@ -147,7 +148,12 @@ public class AiPricingBatchTests
         var org = new Organization { Id = Guid.NewGuid(), Name = "Auto Store", AiOperatingMode = AiOperatingMode.Autonomous };
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
         var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 10m, DiscountedPrice = 10m, Organization = org, Category = category };
-        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true);
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         dbContext.Organizations.Add(org);
         dbContext.Categories.Add(category);
@@ -188,7 +194,12 @@ public class AiPricingBatchTests
         
         // Original price 10m. Default DynamicAi price floor is 70% (7.00m)
         var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 10m, DiscountedPrice = 10m, Organization = org, Category = category };
-        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true);
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         dbContext.Organizations.Add(org);
         dbContext.Categories.Add(category);
@@ -461,5 +472,81 @@ public class AiPricingBatchTests
         var context = new FoodLoop.Infrastructure.Persistence.ApplicationDbContext(options);
         context.Database.EnsureCreated();
         return context;
+    }
+
+    [Fact]
+    public async Task Handle_should_chunk_batches_larger_than_MaxPricingBatchSize_into_multiple_requests()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Chunk Store", AiOperatingMode = AiOperatingMode.Assisted };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Snacks" };
+        dbContext.Organizations.Add(org);
+        dbContext.Categories.Add(category);
+
+        var products = new List<Product>();
+        var risks = new List<AiRiskAssessment>();
+
+        for (int i = 1; i <= 75; i++)
+        {
+            var product = new Product
+            {
+                Id = Guid.NewGuid(),
+                Title = $"Snack {i}",
+                OriginalPrice = 10.00m,
+                DiscountedPrice = 10.00m,
+                QuantityAvailable = 10,
+                OrganizationId = org.Id,
+                Organization = org,
+                CategoryId = category.Id,
+                Category = category
+            };
+            products.Add(product);
+            dbContext.Products.Add(product);
+
+            var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "High risk", 0.9, "corr", isPricingStaged: true)
+            {
+                SnapshotOriginalPrice = 10.00m,
+                SnapshotQuantityAvailable = 10,
+                SnapshotProductStatus = ProductStatus.Active
+            };
+            risks.Add(risk);
+            dbContext.AiRiskAssessments.Add(risk);
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        // Expect 2 calls: first chunk has 50 products, second has 25 products
+        _mockAiClient.Setup(x => x.RecommendPricingAsync(It.Is<PricingBatchRequestDto>(r => r.Products.Count == 50), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PricingBatchRequestDto req, CancellationToken ct) =>
+            {
+                var decisions = req.Products.Select(p => new PricingDecisionDto(p.ProductId, 10.0, "Reason", 0.9, "APPROVAL_REQUIRED", "Assisted Mode")).ToList();
+                return new PricingBatchResponseDto(org.Id.ToString(), decisions);
+            });
+
+        _mockAiClient.Setup(x => x.RecommendPricingAsync(It.Is<PricingBatchRequestDto>(r => r.Products.Count == 25), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PricingBatchRequestDto req, CancellationToken ct) =>
+            {
+                var decisions = req.Products.Select(p => new PricingDecisionDto(p.ProductId, 10.0, "Reason", 0.9, "APPROVAL_REQUIRED", "Assisted Mode")).ToList();
+                return new PricingBatchResponseDto(org.Id.ToString(), decisions);
+            });
+
+        var optionsMock = new Mock<Microsoft.Extensions.Options.IOptions<FoodLoop.Infrastructure.Options.AiServiceOptions>>();
+        optionsMock.Setup(o => o.Value).Returns(new FoodLoop.Infrastructure.Options.AiServiceOptions { MaxPricingBatchSize = 50 });
+
+        var handler = CreateHandler(dbContext, optionsMock.Object);
+
+        // Act
+        var result = await handler.Handle(new RunPricingBatchCommand(), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+
+        _mockAiClient.Verify(x => x.RecommendPricingAsync(It.Is<PricingBatchRequestDto>(r => r.Products.Count == 50), It.IsAny<CancellationToken>()), Times.Once);
+        _mockAiClient.Verify(x => x.RecommendPricingAsync(It.Is<PricingBatchRequestDto>(r => r.Products.Count == 25), It.IsAny<CancellationToken>()), Times.Once);
+
+        var recommendations = await dbContext.AiPricingRecommendations.ToListAsync();
+        recommendations.Count.Should().Be(75);
     }
 }

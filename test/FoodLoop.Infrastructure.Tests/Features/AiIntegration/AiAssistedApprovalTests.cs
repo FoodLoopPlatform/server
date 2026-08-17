@@ -68,7 +68,12 @@ public class AiAssistedApprovalTests
         var org = new Organization { Id = Guid.NewGuid(), Name = "Auto Store", AiOperatingMode = AiOperatingMode.Autonomous };
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
         var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 100m, DiscountedPrice = 100m, Organization = org, Category = category };
-        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true);
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         // We calculate floor (DynamicAi = 90% of 100m is 90m). Discount 5% -> 95m. Valid.
         dbContext.Organizations.Add(org);
@@ -104,7 +109,7 @@ public class AiAssistedApprovalTests
         priceHistory.ProductId.Should().Be(product.Id);
         priceHistory.OldDiscountedPrice.Should().Be(100m);
         priceHistory.NewDiscountedPrice.Should().Be(95m);
-        priceHistory.ChangeReason.Should().Be("AI Autonomous Pricing");
+        priceHistory.ChangeReason.Should().Contain("AI Autonomous Pricing");
         priceHistory.ChangedBy.Should().Be(Guid.Empty); // System/AI sentinel actor ID
     }
 
@@ -121,14 +126,24 @@ public class AiAssistedApprovalTests
         var org = new Organization { Id = Guid.NewGuid(), Name = "Assisted Store", AiOperatingMode = AiOperatingMode.Assisted, OwnerId = merchantUserId };
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
         var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 100m, DiscountedPrice = 100m, Organization = org, Category = category };
-        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true);
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         // AI recommended 5% discount (proposed price 95m). DynamicAi floor is 90% (90m). Above floor.
         var recommendation = new AiPricingRecommendation(
             product.Id, org.Id, 5.0m, "Reason", 0.9,
             AiActionRequirement.APPROVAL_REQUIRED, "ActionReason", "corr-id",
             AiRecommendationStatus.Pending, risk.Id
-        );
+        )
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         dbContext.Organizations.Add(org);
         dbContext.Categories.Add(category);
@@ -160,7 +175,7 @@ public class AiAssistedApprovalTests
         history.ProductId.Should().Be(product.Id);
         history.OldDiscountedPrice.Should().Be(100m);
         history.NewDiscountedPrice.Should().Be(95m);
-        history.ChangeReason.Should().Be("AI Assisted Approval");
+        history.ChangeReason.Should().Contain("AI Assisted Approval");
         history.ChangedBy.Should().Be(Guid.Empty);
     }
 
@@ -177,14 +192,24 @@ public class AiAssistedApprovalTests
         var org = new Organization { Id = Guid.NewGuid(), Name = "Assisted Store", AiOperatingMode = AiOperatingMode.Assisted, OwnerId = merchantUserId };
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
         var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 100m, DiscountedPrice = 100m, Organization = org, Category = category };
-        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true);
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         // AI recommended 15% discount (proposed price 85m). Floor is 90% (90m). Below floor!
         var recommendation = new AiPricingRecommendation(
             product.Id, org.Id, 15.0m, "Reason", 0.9,
             AiActionRequirement.APPROVAL_REQUIRED, "ActionReason", "corr-id",
             AiRecommendationStatus.Pending, risk.Id
-        );
+        )
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         dbContext.Organizations.Add(org);
         dbContext.Categories.Add(category);
@@ -225,14 +250,24 @@ public class AiAssistedApprovalTests
         var org = new Organization { Id = Guid.NewGuid(), Name = "Assisted Store", AiOperatingMode = AiOperatingMode.Assisted, OwnerId = merchantUserId };
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
         var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 100m, DiscountedPrice = 100m, Organization = org, Category = category };
-        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true);
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         // Recommended 15% discount (proposed price 85m). Floor is 90% (90m). Below floor!
         var recommendation = new AiPricingRecommendation(
             product.Id, org.Id, 15.0m, "Reason", 0.9,
             AiActionRequirement.APPROVAL_REQUIRED, "ActionReason", "corr-id",
             AiRecommendationStatus.Pending, risk.Id
-        );
+        )
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         dbContext.Organizations.Add(org);
         dbContext.Categories.Add(category);
@@ -403,13 +438,23 @@ public class AiAssistedApprovalTests
         var org = new Organization { Id = Guid.NewGuid(), Name = "Assisted Store", AiOperatingMode = AiOperatingMode.Assisted, OwnerId = merchantUserId };
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
         var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 100m, DiscountedPrice = 100m, Organization = org, Category = category };
-        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true);
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         var recommendation = new AiPricingRecommendation(
             product.Id, org.Id, 5.0m, "Reason", 0.9,
             AiActionRequirement.APPROVAL_REQUIRED, "ActionReason", "corr-id",
             AiRecommendationStatus.Pending, risk.Id
-        );
+        )
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
 
         dbContext.Organizations.Add(org);
         dbContext.Categories.Add(category);

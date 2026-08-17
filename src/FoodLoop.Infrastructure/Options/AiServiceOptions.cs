@@ -12,4 +12,7 @@ public class AiServiceOptions
 
     [Range(1, 120, ErrorMessage = "TimeoutSeconds must be between 1 and 120 seconds.")]
     public int TimeoutSeconds { get; set; } = 30;
+
+    [Range(1, 1000, ErrorMessage = "MaxPricingBatchSize must be between 1 and 1000.")]
+    public int MaxPricingBatchSize { get; set; } = 50;
 }
