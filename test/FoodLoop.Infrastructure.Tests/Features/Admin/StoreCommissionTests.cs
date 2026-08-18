@@ -206,4 +206,50 @@ public class StoreCommissionTests : IDisposable
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*greater than zero*");
     }
+
+    [Fact]
+    public async Task GetStoreCommission_should_return_correct_commission_for_merchant()
+    {
+        // Arrange
+        var merchantId = Guid.NewGuid();
+        var storeId = Guid.NewGuid();
+
+        var settings = new SystemSettings { Id = SystemSettings.SingletonId, PlatformCommissionPercent = 15 };
+        _db.SystemSettings.Add(settings);
+
+        var merchant = new ApplicationUser { Id = merchantId, Email = "merchant@store.com" };
+        _db.Users.Add(merchant);
+
+        var store = new Organization { Id = storeId, OwnerId = merchantId, Name = "Tasty Bakery", CommissionWithdrawn = 10.00m };
+        _db.Organizations.Add(store);
+
+        var productId = Guid.NewGuid();
+        var product = new Product { Id = productId, OrganizationId = storeId, Title = "Bread" };
+        _db.Products.Add(product);
+
+        var orderId = Guid.NewGuid();
+        var order = new Order { Id = orderId, OrderStatus = OrderStatus.Completed, PaymentStatus = PaymentStatus.Paid };
+        _db.Orders.Add(order);
+
+        var orderItem = new OrderItem { OrderId = orderId, ProductId = productId, Quantity = 4, UnitPrice = 50.00m }; // Total Sales = 200.00
+        _db.OrderItems.Add(orderItem);
+
+        await _db.SaveChangesAsync();
+
+        var handler = new FoodLoop.Infrastructure.Features.Organizations.Queries.GetStoreCommissionQueryHandler(_db);
+        var query = new FoodLoop.Application.Features.Organizations.Queries.GetStoreCommissionQuery(merchantId);
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.StoreId.Should().Be(storeId);
+        result.StoreName.Should().Be("Tasty Bakery");
+        result.OwnerEmail.Should().Be("merchant@store.com");
+        result.PlatformCommissionPercent.Should().Be(15);
+        result.TotalSales.Should().Be(200.00m);
+        result.TotalCommissionGenerated.Should().Be(30.00m); // 200 * 15%
+        result.CommissionWithdrawn.Should().Be(10.00m);
+        result.OutstandingCommission.Should().Be(20.00m); // 30 - 10
+    }
 }
