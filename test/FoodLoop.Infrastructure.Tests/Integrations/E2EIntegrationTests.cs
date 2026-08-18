@@ -156,6 +156,12 @@ public class E2EIntegrationTests : IDisposable
     [Fact]
     public async Task Liveness_and_Readiness_should_confirm_healthy_python_service()
     {
+        if (Environment.GetEnvironmentVariable("RUN_LIVE_AI_SERVICE_TESTS") != "true" &&
+            Environment.GetEnvironmentVariable("RUN_EXTERNAL_INTEGRATION_TESTS") != "true")
+        {
+            return;
+        }
+
         var health = await _realAiClient.GetHealthAsync();
         health.Status.Should().Be("ok");
 
@@ -166,6 +172,12 @@ public class E2EIntegrationTests : IDisposable
     [Fact]
     public async Task Direct_Monitoring_Call_should_succeed()
     {
+        if (Environment.GetEnvironmentVariable("RUN_LIVE_AI_SERVICE_TESTS") != "true" &&
+            Environment.GetEnvironmentVariable("RUN_EXTERNAL_INTEGRATION_TESTS") != "true")
+        {
+            return;
+        }
+
         var org = new Organization { Id = Guid.NewGuid(), Name = "Test Store", AiOperatingMode = AiOperatingMode.Assisted };
         var category = new Category { Id = Guid.NewGuid(), Name = "Produce" };
         var product = new Product
@@ -198,6 +210,12 @@ public class E2EIntegrationTests : IDisposable
     [Fact]
     public async Task E2E_Assisted_Workflow_should_route_and_wait_for_approval()
     {
+        if (Environment.GetEnvironmentVariable("RUN_LIVE_AI_SERVICE_TESTS") != "true" &&
+            Environment.GetEnvironmentVariable("RUN_EXTERNAL_INTEGRATION_TESTS") != "true")
+        {
+            return;
+        }
+
         InMemoryLogStore.Logs.Clear();
         try
         {
@@ -289,6 +307,12 @@ public class E2EIntegrationTests : IDisposable
     [Fact]
     public async Task E2E_Autonomous_Workflow_should_auto_execute_when_passing_floor()
     {
+        if (Environment.GetEnvironmentVariable("RUN_LIVE_AI_SERVICE_TESTS") != "true" &&
+            Environment.GetEnvironmentVariable("RUN_EXTERNAL_INTEGRATION_TESTS") != "true")
+        {
+            return;
+        }
+
         using var dbContext = CreateDbContext();
         var mediator = _serviceProvider.GetRequiredService<IMediator>();
 
@@ -353,6 +377,12 @@ public class E2EIntegrationTests : IDisposable
     [Fact]
     public async Task E2E_Autonomous_Workflow_should_reject_when_failing_floor()
     {
+        if (Environment.GetEnvironmentVariable("RUN_LIVE_AI_SERVICE_TESTS") != "true" &&
+            Environment.GetEnvironmentVariable("RUN_EXTERNAL_INTEGRATION_TESTS") != "true")
+        {
+            return;
+        }
+
         using var dbContext = CreateDbContext();
         var mediator = _serviceProvider.GetRequiredService<IMediator>();
 
@@ -416,6 +446,12 @@ public class E2EIntegrationTests : IDisposable
     [Fact]
     public async Task E2E_Historical_Ingestion_should_succeed()
     {
+        if (Environment.GetEnvironmentVariable("RUN_LIVE_AI_SERVICE_TESTS") != "true" &&
+            Environment.GetEnvironmentVariable("RUN_EXTERNAL_INTEGRATION_TESTS") != "true")
+        {
+            return;
+        }
+
         using var dbContext = CreateDbContext();
         var mediator = _serviceProvider.GetRequiredService<IMediator>();
 
@@ -470,6 +506,12 @@ public class E2EIntegrationTests : IDisposable
     [Fact]
     public async Task Full_flow_should_preserve_single_CorrelationId_from_monitoring_through_PriceHistory()
     {
+        if (Environment.GetEnvironmentVariable("RUN_LIVE_AI_SERVICE_TESTS") != "true" &&
+            Environment.GetEnvironmentVariable("RUN_EXTERNAL_INTEGRATION_TESTS") != "true")
+        {
+            return;
+        }
+
         var testCorrelationId = "e2e-correlation-flow-999";
         InMemoryLogStore.Logs.Clear();
 
