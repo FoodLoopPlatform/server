@@ -60,5 +60,7 @@ public class Organization : BaseEntity, ISoftDelete
     public DateTimeOffset? DeletedAt { get; set; }
     public Guid? DeletedBy { get; set; }
     public bool IsDeleted { get; set; }
+
+    public decimal CommissionWithdrawn { get; set; } = 0.00m;
 }
 

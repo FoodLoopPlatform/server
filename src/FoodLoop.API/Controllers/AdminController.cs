@@ -563,6 +563,33 @@ public class AdminController : ControllerBase
         }
         return Ok(ApiResponse<string>.Ok("Historical ingestion sweep completed successfully."));
     }
+
+    /// <summary>
+    /// GET /admin/stores/commissions — list all stores and their platform commission balance.
+    /// </summary>
+    [HttpGet("stores/commissions")]
+    public async Task<IActionResult> GetStoreCommissions(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetStoreCommissionsQuery(), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<StoreCommissionDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// POST /admin/stores/{id:guid}/withdraw-commission — record a commission withdrawal from a store.
+    /// </summary>
+    [HttpPost("stores/{id:guid}/withdraw-commission")]
+    public async Task<IActionResult> WithdrawStoreCommission(Guid id, [FromBody] WithdrawCommissionRequest request, CancellationToken cancellationToken)
+    {
+        var command = new WithdrawStoreCommissionCommand(id, request.Amount);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<StoreCommissionDto>.Ok(result));
+    }
+}
+
+public class WithdrawCommissionRequest
+{
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.Range(0.01, 10000000.00)]
+    public decimal Amount { get; set; }
 }
 
 public class ProductModerationRequest { public string? Note { get; set; } }

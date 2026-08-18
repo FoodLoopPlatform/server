@@ -37,6 +37,11 @@ public class StoreConfiguration : IEntityTypeConfiguration<Organization>
             .WithOne(r => r.Organization)
             .HasForeignKey(r => r.OrganizationId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(s => s.CommissionWithdrawn)
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0.00m)
+            .IsRequired();
     }
 }
 
