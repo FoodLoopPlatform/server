@@ -82,8 +82,7 @@ public class FirebasePushNotificationService : IFirebasePushNotificationService
                     }
                 };
 
-                var messaging = FirebaseMessaging.GetMessaging(FirebaseApp.DefaultInstance);
-                var response = await messaging.SendAsync(message, cancellationToken);
+                var response = await SendMessageAsync(message, cancellationToken);
                 _logger.LogInformation("Firebase push sent to token for user {UserId}. MessageId: {MessageId}", userId, response);
             }
             catch (FirebaseMessagingException ex)
@@ -110,6 +109,12 @@ public class FirebasePushNotificationService : IFirebasePushNotificationService
                 _logger.LogError(ex, "Unexpected exception while sending Firebase push to user {UserId} with token {Token}", userId, token);
             }
         }
+    }
+
+    protected virtual Task<string> SendMessageAsync(Message message, CancellationToken cancellationToken)
+    {
+        var messaging = FirebaseMessaging.GetMessaging(FirebaseApp.DefaultInstance);
+        return messaging.SendAsync(message, cancellationToken);
     }
 
     private async Task EnsureFirebaseInitializedAsync()
