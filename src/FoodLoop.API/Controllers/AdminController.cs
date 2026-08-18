@@ -8,6 +8,7 @@ using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Application.DTOs.Orders;
 using FoodLoop.Application.Features.Orders.Queries;
+using FoodLoop.Application.Features.AiIntegration.Commands;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -516,6 +517,51 @@ public class AdminController : ControllerBase
             return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Failed to correct historical episode.", result.Errors));
         }
         return Ok(ApiResponse<string>.Ok("Historical episode corrected successfully. It is now eligible for re-ingestion."));
+    }
+
+    /// <summary>
+    /// POST /admin/monitoring-scan — manually trigger the AI monitoring scan for near-expiry products.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpPost("monitoring-scan")]
+    public async Task<IActionResult> RunMonitoringScan(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RunMonitoringScanCommand(), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Monitoring scan failed.", result.Errors));
+        }
+        return Ok(ApiResponse<string>.Ok("AI monitoring scan completed successfully."));
+    }
+
+    /// <summary>
+    /// POST /admin/pricing-batch — manually trigger the AI pricing recommendation batch sweep.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpPost("pricing-batch")]
+    public async Task<IActionResult> RunPricingBatch(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RunPricingBatchCommand(), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Pricing batch sweep failed.", result.Errors));
+        }
+        return Ok(ApiResponse<string>.Ok("AI pricing batch sweep completed successfully."));
+    }
+
+    /// <summary>
+    /// POST /admin/historical-ingestion — manually trigger the historical episode ingestion sweep.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpPost("historical-ingestion")]
+    public async Task<IActionResult> RunHistoricalIngestion(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RunHistoricalIngestionCommand(), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Historical ingestion sweep failed.", result.Errors));
+        }
+        return Ok(ApiResponse<string>.Ok("Historical ingestion sweep completed successfully."));
     }
 }
 
