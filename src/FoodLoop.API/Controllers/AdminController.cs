@@ -8,6 +8,7 @@ using FoodLoop.Application.Features.Admin.Queries;
 using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Application.DTOs.Orders;
 using FoodLoop.Application.Features.Orders.Queries;
+using FoodLoop.Application.Features.AiIntegration.Commands;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -507,6 +508,78 @@ public class AdminController : ControllerBase
         }
         return Ok(ApiResponse<string>.Ok("Historical episode corrected successfully. It is now eligible for re-ingestion."));
     }
+
+    /// <summary>
+    /// POST /admin/monitoring-scan — manually trigger the AI monitoring scan for near-expiry products.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpPost("monitoring-scan")]
+    public async Task<IActionResult> RunMonitoringScan(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RunMonitoringScanCommand(), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Monitoring scan failed.", result.Errors));
+        }
+        return Ok(ApiResponse<string>.Ok("AI monitoring scan completed successfully."));
+    }
+
+    /// <summary>
+    /// POST /admin/pricing-batch — manually trigger the AI pricing recommendation batch sweep.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpPost("pricing-batch")]
+    public async Task<IActionResult> RunPricingBatch(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RunPricingBatchCommand(), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Pricing batch sweep failed.", result.Errors));
+        }
+        return Ok(ApiResponse<string>.Ok("AI pricing batch sweep completed successfully."));
+    }
+
+    /// <summary>
+    /// POST /admin/historical-ingestion — manually trigger the historical episode ingestion sweep.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpPost("historical-ingestion")]
+    public async Task<IActionResult> RunHistoricalIngestion(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new RunHistoricalIngestionCommand(), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Historical ingestion sweep failed.", result.Errors));
+        }
+        return Ok(ApiResponse<string>.Ok("Historical ingestion sweep completed successfully."));
+    }
+
+    /// <summary>
+    /// GET /admin/stores/commissions — list all stores and their platform commission balance.
+    /// </summary>
+    [HttpGet("stores/commissions")]
+    public async Task<IActionResult> GetStoreCommissions(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetStoreCommissionsQuery(), cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<StoreCommissionDto>>.Ok(result));
+    }
+
+    /// <summary>
+    /// POST /admin/stores/{id:guid}/withdraw-commission — record a commission withdrawal from a store.
+    /// </summary>
+    [HttpPost("stores/{id:guid}/withdraw-commission")]
+    public async Task<IActionResult> WithdrawStoreCommission(Guid id, [FromBody] WithdrawCommissionRequest request, CancellationToken cancellationToken)
+    {
+        var command = new WithdrawStoreCommissionCommand(id, request.Amount);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<StoreCommissionDto>.Ok(result));
+    }
+}
+
+public class WithdrawCommissionRequest
+{
+    [System.ComponentModel.DataAnnotations.Required, System.ComponentModel.DataAnnotations.Range(0.01, 10000000.00)]
+    public decimal Amount { get; set; }
 }
 
 public class ProductModerationRequest { public string? Note { get; set; } }

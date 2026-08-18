@@ -66,12 +66,33 @@ public class RunPricingBatchCommandHandler : IRequestHandler<RunPricingBatchComm
 
         _logger.LogInformation("Found {Count} staged candidates for batch pricing.", stagedCandidates.Count);
 
+        // Deduplicate: Keep only the most recent staged risk assessment per product
+        var duplicatesToSkip = stagedCandidates
+            .GroupBy(ara => ara.ProductId)
+            .SelectMany(g => g.OrderByDescending(ara => ara.CreatedAt).Skip(1))
+            .ToList();
+
+        if (duplicatesToSkip.Any())
+        {
+            _logger.LogInformation("De-staging {Count} older duplicate risk assessments to prevent duplication.", duplicatesToSkip.Count);
+            foreach (var dup in duplicatesToSkip)
+            {
+                dup.IsPricingStaged = false;
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        var candidatesToProcess = stagedCandidates
+            .GroupBy(ara => ara.ProductId)
+            .Select(g => g.OrderByDescending(ara => ara.CreatedAt).First())
+            .ToList();
+
         // 2. Fetch platform system settings to calculate price floors
         var settings = await _dbContext.SystemSettings.FirstOrDefaultAsync(cancellationToken);
         var floorPolicy = settings?.DefaultPriceFloorPolicy ?? PriceFloorPolicy.DynamicAi;
 
         // 3. Group candidates by store (OrganizationId)
-        var storeGroups = stagedCandidates
+        var storeGroups = candidatesToProcess
             .GroupBy(ara => ara.Product!.OrganizationId);
 
         foreach (var storeGroup in storeGroups)
