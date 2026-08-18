@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Exceptions;
 using System;
 using System.Linq;
 using System.Threading;
@@ -69,7 +70,7 @@ public class RejectAiRecommendationCommandHandler : IRequestHandler<RejectAiReco
                     throw new UnauthorizedAccessException("Merchant is not authorized to act on another store's recommendation.");
                 }
 
-                return Result<Unit>.Fail("Recommendation is not in Pending status.");
+                throw new ConflictException("Recommendation is not in Pending status.");
             }
 
             // Retrieve recommendation to log context info

@@ -57,4 +57,7 @@ public class SystemSettings : BaseEntity
 
     /// <summary>Maximum API requests per minute per client (used by rate-limit middleware).</summary>
     public int ApiRequestRateLimitPerMinute { get; set; } = 120;
+
+    /// <summary>The threshold of expired product reports before a store is automatically deactivated.</summary>
+    public int MaxExpiredReportsBeforeDeactivation { get; set; } = 3;
 }

@@ -80,7 +80,7 @@ public class MarketplaceController : ControllerBase
     public async Task<IActionResult> ReportProduct(Guid id, [FromBody] ReportProductRequest request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
-        await _mediator.Send(new ReportProductCommand(userId, id, request.Reason, request.Details), cancellationToken);
+        await _mediator.Send(new ReportProductCommand(userId, id, request.Reason, request.Details, request.ImageUrl), cancellationToken);
         return Ok(ApiResponse.Ok("Report submitted. Our team will review it shortly."));
     }
 }
@@ -91,4 +91,7 @@ public class ReportProductRequest
     [Required]
     public string Reason { get; set; } = null!;
     public string? Details { get; set; }
+
+    [MaxLength(500)]
+    public string? ImageUrl { get; set; }
 }

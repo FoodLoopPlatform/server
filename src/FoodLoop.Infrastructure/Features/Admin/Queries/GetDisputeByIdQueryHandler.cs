@@ -41,7 +41,8 @@ public class GetDisputeByIdQueryHandler : IRequestHandler<GetDisputeByIdQuery, D
             IsResolved = report.IsResolved,
             AdminNote = report.AdminNote,
             ResolvedAt = report.ResolvedAt,
-            CreatedAt = report.CreatedAt
+            CreatedAt = report.CreatedAt,
+            ImageUrl = report.ImageUrl
         };
     }
 }

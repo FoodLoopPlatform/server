@@ -15,4 +15,5 @@ public class DisputeDto
     public string? AdminNote { get; set; }
     public DateTimeOffset? ResolvedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public string? ImageUrl { get; set; }
 }

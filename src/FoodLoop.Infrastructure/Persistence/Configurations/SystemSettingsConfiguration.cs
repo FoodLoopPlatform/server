@@ -14,6 +14,8 @@ public class SystemSettingsConfiguration : IEntityTypeConfiguration<SystemSettin
         // Hard ceiling: MaxDiscountPerCyclePercent must be 1–15
         builder.Property(s => s.MaxDiscountPerCyclePercent).IsRequired();
 
+        builder.Property(s => s.MaxExpiredReportsBeforeDeactivation).HasDefaultValue(3);
+
         // Seed the singleton row so the table always has exactly one record
         builder.HasData(new SystemSettings
         {
@@ -25,6 +27,7 @@ public class SystemSettingsConfiguration : IEntityTypeConfiguration<SystemSettin
             BulkProductUploadEnabled = true,
             PlatformCommissionPercent = 10,
             ApiRequestRateLimitPerMinute = 120,
+            MaxExpiredReportsBeforeDeactivation = 3,
             CreatedAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero)
         });
     }

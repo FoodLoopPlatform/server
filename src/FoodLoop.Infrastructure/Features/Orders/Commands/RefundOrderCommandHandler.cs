@@ -41,12 +41,18 @@ public class RefundOrderCommandHandler : IRequestHandler<RefundOrderCommand, Ord
         var store = await _db.Organizations
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.OwnerId == request.MerchantUserId && !o.IsDeleted, cancellationToken)
-            ?? throw new UnauthorizedAccessException("Merchant organization not found.");
+            ?? throw new ForbiddenAccessException("Merchant organization not found.");
 
         var belongsToStore = order.Items.Any(i => i.Product != null && i.Product.OrganizationId == store.Id);
         if (!belongsToStore)
         {
-            throw new UnauthorizedAccessException("You are not authorized to refund this order as it does not belong to your store.");
+            throw new ForbiddenAccessException("You are not authorized to refund this order as it does not belong to your store.");
+        }
+
+        // Check if already refunded
+        if (order.PaymentStatus == FoodLoop.Domain.Enums.PaymentStatus.Refunded)
+        {
+            throw new ConflictException("This order has already been refunded.");
         }
 
         // 3. Safety Check: Verify refund amount does not exceed the order's total amount

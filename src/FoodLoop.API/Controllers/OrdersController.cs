@@ -65,6 +65,17 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// POST /orders/{id:guid}/wallet-checkout — pay for an order using the customer's wallet balance.
+    /// </summary>
+    [HttpPost("{id:guid}/wallet-checkout")]
+    public async Task<IActionResult> PayWithWallet(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new WalletCheckoutCommand(id, UserId);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<WalletCheckoutResultDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /orders — get customer's order history.
     /// </summary>
     [HttpGet]
