@@ -26,6 +26,16 @@ public class UserDeviceTokenService : IUserDeviceTokenService
             return;
         }
 
+        // Deactivate this token for other users to prevent cross-tenant notification leakage
+        var otherTokens = await _db.UserDeviceTokens
+            .Where(x => x.Token == token && x.UserId != userId && x.IsActive)
+            .ToListAsync(cancellationToken);
+
+        foreach (var ot in otherTokens)
+        {
+            ot.IsActive = false;
+        }
+
         var existing = await _db.UserDeviceTokens
             .FirstOrDefaultAsync(x => x.UserId == userId && x.Token == token, cancellationToken);
 

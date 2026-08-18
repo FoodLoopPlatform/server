@@ -4,6 +4,7 @@ using FoodLoop.Domain.Entities;
 using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Hubs;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,15 +16,18 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     private readonly ApplicationDbContext _db;
     private readonly IHubContext<NotificationHub, INotificationHubClient> _hubContext;
     private readonly IFirebasePushNotificationService _firebasePushNotificationService;
+    private readonly ILogger<RealTimeNotificationService> _logger;
 
     public RealTimeNotificationService(
         ApplicationDbContext db,
         IHubContext<NotificationHub, INotificationHubClient> hubContext,
-        IFirebasePushNotificationService firebasePushNotificationService)
+        IFirebasePushNotificationService firebasePushNotificationService,
+        ILogger<RealTimeNotificationService> logger)
     {
         _db = db;
         _hubContext = hubContext;
         _firebasePushNotificationService = firebasePushNotificationService;
+        _logger = logger;
     }
 
     public async Task SendNotificationToUserAsync(
@@ -55,10 +59,24 @@ public class RealTimeNotificationService : IRealTimeNotificationService
             CreatedAt = notification.CreatedAt
         };
 
-        // Push real-time SignalR message to the specific user connection group.
-        await _hubContext.Clients.User(userId.ToString()).ReceiveNotification(dto);
+        try
+        {
+            // Push real-time SignalR message to the specific user connection group.
+            await _hubContext.Clients.User(userId.ToString()).ReceiveNotification(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to dispatch SignalR real-time notification to user {UserId}.", userId);
+        }
 
-        // Best-practice hybrid delivery: web via SignalR, mobile via Firebase push.
-        await _firebasePushNotificationService.SendToUserAsync(userId, title, body, type, cancellationToken);
+        try
+        {
+            // Best-practice hybrid delivery: web via SignalR, mobile via Firebase push.
+            await _firebasePushNotificationService.SendToUserAsync(userId, title, body, type, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to dispatch Firebase push notification to user {UserId}.", userId);
+        }
     }
 }

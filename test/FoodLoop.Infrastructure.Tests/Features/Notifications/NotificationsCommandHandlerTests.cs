@@ -12,6 +12,7 @@ using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Services;
 using FoodLoop.Infrastructure.Tests.TestSupport;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Linq;
@@ -115,7 +116,11 @@ public class NotificationsCommandHandlerTests : IDisposable
         mockHubContext.Setup(h => h.Clients).Returns(mockClients.Object);
         mockClients.Setup(c => c.User(It.IsAny<string>())).Returns(mockClientProxy.Object);
 
-        var service = new RealTimeNotificationService(_db, mockHubContext.Object, new Mock<IFirebasePushNotificationService>().Object);
+        var service = new RealTimeNotificationService(
+            _db, 
+            mockHubContext.Object, 
+            new Mock<IFirebasePushNotificationService>().Object, 
+            new Mock<ILogger<RealTimeNotificationService>>().Object);
 
         // Act
         await service.SendNotificationToUserAsync(_userId, "Realtime Test", "SignalR is working", "OrderPlaced", CancellationToken.None);
