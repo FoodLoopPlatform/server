@@ -76,6 +76,13 @@ public class RejectAiRecommendationCommandHandler : IRequestHandler<RejectAiReco
             var rec = await _dbContext.AiPricingRecommendations
                 .FirstAsync(r => r.Id == request.Id, cancellationToken);
 
+            using var logScope = _logger.BeginScope(new System.Collections.Generic.Dictionary<string, object>
+            {
+                ["RecommendationId"] = rec.Id,
+                ["ProductId"] = rec.ProductId,
+                ["CorrelationId"] = rec.CorrelationId ?? string.Empty
+            });
+
             await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Assisted Pricing Recommendation rejected. Recommendation: {RecId}. CorrelationId: {CorrelationId}, Actor: {UserId}", request.Id, rec.CorrelationId, request.MerchantUserId);

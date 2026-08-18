@@ -92,10 +92,19 @@ public class RunMonitoringScanCommandHandler : IRequestHandler<RunMonitoringScan
 
                 // B. Sales velocity check
                 var cutoffDate = _timeProvider.GetUtcNow().AddDays(-30);
-                var orderItems = await _dbContext.Orders
+                var paidOrders = await _dbContext.Orders
                     .Where(o => o.PaymentStatus == PaymentStatus.Paid && o.CreatedAt >= cutoffDate)
-                    .SelectMany(o => o.Items.Where(oi => oi.ProductId == product.Id), (o, oi) => new { oi.Quantity, o.CreatedAt })
+                    .Select(o => new { o.Id, o.CreatedAt })
                     .ToListAsync(cancellationToken);
+
+                var productItems = await _dbContext.OrderItems
+                    .Where(oi => oi.ProductId == product.Id)
+                    .Select(oi => new { oi.OrderId, oi.Quantity })
+                    .ToListAsync(cancellationToken);
+
+                var orderItems = (from oi in productItems
+                                  join o in paidOrders on oi.OrderId equals o.Id
+                                  select new { oi.Quantity, o.CreatedAt }).ToList();
 
                 var metrics = SalesMetricsCalculator.Calculate(
                     orderItems.Select(oi => new SalesMetricsCalculator.OrderItemSummary { Quantity = oi.Quantity, CreatedAt = oi.CreatedAt }),
@@ -185,7 +194,12 @@ public class RunMonitoringScanCommandHandler : IRequestHandler<RunMonitoringScan
                     correlationId: correlationId,
                     isPricingStaged: isPricingStaged,
                     requestedContext: null
-                );
+                )
+                {
+                    SnapshotOriginalPrice = product.OriginalPrice,
+                    SnapshotQuantityAvailable = product.QuantityAvailable,
+                    SnapshotProductStatus = product.Status
+                };
 
                 _dbContext.AiRiskAssessments.Add(riskAssessment);
                 await _dbContext.SaveChangesAsync(cancellationToken);

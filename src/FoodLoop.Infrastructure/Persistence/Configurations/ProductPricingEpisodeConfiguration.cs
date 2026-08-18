@@ -18,7 +18,10 @@ public class ProductPricingEpisodeConfiguration : IEntityTypeConfiguration<Produ
 
         builder.Property(pe => pe.IngestionCorrelationId)
             .HasMaxLength(64)
-            .IsRequired();
+            .IsRequired(false);
+
+        builder.Property(pe => pe.IngestedAt)
+            .IsRequired(false);
 
         builder.Property(pe => pe.Outcome)
             .HasMaxLength(50)

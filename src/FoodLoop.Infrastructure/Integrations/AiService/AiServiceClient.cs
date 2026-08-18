@@ -177,6 +177,7 @@ public class AiServiceClient : IAiServiceClient
         // Strict client-side contract validations
         var requestedProductIds = request.Products.Select(p => p.ProductId).ToHashSet();
         var uniqueResponseProductIds = new HashSet<string>();
+        var duplicates = new List<string>();
 
         foreach (var decision in result.Decisions)
         {
@@ -192,7 +193,7 @@ public class AiServiceClient : IAiServiceClient
 
             if (!uniqueResponseProductIds.Add(decision.ProductId))
             {
-                throw new AiServiceContractException($"AI pricing decision contains duplicate ProductId '{decision.ProductId}'.");
+                duplicates.Add(decision.ProductId);
             }
 
             if (decision.DiscountPercentage < 0.0 || decision.DiscountPercentage > 15.0)
@@ -214,6 +215,22 @@ public class AiServiceClient : IAiServiceClient
             {
                 throw new AiServiceContractException("Decision contains missing or empty ActionRequirement.");
             }
+        }
+
+        if (duplicates.Count > 0)
+        {
+            throw new AiServiceContractException($"AI pricing decisions contains duplicate ProductId(s): {string.Join(", ", duplicates)}. Specifically, duplicate ProductId '{string.Join("', '", duplicates)}'.");
+        }
+
+        var missing = requestedProductIds.Except(uniqueResponseProductIds).Select(id => id.ToString()).ToList();
+        if (missing.Count > 0)
+        {
+            throw new AiServiceContractException($"AI pricing decisions are missing recommendations for requested ProductId(s): {string.Join(", ", missing)}.");
+        }
+
+        if (result.Decisions.Count > request.Products.Count)
+        {
+            throw new AiServiceContractException($"AI pricing response contains more decisions ({result.Decisions.Count}) than requested products ({request.Products.Count}).");
         }
 
         return result;
@@ -288,6 +305,43 @@ public class AiServiceClient : IAiServiceClient
         if (result == null)
         {
             throw new AiServiceContractException("Deserialized readiness response was null.");
+        }
+
+        return result;
+    }
+
+    public async Task<AiServiceVersionDto> GetVersionAsync(CancellationToken ct = default)
+    {
+        _logger.LogInformation("Retrieving AI Service version. CorrelationId: {CorrelationId}", _correlationIdAccessor.GetCorrelationId());
+
+        var pipeline = _pipelineProvider.GetPipeline<HttpResponseMessage>("AiServiceHealthPipeline");
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await pipeline.ExecuteAsync(async state => 
+                await _httpClient.GetAsync("/version", state), ct);
+        }
+        catch (Polly.CircuitBreaker.BrokenCircuitException ex)
+        {
+            throw new AiServiceUnavailableException("AI Service circuit breaker is open. Failing fast.", ex);
+        }
+        catch (Polly.Timeout.TimeoutRejectedException ex)
+        {
+            throw new AiServiceUnavailableException("AI Service call timed out.", ex);
+        }
+
+        var responseBody = await response.Content.ReadAsStringAsync(ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new AiServiceUnavailableException($"AI Service version call failed with status code: {response.StatusCode}");
+        }
+
+        var result = JsonSerializer.Deserialize<AiServiceVersionDto>(responseBody, _jsonSerializerOptions);
+        if (result == null)
+        {
+            throw new AiServiceContractException("Deserialized version response was null.");
         }
 
         return result;

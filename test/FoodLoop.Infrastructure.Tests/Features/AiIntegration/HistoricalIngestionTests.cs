@@ -52,6 +52,14 @@ public class HistoricalIngestionTests
         
         var utcNow = new DateTimeOffset(2026, 8, 17, 12, 0, 0, TimeSpan.Zero);
         _mockTimeProvider.Setup(x => x.GetUtcNow()).Returns(utcNow);
+
+        // Default setup: assume all submitted events are successfully ingested
+        _mockAiClient.Setup(x => x.IngestHistoricalPricingAsync(It.IsAny<HistoricalIngestionRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HistoricalIngestionRequestDto req, CancellationToken ct) =>
+            {
+                var docIds = req.Events.Select(e => e.EventId).ToList();
+                return new HistoricalIngestionResponseDto(docIds.Count, docIds.Count, 0, docIds);
+            });
     }
 
     private RunHistoricalIngestionCommandHandler CreateHandler(IApplicationDbContext dbContext)
@@ -779,9 +787,222 @@ public class HistoricalIngestionTests
         // Act
         dbContext.ProductPricingEpisodes.Add(ep2);
         Func<Task> act = async () => await dbContext.SaveChangesAsync();
-
+ 
         // Assert
         await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public void HistoricalIngestionResponseDto_should_deserialize_correctly_from_literal_json()
+    {
+        // Arrange
+        // accepted_count: number of validation-passed records accepted for processing.
+        // upserted_count: number of records successfully written to the vector store.
+        // failed_count: number of records rejected or failed during vector store write.
+        // document_ids: list of successfully stored document identifiers (matching event IDs).
+        // Since accepted and upserted counts may diverge (e.g. accepted-but-not-yet-upserted transient queueing),
+        // we track both but map document_ids as the source of truth for completed writes.
+        var json = @"{
+            ""accepted_count"": 3,
+            ""upserted_count"": 2,
+            ""failed_count"": 1,
+            ""document_ids"": [""doc-1"", ""doc-2""]
+        }";
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        // Act
+        var response = JsonSerializer.Deserialize<HistoricalIngestionResponseDto>(json, options);
+
+        // Assert
+        response.Should().NotBeNull();
+        response.AcceptedCount.Should().Be(3);
+        response.UpsertedCount.Should().Be(2);
+        response.FailedCount.Should().Be(1);
+        response.DocumentIds.Should().ContainInOrder("doc-1", "doc-2");
+    }
+
+    [Fact]
+    public async Task HistoricalIngestion_should_only_stamp_and_persist_episodes_that_did_not_fail()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Store A" };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
+
+        var today = DateOnly.FromDateTime(_mockTimeProvider.Object.GetUtcNow().DateTime);
+
+        // Product A: Expired (will generate ep-{id}-nodisc)
+        var pA = new Product
+        {
+            Id = Guid.NewGuid(),
+            Title = "Product A",
+            OriginalPrice = 100m,
+            DiscountedPrice = 85m,
+            QuantityAvailable = 10,
+            ExpirationDate = today.AddDays(-1),
+            Organization = org,
+            Category = category,
+            CreatedAt = _mockTimeProvider.Object.GetUtcNow().AddDays(-5)
+        };
+
+        // Product B: Expired (will generate ep-{id}-nodisc)
+        var pB = new Product
+        {
+            Id = Guid.NewGuid(),
+            Title = "Product B",
+            OriginalPrice = 50m,
+            DiscountedPrice = 45m,
+            QuantityAvailable = 5,
+            ExpirationDate = today.AddDays(-1),
+            Organization = org,
+            Category = category,
+            CreatedAt = _mockTimeProvider.Object.GetUtcNow().AddDays(-5)
+        };
+
+        dbContext.Organizations.Add(org);
+        dbContext.Categories.Add(category);
+        dbContext.Products.AddRange(pA, pB);
+        await dbContext.SaveChangesAsync();
+
+        var eventIdA = $"ep-{pA.Id}-nodisc";
+        var eventIdB = $"ep-{pB.Id}-nodisc";
+
+        // Mock AI Service to report that only Product A was successfully ingested (upserted/accepted)
+        // while Product B failed (it is not in the successful document IDs).
+        var mockResponse = new HistoricalIngestionResponseDto(
+            AcceptedCount: 1,
+            UpsertedCount: 1,
+            FailedCount: 1,
+            DocumentIds: new List<string> { eventIdA }
+        );
+
+        _mockAiClient.Setup(x => x.IngestHistoricalPricingAsync(It.IsAny<HistoricalIngestionRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockResponse);
+
+        var handler = CreateHandler(dbContext);
+
+        // Act
+        var result = await handler.Handle(new RunHistoricalIngestionCommand(), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+
+        // Verify that only the successful episode (Product A) is persisted in the database
+        var persistedEpisodes = await dbContext.ProductPricingEpisodes.ToListAsync();
+        persistedEpisodes.Should().HaveCount(1);
+        persistedEpisodes[0].ProductId.Should().Be(pA.Id);
+        persistedEpisodes[0].EventId.Should().Be(eventIdA);
+        persistedEpisodes[0].IngestionCorrelationId.Should().Be("test-correlation-id");
+
+        // Verify Product B was not persisted as ingested, leaving it eligible for retry
+        persistedEpisodes.Any(pe => pe.ProductId == pB.Id).Should().BeFalse();
+    }
+
+    [Fact]
+    public void HistoricalIngestionRequestDto_should_serialize_correctly_to_snake_case()
+    {
+        // Arrange
+        var events = new List<HistoricalPricingEventDto>
+        {
+            new HistoricalPricingEventDto(
+                EventId: "ev-1",
+                StoreId: "store-1",
+                ProductId: "prod-1",
+                Category: "Fruit",
+                RecordedAt: DateTimeOffset.UtcNow,
+                Quantity: 10,
+                CurrentPrice: 15.0m,
+                OriginalPrice: 20.0m,
+                PriceFloor: 12.0m,
+                SalesVelocity: 1.5,
+                HistoricalAverageDailySales: 3.2, // FLAT field!
+                HoursRemaining: 24.0,
+                DiscountPercentage: 25.0,
+                UnitsSoldAfterDiscount: 4,
+                SellThroughRate: 0.4,
+                Outcome: "PARTIALLY_SOLD"
+            )
+        };
+
+        var request = new HistoricalIngestionRequestDto(events);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(request, options);
+
+        // Assert
+        // Verify key field mapping from §7.1 matches flat snake_case field name
+        json.Should().Contain("\"historical_average_daily_sales\":3.2");
+        json.Should().NotContain("demand");
+        json.Should().NotContain("historical_sales");
+        
+        // Check other snake_case fields
+        json.Should().Contain("\"event_id\"");
+        json.Should().Contain("\"store_id\"");
+        json.Should().Contain("\"product_id\"");
+        json.Should().Contain("\"units_sold_after_discount\"");
+        json.Should().Contain("\"sell_through_rate\"");
+        json.Should().Contain("\"hours_remaining\"");
+    }
+
+    [Fact]
+    public async Task Handle_should_not_call_AiServiceClient_if_all_episodes_are_already_ingested()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Store A" };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
+        var today = DateOnly.FromDateTime(_mockTimeProvider.Object.GetUtcNow().DateTime);
+
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            Title = "Ingested Product",
+            OriginalPrice = 100m,
+            DiscountedPrice = 85m,
+            QuantityAvailable = 0,
+            ExpirationDate = today.AddDays(5),
+            Organization = org,
+            Category = category,
+            CreatedAt = _mockTimeProvider.Object.GetUtcNow().AddDays(-10)
+        };
+
+        dbContext.Organizations.Add(org);
+        dbContext.Categories.Add(category);
+        dbContext.Products.Add(product);
+
+        // Add already ingested episode for product
+        dbContext.ProductPricingEpisodes.Add(new ProductPricingEpisode
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            EventId = $"ep-{product.Id}-nodisc",
+            RecordedAt = product.CreatedAt,
+            IngestedAt = DateTimeOffset.UtcNow,
+            IngestionCorrelationId = "existing-id",
+            Outcome = "UNSOLD"
+        });
+
+        await dbContext.SaveChangesAsync();
+
+        var handler = CreateHandler(dbContext);
+
+        // Act
+        var result = await handler.Handle(new RunHistoricalIngestionCommand(), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        // Verify client was never called for this episode batch
+        _mockAiClient.Verify(x => x.IngestHistoricalPricingAsync(It.IsAny<HistoricalIngestionRequestDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     private FoodLoop.Infrastructure.Persistence.ApplicationDbContext CreateSqliteContext()

@@ -60,7 +60,8 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<FoodLoop.Infrastructure.Integrations.AiService.AiServiceHealthCheck>("AiServiceHealth", failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded);
 
 // ---- Localization -------------------------------------------------------
 
@@ -172,6 +173,21 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// ---- Cutover Safety Check (AI_Report.md §10, §15) -----------------------
+if (app.Environment.IsProduction())
+{
+    var aiOptions = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<FoodLoop.Infrastructure.Options.AiServiceOptions>>().Value;
+    if (!string.IsNullOrWhiteSpace(aiOptions.BaseUrl) && 
+        (aiOptions.BaseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase) || 
+         aiOptions.BaseUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase) || 
+         aiOptions.BaseUrl.Contains("::1", StringComparison.OrdinalIgnoreCase)))
+    {
+        throw new InvalidOperationException(
+            $"[Cutover Safety Check] AI Service BaseUrl '{aiOptions.BaseUrl}' points to localhost in a Production environment. " +
+            "A production deployment must not point at a dev/mock hostname. Application start aborted.");
+    }
+}
 
 // ---- Middleware pipeline ------------------------------------------------
 

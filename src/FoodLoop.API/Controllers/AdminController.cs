@@ -490,6 +490,23 @@ public class AdminController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<SystemSettingsDto>.Ok(result));
     }
+
+    /// <summary>
+    /// POST /admin/historical-episodes/correct — correct a historical pricing episode's snapshot values and clear ingestion state.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpPost("historical-episodes/correct")]
+    public async Task<IActionResult> RequestHistoricalEpisodeCorrection(
+        [FromBody] RequestHistoricalEpisodeCorrectionCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Failed to correct historical episode.", result.Errors));
+        }
+        return Ok(ApiResponse<string>.Ok("Historical episode corrected successfully. It is now eligible for re-ingestion."));
+    }
 }
 
 public class ProductModerationRequest { public string? Note { get; set; } }

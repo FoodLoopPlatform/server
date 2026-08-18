@@ -55,6 +55,9 @@ public class AiPricingRecommendation : BaseEntity
     public AiRiskAssessment? RiskAssessment { get; set; }
 
     public string CorrelationId { get; set; } = string.Empty; // MaxLength: 64
+    public decimal? SnapshotOriginalPrice { get; set; }
+    public int? SnapshotQuantityAvailable { get; set; }
+    public ProductStatus? SnapshotProductStatus { get; set; }
 
     // Parameterless constructor for EF Core serialization
     public AiPricingRecommendation() { }

@@ -31,6 +31,9 @@ public class AiRiskAssessment : BaseEntity
     public string? RequestedContext { get; set; } // JSON list of weather/events
     public bool IsPricingStaged { get; set; } = false;
     public string CorrelationId { get; set; } = string.Empty;
+    public decimal? SnapshotOriginalPrice { get; set; }
+    public int? SnapshotQuantityAvailable { get; set; }
+    public ProductStatus? SnapshotProductStatus { get; set; }
 
     // Parameterless constructor for EF Core serialization
     public AiRiskAssessment() { }

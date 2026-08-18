@@ -36,6 +36,14 @@ public class AiPricingRecommendationConfiguration : IEntityTypeConfiguration<AiP
             .HasMaxLength(64)
             .IsRequired();
 
+        builder.Property(p => p.SnapshotOriginalPrice)
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.SnapshotQuantityAvailable);
+
+        builder.Property(p => p.SnapshotProductStatus)
+            .HasConversion<string>();
+
         builder.HasOne(p => p.Product)
             .WithMany()
             .HasForeignKey(p => p.ProductId)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ using Moq.Protected;
 using Polly.CircuitBreaker;
 using Polly;
 using Microsoft.Extensions.Time.Testing;
+using Microsoft.Extensions.Logging;
+using Polly.Registry;
 using Xunit;
 
 namespace FoodLoop.Infrastructure.Tests.Integrations;
@@ -439,6 +442,130 @@ public class AiServiceClientTests
     }
 
     [Fact]
+    public async Task RecommendPricingAsync_boundary_values_0_and_15_discount_and_0_and_1_confidence_should_succeed()
+    {
+        // Scenario: discount exactly 0.0 and 15.0, confidence exactly 0.0 and 1.0 (inclusive boundaries).
+        // Finding: confirms client accepts closed-interval boundary values.
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(@"{
+                ""store_id"": ""store-cairo"",
+                ""decisions"": [
+                    { ""product_id"": ""p-10"", ""discount_percentage"": 0.0, ""reason"": ""No change"", ""confidence"": 0.0, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""min"" },
+                    { ""product_id"": ""p-11"", ""discount_percentage"": 15.0, ""reason"": ""Max allowed"", ""confidence"": 1.0, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""max"" }
+                ]
+            }")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(mockResponse);
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new PricingBatchRequestDto(
+            StoreId: "store-cairo",
+            StorePolicy: new("store-cairo", "assisted"),
+            Products: new List<PricingProductRequestDto>
+            {
+                new("p-10", "Milk", "Dairy", new(10, 20m, 18m, 15m), new(2.0, new(3.0)), new(DateTimeOffset.UtcNow, 2.0), new("CRITICAL", "Near expiry", 0.95)),
+                new("p-11", "Bread", "Bakery", new(5, 10m, 9m, 8m), new(1.0, new(2.0)), new(DateTimeOffset.UtcNow, 2.0), new("HIGH", "Low velocity", 0.85))
+            }
+        );
+
+        var result = await client.RecommendPricingAsync(request);
+
+        result.Decisions.Should().HaveCount(2);
+        result.Decisions[0].DiscountPercentage.Should().Be(0.0);
+        result.Decisions[0].Confidence.Should().Be(0.0);
+        result.Decisions[1].DiscountPercentage.Should().Be(15.0);
+        result.Decisions[1].Confidence.Should().Be(1.0);
+    }
+
+    [Fact]
+    public async Task RecommendPricingAsync_duplicate_product_id_in_response_should_throw_AiServiceContractException()
+    {
+        // Scenario: AI returns two decisions for the same product ID that was in the request.
+        // Finding: confirms client rejects duplicate ProductId before handler sees the response.
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(@"{
+                ""store_id"": ""store-cairo"",
+                ""decisions"": [
+                    { ""product_id"": ""p-10"", ""discount_percentage"": 5.0, ""reason"": ""First"", ""confidence"": 0.9, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""dup"" },
+                    { ""product_id"": ""p-10"", ""discount_percentage"": 10.0, ""reason"": ""Duplicate"", ""confidence"": 0.8, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""dup"" }
+                ]
+            }")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(mockResponse);
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new PricingBatchRequestDto(
+            StoreId: "store-cairo",
+            StorePolicy: new("store-cairo", "assisted"),
+            Products: new List<PricingProductRequestDto>
+            {
+                new("p-10", "Milk", "Dairy", new(10, 20m, 18m, 15m), new(2.0, new(3.0)), new(DateTimeOffset.UtcNow, 2.0), new("CRITICAL", "Near expiry", 0.95))
+            }
+        );
+
+        var ex = await Assert.ThrowsAsync<AiServiceContractException>(() => client.RecommendPricingAsync(request));
+        ex.Message.Should().Contain("duplicate ProductId 'p-10'");
+    }
+
+    [Fact]
+    public async Task AnalyzeMonitoringAsync_boundary_confidence_0_and_1_should_succeed()
+    {
+        // Scenario: monitoring response with confidence exactly 0.0 and exactly 1.0.
+        // Finding: confirms inclusive [0.0, 1.0] boundary on monitoring endpoint.
+        foreach (var confidence in new[] { 0.0, 1.0 })
+        {
+            var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent($@"{{ ""route"": ""NO_ACTION"", ""risk_level"": ""LOW"", ""reason"": ""Boundary"", ""confidence"": {confidence.ToString(System.Globalization.CultureInfo.InvariantCulture)} }}")
+            };
+
+            _mockHttpMessageHandler.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>()
+                )
+                .ReturnsAsync(mockResponse);
+
+            var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+            var client = sp.GetRequiredService<IAiServiceClient>();
+
+            var request = new MonitoringRequestDto(
+                Product: new("p-10", "Milk", "Dairy"),
+                Inventory: new(10, 20.00m, 18.00m, 15.00m),
+                Demand: new(2.5, new(3.0)),
+                Expiry: new(DateTimeOffset.UtcNow.AddHours(2), 2.0),
+                Location: new(30.05, 31.23, "store-cairo"),
+                StorePolicy: new("store-cairo", "assisted"),
+                Timestamp: DateTimeOffset.UtcNow
+            );
+
+            var result = await client.AnalyzeMonitoringAsync(request);
+            result.Confidence.Should().Be(confidence);
+        }
+    }
+
+    [Fact]
     public async Task Response_with_out_of_bounds_discount_percentage_should_throw_AiServiceContractException()
     {
         // Arrange
@@ -747,5 +874,286 @@ public class AiServiceClientTests
 
         // Ensure uniqueness (non-repeating)
         id1.Should().NotBe(id2);
+    }
+
+    [Fact]
+    public async Task RecommendPricingAsync_counts_match_but_returned_IDs_are_duplicates_should_throw_AiServiceContractException()
+    {
+        // Scenario: Requested 2 products, AI returns 2 decisions but duplicates the same product ID (count matches but 1:1 mapping fails).
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(@"{
+                ""store_id"": ""store-cairo"",
+                ""decisions"": [
+                    { ""product_id"": ""p-10"", ""discount_percentage"": 5.0, ""reason"": ""First"", ""confidence"": 0.9, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""dup"" },
+                    { ""product_id"": ""p-10"", ""discount_percentage"": 10.0, ""reason"": ""Duplicate"", ""confidence"": 0.8, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""dup"" }
+                ]
+            }")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(mockResponse);
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new PricingBatchRequestDto(
+            StoreId: "store-cairo",
+            StorePolicy: new("store-cairo", "assisted"),
+            Products: new List<PricingProductRequestDto>
+            {
+                new("p-10", "Milk", "Dairy", new(10, 20m, 18m, 15m), new(2.0, new(3.0)), new(DateTimeOffset.UtcNow, 2.0), new("CRITICAL", "Near expiry", 0.95)),
+                new("p-11", "Bread", "Bakery", new(5, 10m, 9m, 8m), new(1.0, new(2.0)), new(DateTimeOffset.UtcNow, 2.0), new("HIGH", "Low velocity", 0.85))
+            }
+        );
+
+        var ex = await Assert.ThrowsAsync<AiServiceContractException>(() => client.RecommendPricingAsync(request));
+        ex.Message.Should().Contain("duplicate ProductId(s)");
+    }
+
+    [Fact]
+    public async Task RecommendPricingAsync_fewer_decisions_than_products_should_throw_AiServiceContractException()
+    {
+        // Scenario: Requested 2 products, AI only returns 1 decision.
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(@"{
+                ""store_id"": ""store-cairo"",
+                ""decisions"": [
+                    { ""product_id"": ""p-10"", ""discount_percentage"": 5.0, ""reason"": ""First"", ""confidence"": 0.9, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""fewer"" }
+                ]
+            }")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(mockResponse);
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new PricingBatchRequestDto(
+            StoreId: "store-cairo",
+            StorePolicy: new("store-cairo", "assisted"),
+            Products: new List<PricingProductRequestDto>
+            {
+                new("p-10", "Milk", "Dairy", new(10, 20m, 18m, 15m), new(2.0, new(3.0)), new(DateTimeOffset.UtcNow, 2.0), new("CRITICAL", "Near expiry", 0.95)),
+                new("p-11", "Bread", "Bakery", new(5, 10m, 9m, 8m), new(1.0, new(2.0)), new(DateTimeOffset.UtcNow, 2.0), new("HIGH", "Low velocity", 0.85))
+            }
+        );
+
+        var ex = await Assert.ThrowsAsync<AiServiceContractException>(() => client.RecommendPricingAsync(request));
+        ex.Message.Should().Contain("missing recommendations for requested ProductId(s)");
+    }
+
+    [Fact]
+    public async Task RecommendPricingAsync_more_decisions_than_products_should_throw_AiServiceContractException()
+    {
+        // Scenario: Requested 1 product, AI returns 2 decisions.
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(@"{
+                ""store_id"": ""store-cairo"",
+                ""decisions"": [
+                    { ""product_id"": ""p-10"", ""discount_percentage"": 5.0, ""reason"": ""First"", ""confidence"": 0.9, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""more"" },
+                    { ""product_id"": ""p-11"", ""discount_percentage"": 10.0, ""reason"": ""Extra"", ""confidence"": 0.8, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""more"" }
+                ]
+            }")
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(mockResponse);
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new PricingBatchRequestDto(
+            StoreId: "store-cairo",
+            StorePolicy: new("store-cairo", "assisted"),
+            Products: new List<PricingProductRequestDto>
+            {
+                new("p-10", "Milk", "Dairy", new(10, 20m, 18m, 15m), new(2.0, new(3.0)), new(DateTimeOffset.UtcNow, 2.0), new("CRITICAL", "Near expiry", 0.95))
+            }
+        );
+
+        var ex = await Assert.ThrowsAsync<AiServiceContractException>(() => client.RecommendPricingAsync(request));
+        ex.Message.Should().Contain("unknown ProductId 'p-11'");
+    }
+
+    [Theory]
+    [InlineData(-0.0001)]
+    [InlineData(1.0001)]
+    public async Task RecommendPricingAsync_out_of_bounds_confidence_values_should_throw_AiServiceContractException(double invalidConfidence)
+    {
+        var mockResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent($@"[{{
+                ""store_id"": ""store-cairo"",
+                ""decisions"": [
+                    {{ ""product_id"": ""p-10"", ""discount_percentage"": 5.0, ""reason"": ""Invalid confidence"", ""confidence"": {invalidConfidence}, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""bounds"" }}
+                ]
+            }}]")
+        };
+
+        // Standard JSON format for batch response
+        var jsonResponse = $@"{{
+            ""store_id"": ""store-cairo"",
+            ""decisions"": [
+                {{ ""product_id"": ""p-10"", ""discount_percentage"": 5.0, ""reason"": ""Invalid confidence"", ""confidence"": {invalidConfidence}, ""action_requirement"": ""APPROVAL_REQUIRED"", ""action_reason"": ""bounds"" }}
+            ]
+        }}";
+
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(jsonResponse)
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(response);
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new PricingBatchRequestDto(
+            StoreId: "store-cairo",
+            StorePolicy: new("store-cairo", "assisted"),
+            Products: new List<PricingProductRequestDto>
+            {
+                new("p-10", "Milk", "Dairy", new(10, 20m, 18m, 15m), new(2.0, new(3.0)), new(DateTimeOffset.UtcNow, 2.0), new("CRITICAL", "Near expiry", 0.95))
+            }
+        );
+
+        var ex = await Assert.ThrowsAsync<AiServiceContractException>(() => client.RecommendPricingAsync(request));
+        ex.Message.Should().Contain("Confidence value");
+    }
+
+    [Fact]
+    public async Task AiServiceClient_logs_should_never_contain_raw_HTTP_headers_at_any_log_level()
+    {
+        // Arrange
+        var mockLogger = new Mock<ILogger<AiServiceClient>>();
+        var loggedMessages = new List<string>();
+
+        mockLogger.Setup(x => x.Log(
+            It.IsAny<LogLevel>(),
+            It.IsAny<EventId>(),
+            It.IsAny<It.IsAnyType>(),
+            It.IsAny<Exception>(),
+            (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()))
+            .Callback(new InvocationAction(invocation =>
+            {
+                var state = invocation.Arguments[2];
+                var exception = (Exception?)invocation.Arguments[3];
+                var formatter = invocation.Arguments[4];
+                
+                var formatterType = formatter.GetType();
+                var methodInfo = formatterType.GetMethod("Invoke");
+                if (methodInfo != null)
+                {
+                    var formattedMessage = methodInfo.Invoke(formatter, new[] { state, exception }) as string;
+                    if (formattedMessage != null)
+                    {
+                        loggedMessages.Add(formattedMessage);
+                    }
+                }
+            }));
+
+        var mockHandler = new Mock<HttpMessageHandler>();
+        mockHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(@"{ ""route"": ""PRICING"", ""risk_level"": ""CRITICAL"", ""reason"": ""Severe exposure"", ""confidence"": 0.95 }")
+            });
+
+        using var httpClient = new HttpClient(mockHandler.Object)
+        {
+            BaseAddress = new Uri("http://localhost:8000")
+        };
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "samba-nova-super-secret-key-12345");
+        httpClient.DefaultRequestHeaders.Add("api-key", "some-other-secret-key");
+
+        // Mock resilience pipelines
+        var mockPipelineProvider = new Mock<ResiliencePipelineProvider<string>>();
+        mockPipelineProvider.Setup(x => x.GetPipeline<HttpResponseMessage>("AiServiceBusinessPipeline"))
+            .Returns(ResiliencePipeline<HttpResponseMessage>.Empty);
+
+        var client = new AiServiceClient(httpClient, mockPipelineProvider.Object, mockLogger.Object, _mockCorrelationIdAccessor.Object);
+
+        var request = new MonitoringRequestDto(
+            Product: new("p-10", "Milk", "Dairy"),
+            Inventory: new(10, 20.00m, 18.00m, 15.00m),
+            Demand: new(2.5, new(3.0)),
+            Expiry: new(DateTimeOffset.UtcNow.AddHours(2), 2.0),
+            Location: new(30.05, 31.23, "store-cairo"),
+            StorePolicy: new("store-cairo", "assisted"),
+            Timestamp: DateTimeOffset.UtcNow
+        );
+
+        // Act
+        var result = await client.AnalyzeMonitoringAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        loggedMessages.Should().NotBeEmpty();
+        foreach (var msg in loggedMessages)
+        {
+            msg.Should().NotContain("samba-nova-super-secret-key-12345");
+            msg.Should().NotContain("some-other-secret-key");
+            msg.Should().NotContain("Bearer");
+            msg.Should().NotContain("Authorization");
+            msg.Should().NotContain("api-key");
+        }
+    }
+
+    [Fact]
+    public async Task GetVersionAsync_should_call_version_endpoint_and_return_version_dto()
+    {
+        // Arrange
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(@"{ ""name"": ""Banana AI Service"", ""version"": ""1.0.4"", ""environment"": ""production"" }")
+            });
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        // Act
+        var result = await client.GetVersionAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Name.Should().Be("Banana AI Service");
+        result.Version.Should().Be("1.0.4");
+        result.Environment.Should().Be("production");
     }
 }
