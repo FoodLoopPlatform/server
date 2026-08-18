@@ -271,6 +271,16 @@ public class StoresController : ControllerBase
     }
 
     /// <summary>
+    /// GET /stores/me/commission — read my store's sales and platform commission balance.
+    /// </summary>
+    [HttpGet("me/commission")]
+    public async Task<IActionResult> GetMyStoreCommission(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetStoreCommissionQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<StoreCommissionDto>.Ok(result));
+    }
+
+    /// <summary>
     /// PATCH /stores/me/ai-settings — update AI automation preferences.
     /// </summary>
     [HttpPatch("me/ai-settings")]
