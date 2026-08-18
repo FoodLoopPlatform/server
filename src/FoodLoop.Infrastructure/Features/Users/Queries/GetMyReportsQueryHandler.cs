@@ -50,7 +50,8 @@ public class GetMyReportsQueryHandler : IRequestHandler<GetMyReportsQuery, IRead
             IsResolved = r.IsResolved,
             AdminNote = r.AdminNote,
             ResolvedAt = r.ResolvedAt,
-            CreatedAt = r.CreatedAt
+            CreatedAt = r.CreatedAt,
+            ImageUrl = r.ImageUrl
         }).ToList();
     }
 }

@@ -11,5 +11,9 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.Property(p => p.Method).HasMaxLength(50).IsRequired();
         builder.Property(p => p.Amount).HasPrecision(10, 2);
         builder.Property(p => p.TransactionReference).HasMaxLength(200);
+
+        builder.HasIndex(p => p.TransactionReference)
+            .IsUnique()
+            .HasFilter("[TransactionReference] IS NOT NULL AND [TransactionReference] <> ''");
     }
 }

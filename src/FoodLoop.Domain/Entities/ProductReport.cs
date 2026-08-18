@@ -21,4 +21,5 @@ public class ProductReport : BaseEntity
     public bool IsResolved { get; set; }
     public string? AdminNote { get; set; }
     public DateTimeOffset? ResolvedAt { get; set; }
+    public string? ImageUrl { get; set; }
 }

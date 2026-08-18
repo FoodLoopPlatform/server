@@ -1,10 +1,12 @@
 using FoodLoop.API.Common;
 using FoodLoop.Application.Common.Interfaces;
+using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Text.Json;
 using System.Threading;
@@ -19,11 +21,13 @@ public class PaymentsController : ControllerBase
 {
     private readonly IApplicationDbContext _db;
     private readonly IPaymentService _paymentService;
+    private readonly ILogger<PaymentsController> _logger;
 
-    public PaymentsController(IApplicationDbContext db, IPaymentService paymentService)
+    public PaymentsController(IApplicationDbContext db, IPaymentService paymentService, ILogger<PaymentsController> logger)
     {
         _db = db;
         _paymentService = paymentService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -47,8 +51,15 @@ public class PaymentsController : ControllerBase
             var currency = obj.GetProperty("currency").GetString() ?? "";
             var errorOccured = obj.GetProperty("error_occured").GetRawText(); // "true" or "false"
             var hasParentTransaction = obj.GetProperty("has_parent_transaction").GetRawText();
-            var id = obj.GetProperty("id").GetRawText();
-            var integrationId = obj.GetProperty("integration_id").GetRawText();
+            var idProperty = obj.GetProperty("id");
+            var id = idProperty.ValueKind == JsonValueKind.Number 
+                ? idProperty.GetInt64().ToString() 
+                : idProperty.GetString() ?? idProperty.GetRawText();
+
+            var integrationIdProperty = obj.GetProperty("integration_id");
+            var integrationId = integrationIdProperty.ValueKind == JsonValueKind.Number
+                ? integrationIdProperty.GetInt64().ToString()
+                : integrationIdProperty.GetString() ?? integrationIdProperty.GetRawText();
             var is3dSecure = obj.GetProperty("is_3d_secure").GetRawText();
             var isAuth = obj.GetProperty("is_auth").GetRawText();
             var isCapture = obj.GetProperty("is_capture").GetRawText();
@@ -76,6 +87,89 @@ public class PaymentsController : ControllerBase
             var isSuccess = obj.GetProperty("success").GetBoolean();
             if (isSuccess)
             {
+                // Layer 1 Idempotency Check
+                var alreadyProcessed = await _db.Payments
+                    .AnyAsync(p => p.TransactionReference == id, cancellationToken);
+                if (alreadyProcessed)
+                {
+                    _logger.LogInformation("Webhook callback already processed for transaction reference {TransactionId}.", id);
+                    return Ok(new { status = "success", message = "Transaction already processed." });
+                }
+
+                // Retrieve merchant_order_id
+                var orderObj = obj.GetProperty("order");
+                var merchantOrderIdStr = orderObj.GetProperty("merchant_order_id").GetString();
+
+                if (Guid.TryParse(merchantOrderIdStr, out var orderId))
+                {
+                    var order = await _db.Orders
+                        .Include(o => o.Payment)
+                        .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+
+                    if (order != null)
+                    {
+                        // Verify amount: Paymob amount_cents is in EGP cents
+                        if (!decimal.TryParse(amountCents, out var parsedAmountCents))
+                        {
+                            return BadRequest("Invalid amount format in callback.");
+                        }
+                        var callbackAmount = parsedAmountCents / 100.0m;
+                        if (order.TotalAmount != callbackAmount)
+                        {
+                            _logger.LogWarning("Paymob callback amount mismatch: callback={CallbackAmount} EGP, order={OrderAmount} EGP for Order {OrderId}", callbackAmount, order.TotalAmount, order.Id);
+                            return BadRequest("Amount mismatch.");
+                        }
+
+                        if (order.PaymentStatus != PaymentStatus.Paid)
+                        {
+                            order.PaymentStatus = PaymentStatus.Paid;
+                            order.OrderStatus = OrderStatus.Confirmed; // Auto-confirm on payment success
+                            order.UpdatedAt = DateTimeOffset.UtcNow;
+
+                            if (order.Payment != null)
+                            {
+                                order.Payment.Status = PaymentStatus.Paid;
+                                order.Payment.TransactionReference = id; // Paymob transaction ID
+                                order.Payment.UpdatedAt = DateTimeOffset.UtcNow;
+                            }
+                            else
+                            {
+                                var newPayment = new Payment
+                                {
+                                    OrderId = order.Id,
+                                    Amount = order.TotalAmount,
+                                    Method = "Paymob",
+                                    Status = PaymentStatus.Paid,
+                                    TransactionReference = id,
+                                    CreatedAt = DateTimeOffset.UtcNow,
+                                    UpdatedAt = DateTimeOffset.UtcNow
+                                };
+                                _db.Payments.Add(newPayment);
+                                order.Payment = newPayment;
+                            }
+
+                            // Layer 2 Idempotency: Catch DbUpdateException from unique index violation on TransactionReference
+                            try
+                            {
+                                await _db.SaveChangesAsync(cancellationToken);
+                            }
+                            catch (DbUpdateException)
+                            {
+                                var processedConcurrently = await _db.Payments
+                                    .AnyAsync(p => p.TransactionReference == id, cancellationToken);
+                                if (processedConcurrently)
+                                {
+                                    _logger.LogInformation("Transaction {TransactionId} was processed concurrently by another request.", id);
+                                    return Ok(new { status = "success", message = "Transaction already processed concurrently." });
+                                }
+                                throw; // Re-throw other database update errors
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
                 // Retrieve merchant_order_id
                 var orderObj = obj.GetProperty("order");
                 var merchantOrderIdStr = orderObj.GetProperty("merchant_order_id").GetString();
@@ -87,18 +181,31 @@ public class PaymentsController : ControllerBase
                         .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
                     if (order != null && order.PaymentStatus != PaymentStatus.Paid)
                     {
-                        order.PaymentStatus = PaymentStatus.Paid;
-                        order.OrderStatus = OrderStatus.Confirmed; // Auto-confirm on payment success
+                        order.PaymentStatus = PaymentStatus.Failed;
                         order.UpdatedAt = DateTimeOffset.UtcNow;
 
                         if (order.Payment != null)
                         {
-                            order.Payment.Status = PaymentStatus.Paid;
-                            order.Payment.TransactionReference = id; // Paymob transaction ID
+                            order.Payment.Status = PaymentStatus.Failed;
+                            order.Payment.TransactionReference = id;
                             order.Payment.UpdatedAt = DateTimeOffset.UtcNow;
                         }
+                        else
+                        {
+                            var newPayment = new Payment
+                            {
+                                OrderId = order.Id,
+                                Amount = order.TotalAmount,
+                                Method = "Paymob",
+                                Status = PaymentStatus.Failed,
+                                TransactionReference = id,
+                                CreatedAt = DateTimeOffset.UtcNow,
+                                UpdatedAt = DateTimeOffset.UtcNow
+                            };
+                            _db.Payments.Add(newPayment);
+                            order.Payment = newPayment;
+                        }
 
-                        _db.Orders.Update(order);
                         await _db.SaveChangesAsync(cancellationToken);
                     }
                 }

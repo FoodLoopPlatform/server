@@ -185,7 +185,7 @@ All tables except join tables inherit from `BaseEntity` (providing a `Guid Id` p
     *   `Amount` (`decimal(18,2)`, NOT NULL)
     *   `Method` (`nvarchar(max)`, NOT NULL) -- "CreditCard", "Wallet", "Paymob"
     *   `Status` (`int`, NOT NULL, Maps to `PaymentStatus` Enum)
-    *   `TransactionReference` (`nvarchar(max)`, NULL)
+    *   `TransactionReference` (`nvarchar(200)`, NULL) -- Unique filtered index (WHERE [TransactionReference] IS NOT NULL AND [TransactionReference] <> '')
 
 #### `PriceHistories` Table
 *   **PK:** `Id` (`uniqueidentifier`, NOT NULL)
@@ -250,6 +250,7 @@ All tables except join tables inherit from `BaseEntity` (providing a `Guid Id` p
     *   `Comment` (`nvarchar(max)`, NULL)
     *   `Status` (`nvarchar(max)`, NOT NULL, Default: `'Pending'`) -- "Pending", "Resolved", "Dismissed"
     *   `AdminNote` (`nvarchar(max)`, NULL)
+    *   `ImageUrl` (`nvarchar(500)`, NULL)
 
 #### `Reviews` Table
 *   **PK:** `Id` (`uniqueidentifier`, NOT NULL)
@@ -367,6 +368,18 @@ All tables except join tables inherit from `BaseEntity` (providing a `Guid Id` p
     *   `Outcome` (`nvarchar(max)`, NOT NULL) -- "SoldOut", "Expired", "PartialSale"
     *   `DiscountPercentage` (`float`, NOT NULL)
     *   `SellThroughRate` (`float`, NOT NULL)
+
+#### `SystemSettings` Table
+*   **PK:** `Id` (`uniqueidentifier`, NOT NULL)
+*   **Columns:**
+    *   `MaxDiscountPerCyclePercent` (`int`, NOT NULL, Default: `10`)
+    *   `DefaultPriceFloorPolicy` (`int`, NOT NULL, Maps to `PriceFloorPolicy` Enum)
+    *   `NewBusinessDefaultAutomationMode` (`int`, NOT NULL, Maps to `AutomationMode` Enum)
+    *   `AutoVerifyPartnerStores` (`bit`, NOT NULL, Default: `0`)
+    *   `BulkProductUploadEnabled` (`bit`, NOT NULL, Default: `1`)
+    *   `PlatformCommissionPercent` (`int`, NOT NULL, Default: `10`)
+    *   `ApiRequestRateLimitPerMinute` (`int`, NOT NULL, Default: `120`)
+    *   `MaxExpiredReportsBeforeDeactivation` (`int`, NOT NULL, Default: `3`)
 
 ---
 
@@ -515,6 +528,7 @@ public record AiServiceVersionDto(string Name, string Version, string Environmen
 | **POST** | `/marketplace/products/{id}/report`| Customer | `ReportProductRequest` | `ApiResponse` |
 | **POST** | `/orders` | Customer | `CreateOrderRequest` | `ApiResponse<OrderDto>` |
 | **POST** | `/orders/{id}/paymob-checkout` | Customer | None | `ApiResponse<PaymobCheckoutDto>` |
+| **POST** | `/orders/{id}/wallet-checkout` | Customer | None | `ApiResponse<OrderDto>` |
 | **POST** | `/payments/paymob-callback` | Public | Paymob raw callback payload JSON | `ApiResponse` |
 | **GET** | `/stores/me` | Merchant | None | `ApiResponse<OrganizationDto>` |
 | **GET** | `/stores/me/commission` | Merchant | None | `ApiResponse<StoreCommissionDto>` |
@@ -663,6 +677,7 @@ When a merchant approves a pending pricing recommendation (`POST /stores/me/ai-r
 | `UnauthorizedAccessException`| 401 Unauthorized | `{"success": false, "message": "..."}` | Invalid authentication token. |
 | `ForbiddenAccessException` | 403 Forbidden | `{"success": false, "message": "..."}` | User has valid token but lacks the required role. |
 | `NotFoundException` | 404 Not Found | `{"success": false, "message": "..."}` | Entity not found in database. |
+| `ConflictException` | 409 Conflict | `{"success": false, "message": "..."}` | Resource state conflict (e.g. duplicate payment/refund). |
 | `AiServiceUnavailableException`| 503 Service Unavailable| `{"success": false, "message": "..."}` | Circuit breaker is open or downstream timed out. |
 
 ### Mathematical Invariants
@@ -681,5 +696,5 @@ When a merchant approves a pending pricing recommendation (`POST /stores/me/ai-r
 ### Automated Test Suite Status
 *   **Domain Tests:** 28 passed.
 *   **Application Tests:** 11 passed.
-*   **Infrastructure Tests:** 167 passed (includes all mock and integration tests).
-*   **Total Suite Status:** **206 Passed, 0 Failed**.
+*   **Infrastructure Tests:** 206 passed (includes all mock, integration, payments, and dispute policy tests).
+*   **Total Suite Status:** **245 Passed, 0 Failed**.

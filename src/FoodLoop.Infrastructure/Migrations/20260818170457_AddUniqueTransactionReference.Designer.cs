@@ -4,6 +4,7 @@ using FoodLoop.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FoodLoop.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260818170457_AddUniqueTransactionReference")]
+    partial class AddUniqueTransactionReference
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1083,10 +1086,6 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<string>("Details")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<bool>("IsResolved")
                         .HasColumnType("bit");
 
@@ -1277,11 +1276,6 @@ namespace FoodLoop.Infrastructure.Migrations
                     b.Property<int>("MaxDiscountPerCyclePercent")
                         .HasColumnType("int");
 
-                    b.Property<int>("MaxExpiredReportsBeforeDeactivation")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(3);
-
                     b.Property<int>("NewBusinessDefaultAutomationMode")
                         .HasColumnType("int");
 
@@ -1308,7 +1302,6 @@ namespace FoodLoop.Infrastructure.Migrations
                             CreatedAt = new DateTimeOffset(new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
                             DefaultPriceFloorPolicy = 0,
                             MaxDiscountPerCyclePercent = 10,
-                            MaxExpiredReportsBeforeDeactivation = 3,
                             NewBusinessDefaultAutomationMode = 1,
                             PlatformCommissionPercent = 10
                         });

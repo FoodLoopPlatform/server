@@ -1,4 +1,5 @@
 using System;
+using FoodLoop.Application.Common.Exceptions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -377,12 +378,10 @@ public class AiAssistedApprovalTests
         dbContext.ChangeTracker.Clear();
 
         // Act
-        var result = await handler.Handle(new ApproveAiRecommendationCommand(merchantUserId, recommendation.Id), CancellationToken.None);
-        dbContext.ChangeTracker.Clear();
+        var act = async () => await handler.Handle(new ApproveAiRecommendationCommand(merchantUserId, recommendation.Id), CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Pending");
+        await act.Should().ThrowAsync<ConflictException>().WithMessage("Recommendation is not in Pending status.");
 
         var freshProduct = await dbContext.Products.FindAsync(product.Id);
         freshProduct!.DiscountedPrice.Should().Be(100m); // NOT mutated
@@ -473,12 +472,11 @@ public class AiAssistedApprovalTests
         dbContext.ChangeTracker.Clear();
         
         // Second execution fails because first claimed the lock and status transitioned.
-        var result2 = await handler.Handle(new ApproveAiRecommendationCommand(merchantUserId, recommendation.Id), CancellationToken.None);
-        dbContext.ChangeTracker.Clear();
+        var act2 = async () => await handler.Handle(new ApproveAiRecommendationCommand(merchantUserId, recommendation.Id), CancellationToken.None);
 
         // Assert
         result1.Success.Should().BeTrue();
-        result2.Success.Should().BeFalse(); // Fails cleanly on second attempt
+        await act2.Should().ThrowAsync<ConflictException>().WithMessage("Recommendation is not in Pending status.");
 
         var freshProduct = await dbContext.Products.FindAsync(product.Id);
         freshProduct!.DiscountedPrice.Should().Be(95m); // Mutated exactly once
@@ -516,12 +514,10 @@ public class AiAssistedApprovalTests
         dbContext.ChangeTracker.Clear();
 
         // Act
-        var result = await handler.Handle(new RejectAiRecommendationCommand(org.OwnerId, recommendation.Id, "Not needed"), CancellationToken.None);
-        dbContext.ChangeTracker.Clear();
+        var act = async () => await handler.Handle(new RejectAiRecommendationCommand(org.OwnerId, recommendation.Id, "Not needed"), CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Pending");
+        await act.Should().ThrowAsync<ConflictException>().WithMessage("Recommendation is not in Pending status.");
 
         var freshProduct = await dbContext.Products.FindAsync(product.Id);
         freshProduct!.DiscountedPrice.Should().Be(100m); // NOT mutated

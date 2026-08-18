@@ -114,7 +114,10 @@ public class PaymobService : IPaymentService
         var hashBytes = hmac.ComputeHash(payloadBytes);
         var calculatedHmac = Convert.ToHexString(hashBytes).ToLower();
 
-        return string.Equals(calculatedHmac, hmacReceived, StringComparison.OrdinalIgnoreCase);
+        var calculatedBytes = Encoding.UTF8.GetBytes(calculatedHmac);
+        var receivedBytes = Encoding.UTF8.GetBytes(hmacReceived.ToLower());
+
+        return CryptographicOperations.FixedTimeEquals(calculatedBytes, receivedBytes);
     }
 
     private static string NormalizeBaseUrl(string? baseUrl)
