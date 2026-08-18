@@ -86,9 +86,28 @@ public class FirebasePushNotificationService : IFirebasePushNotificationService
                 var response = await messaging.SendAsync(message, cancellationToken);
                 _logger.LogInformation("Firebase push sent to token for user {UserId}. MessageId: {MessageId}", userId, response);
             }
+            catch (FirebaseMessagingException ex)
+            {
+                _logger.LogError(ex, "Firebase messaging exception while sending push to user {UserId} with token {Token}", userId, token);
+                if (ex.MessagingErrorCode == MessagingErrorCode.Unregistered || 
+                    ex.MessagingErrorCode == MessagingErrorCode.InvalidArgument ||
+                    ex.ErrorCode == ErrorCode.InvalidArgument ||
+                    ex.Message.Contains("unregistered", StringComparison.OrdinalIgnoreCase) ||
+                    ex.Message.Contains("invalid-argument", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Stale or invalid FCM token detected for user {UserId}. Marking token as inactive: {Token}", userId, token);
+                    var dbToken = await _db.Set<UserDeviceToken>()
+                        .FirstOrDefaultAsync(t => t.UserId == userId && t.Token == token, cancellationToken);
+                    if (dbToken != null)
+                    {
+                        dbToken.IsActive = false;
+                        await _db.SaveChangesAsync(cancellationToken);
+                    }
+                }
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception while sending Firebase push to user {UserId}", userId);
+                _logger.LogError(ex, "Unexpected exception while sending Firebase push to user {UserId} with token {Token}", userId, token);
             }
         }
     }
