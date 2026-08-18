@@ -1156,4 +1156,78 @@ public class AiServiceClientTests
         result.Version.Should().Be("1.0.4");
         result.Environment.Should().Be("production");
     }
+
+    [Fact]
+    public async Task IngestHistoricalPricingAsync_should_call_ingest_endpoint_and_return_ingestion_response_dto()
+    {
+        // Arrange
+        var mockResponseContent = @"{
+            ""accepted_count"": 2,
+            ""upserted_count"": 2,
+            ""failed_count"": 0,
+            ""document_ids"": [""doc-1"", ""doc-2""]
+        }";
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(mockResponseContent)
+            });
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new HistoricalIngestionRequestDto(new List<HistoricalPricingEventDto>
+        {
+            new HistoricalPricingEventDto(
+                EventId: "ev-1", StoreId: "store-1", ProductId: "prod-1", Category: "Fruits",
+                RecordedAt: DateTimeOffset.UtcNow, Quantity: 10, CurrentPrice: 15.00m, OriginalPrice: 20.00m,
+                PriceFloor: 10.00m, SalesVelocity: 1.5, HistoricalAverageDailySales: 2.0, HoursRemaining: 24.0,
+                DiscountPercentage: 10.0, UnitsSoldAfterDiscount: 8, SellThroughRate: 0.8, Outcome: "SOLD_OUT"
+            )
+        });
+
+        // Act
+        var result = await client.IngestHistoricalPricingAsync(request);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.AcceptedCount.Should().Be(2);
+        result.UpsertedCount.Should().Be(2);
+        result.FailedCount.Should().Be(0);
+        result.DocumentIds.Should().Contain("doc-1");
+    }
+
+    [Fact]
+    public async Task IngestHistoricalPricingAsync_should_throw_AiServiceValidationException_on_422()
+    {
+        // Arrange
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.UnprocessableEntity)
+            {
+                Content = new StringContent(@"{""detail"": ""Validation error details""}")
+            });
+
+        var sp = BuildServiceProvider(_mockHttpMessageHandler.Object);
+        var client = sp.GetRequiredService<IAiServiceClient>();
+
+        var request = new HistoricalIngestionRequestDto(new List<HistoricalPricingEventDto>());
+
+        // Act
+        var act = async () => await client.IngestHistoricalPricingAsync(request);
+
+        // Assert
+        var exception = await act.Should().ThrowAsync<AiServiceValidationException>();
+        exception.Which.RawResponseBody.Should().Contain("Validation error details");
+    }
 }

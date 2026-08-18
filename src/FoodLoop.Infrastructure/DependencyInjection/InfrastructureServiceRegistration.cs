@@ -225,9 +225,11 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
         services.AddTransient<CorrelationIdDelegatingHandler>();
 
-        // 1. Business Resilience Pipeline (Exponential backoff retry with jitter, 30s timeout, circuit breaker)
-        services.AddResiliencePipeline<string, HttpResponseMessage>("AiServiceBusinessPipeline", builder =>
+        // 1. Business Resilience Pipeline (Exponential backoff retry with jitter, dynamic timeout, circuit breaker)
+        services.AddResiliencePipeline<string, HttpResponseMessage>("AiServiceBusinessPipeline", (builder, context) =>
         {
+            var options = context.ServiceProvider.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+
             builder.AddRetry(new Polly.Retry.RetryStrategyOptions<HttpResponseMessage>
             {
                 MaxRetryAttempts = 3,
@@ -242,7 +244,7 @@ public static class InfrastructureServiceRegistration
 
             builder.AddTimeout(new Polly.Timeout.TimeoutStrategyOptions
             {
-                Timeout = TimeSpan.FromSeconds(30)
+                Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds)
             });
 
             builder.AddCircuitBreaker(new Polly.CircuitBreaker.CircuitBreakerStrategyOptions<HttpResponseMessage>

@@ -87,6 +87,10 @@ public class LiveAiServiceSmokeTests
         var monitoringResult = await client.AnalyzeMonitoringAsync(monitoringRequest);
         monitorStopwatch.Stop();
         Console.WriteLine($"[Live AI Smoke Test] AnalyzeMonitoringAsync duration: {monitorStopwatch.ElapsedMilliseconds} ms");
+        Console.WriteLine($"[Live AI Smoke Test] Real Risk Level: {monitoringResult.RiskLevel}");
+        Console.WriteLine($"[Live AI Smoke Test] Real Route: {monitoringResult.Route}");
+        Console.WriteLine($"[Live AI Smoke Test] Real Confidence: {monitoringResult.Confidence}");
+        Console.WriteLine($"[Live AI Smoke Test] Real Reason: {monitoringResult.Reason}");
         monitorStopwatch.ElapsedMilliseconds.Should().BeGreaterThan(0);
         
         monitoringResult.Should().NotBeNull();
@@ -127,6 +131,11 @@ public class LiveAiServiceSmokeTests
             pricingResult.Decisions.Should().HaveCount(1);
 
             var decision = pricingResult.Decisions[0];
+            Console.WriteLine($"[Live AI Smoke Test] Real Discount Percentage: {decision.DiscountPercentage}%");
+            Console.WriteLine($"[Live AI Smoke Test] Real Decision Confidence: {decision.Confidence}");
+            Console.WriteLine($"[Live AI Smoke Test] Real Action Requirement: {decision.ActionRequirement}");
+            Console.WriteLine($"[Live AI Smoke Test] Real Decision Reason: {decision.Reason}");
+
             decision.ProductId.Should().Be("00000000-0000-0000-0000-000000000123");
             decision.DiscountPercentage.Should().BeInRange(0.0, 15.0);
             decision.Confidence.Should().BeInRange(0.0, 1.0);
