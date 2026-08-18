@@ -75,14 +75,14 @@ We have added comprehensive test coverage inside [`NotificationSystemTests.cs`](
 ### Integration / Trigger Verification
 *   `ReplyToSupportTicket_should_dispatch_exactly_one_notification_on_success` — **PASSED**
     Verifies that support ticket replies trigger exactly one customer notification with the correct category.
-*   `SendAdminNote_should_dispatch_exactly_one_notification_if_not_internal` — **PASSED**
-    Verifies that public admin notes dispatch a single notification with the correct type.
+*   `SendAdminNote_should_dispatch_exactly_one_notification_of_correct_type_if_not_internal` — **PASSED (Theory)**
+    Verifies that public admin notes of categories `Warning`, `Urgent`, and `Notice` dispatch exactly one notification of type `AdminWarning`, `AdminUrgent`, or `AdminNotice` respectively.
 *   `SendAdminNote_should_skip_notification_if_internal` — **PASSED**
     Verifies that internal notes do not dispatch any external notifications.
 *   `CreateOrder_should_dispatch_exactly_one_customer_and_one_merchant_notification` — **PASSED**
     Verifies that placing an order dispatches exactly one customer notification (`OrderPlaced`) and exactly one merchant notification (`OrderReceived`).
-*   `UpdateOrderStatus_should_dispatch_exactly_one_customer_notification` — **PASSED**
-    Verifies that confirming an order dispatches exactly one customer notification (`OrderConfirmed`).
+*   `UpdateOrderStatus_should_dispatch_exactly_one_customer_notification_of_correct_type` — **PASSED (Theory)**
+    Verifies that order status updates (`Confirmed`, `Preparing`, `ReadyForPickup`, `Completed`, `Cancelled`) dispatch exactly one customer notification of the expected type (`OrderConfirmed`, `OrderPreparing`, `OrderReadyForPickup`, `OrderCompleted`, `OrderCancelled` respectively) with the expected message body.
 
 ---
 
@@ -93,8 +93,6 @@ All test suites compile and run without regressions. The complete log of `dotnet
 ```text
 Determining projects to restore...
 C:\ITI\server\src\FoodLoop.Infrastructure\FoodLoop.Infrastructure.csproj : warning NU1510: PackageReference System.Security.Cryptography.Xml will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary. [C:\ITI\server\FoodLoop.sln]
-C:\ITI\server\test\FoodLoop.Infrastructure.Tests\FoodLoop.Infrastructure.Tests.csproj : warning NU1603: FoodLoop.Infrastructure.Tests depends on Microsoft.AspNetCore.Mvc.Testing (>= 10.0.0-rc.2.24474.3) but Microsoft.AspNetCore.Mvc.Testing 10.0.0-rc.2.24474.3 was not found. Microsoft.AspNetCore.Mvc.Testing 10.0.0-rc.2.25502.107 was resolved instead. [C:\ITI\server\FoodLoop.sln]
-C:\ITI\server\test\FoodLoop.Infrastructure.Tests\FoodLoop.Infrastructure.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q [C:\ITI\server\FoodLoop.sln]
 C:\ITI\server\src\FoodLoop.DbTool\FoodLoop.DbTool.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-23rf-6693-g89p [C:\ITI\server\FoodLoop.sln]
 C:\ITI\server\src\FoodLoop.DbTool\FoodLoop.DbTool.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-37gx-xxp4-5rgx [C:\ITI\server\FoodLoop.sln]
 C:\ITI\server\src\FoodLoop.DbTool\FoodLoop.DbTool.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-6588-8gv4-xfgh [C:\ITI\server\FoodLoop.sln]
@@ -103,27 +101,29 @@ C:\ITI\server\src\FoodLoop.DbTool\FoodLoop.DbTool.csproj : warning NU1903: Packa
 C:\ITI\server\src\FoodLoop.DbTool\FoodLoop.DbTool.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-g8r8-53c2-pm3f [C:\ITI\server\FoodLoop.sln]
 C:\ITI\server\src\FoodLoop.DbTool\FoodLoop.DbTool.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-mmjf-rqrv-855v [C:\ITI\server\FoodLoop.sln]
 C:\ITI\server\src\FoodLoop.DbTool\FoodLoop.DbTool.csproj : warning NU1903: Package 'System.Security.Cryptography.Xml' 8.0.2 has a known high severity vulnerability, https://github.com/advisories/GHSA-w3x6-4m5h-cxqf [C:\ITI\server\FoodLoop.sln]
+C:\ITI\server\test\FoodLoop.Infrastructure.Tests\FoodLoop.Infrastructure.Tests.csproj : warning NU1603: FoodLoop.Infrastructure.Tests depends on Microsoft.AspNetCore.Mvc.Testing (>= 10.0.0-rc.2.24474.3) but Microsoft.AspNetCore.Mvc.Testing 10.0.0-rc.2.24474.3 was not found. Microsoft.AspNetCore.Mvc.Testing 10.0.0-rc.2.25502.107 was resolved instead. [C:\ITI\server\FoodLoop.sln]
+C:\ITI\server\test\FoodLoop.Infrastructure.Tests\FoodLoop.Infrastructure.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q [C:\ITI\server\FoodLoop.sln]
   All projects are up-to-date for restore.
 C:\ITI\server\test\FoodLoop.Infrastructure.Tests\FoodLoop.Infrastructure.Tests.csproj : warning NU1603: FoodLoop.Infrastructure.Tests depends on Microsoft.AspNetCore.Mvc.Testing (>= 10.0.0-rc.2.24474.3) but Microsoft.AspNetCore.Mvc.Testing 10.0.0-rc.2.24474.3 was not found. Microsoft.AspNetCore.Mvc.Testing 10.0.0-rc.2.25502.107 was resolved instead.
 C:\ITI\server\test\FoodLoop.Infrastructure.Tests\FoodLoop.Infrastructure.Tests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
 C:\ITI\server\src\FoodLoop.Infrastructure\FoodLoop.Infrastructure.csproj : warning NU1510: PackageReference System.Security.Cryptography.Xml will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.
   FoodLoop.Domain -> C:\ITI\server\src\FoodLoop.Domain\bin\Debug\net10.0\FoodLoop.Domain.dll
   FoodLoop.Application -> C:\ITI\server\src\FoodLoop.Application\bin\Debug\net10.0\FoodLoop.Application.dll
-  FoodLoop.Infrastructure -> C:\ITI\server\src\FoodLoop.Infrastructure\bin\Debug\net10.0\FoodLoop.Infrastructure.dll
-  FoodLoop.API -> C:\ITI\server\src\FoodLoop.API\bin\Debug\net10.0\FoodLoop.API.dll
   FoodLoop.Domain.Tests -> C:\ITI\server\test\FoodLoop.Domain.Tests\bin\Debug\net10.0\FoodLoop.Domain.Tests.dll
-  FoodLoop.Application.Tests -> C:\ITI\server\test\FoodLoop.Application.Tests\bin\Debug\net10.0\FoodLoop.Application.Tests.dll
 Test run for C:\ITI\server\test\FoodLoop.Domain.Tests\bin\Debug\net10.0\FoodLoop.Domain.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+  FoodLoop.Application.Tests -> C:\ITI\server\test\FoodLoop.Application.Tests\bin\Debug\net10.0\FoodLoop.Application.Tests.dll
 Test run for C:\ITI\server\test\FoodLoop.Application.Tests\bin\Debug\net10.0\FoodLoop.Application.Tests.dll (.NETCoreApp,Version=v10.0)
+  FoodLoop.Infrastructure -> C:\ITI\server\src\FoodLoop.Infrastructure\bin\Debug\net10.0\FoodLoop.Infrastructure.dll
 A total of 1 test files matched the specified pattern.
-A total of 1 test files matched the specified pattern.
+  FoodLoop.API -> C:\ITI\server\src\FoodLoop.API\bin\Debug\net10.0\FoodLoop.API.dll
 
-Passed!  - Failed:     0, Passed:    28, Skipped:     0, Total:    28, Duration: 127 ms - FoodLoop.Domain.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    28, Skipped:     0, Total:    28, Duration: 71 ms - FoodLoop.Domain.Tests.dll (net10.0)
 
-Passed!  - Failed:     0, Passed:    11, Skipped:     0, Total:    11, Duration: 310 ms - FoodLoop.Application.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:    11, Skipped:     0, Total:    11, Duration: 192 ms - FoodLoop.Application.Tests.dll (net10.0)
   FoodLoop.Infrastructure.Tests -> C:\ITI\server\test\FoodLoop.Infrastructure.Tests\bin\Debug\net10.0\FoodLoop.Infrastructure.Tests.dll
 Test run for C:\ITI\server\test\FoodLoop.Infrastructure.Tests\bin\Debug\net10.0\FoodLoop.Infrastructure.Tests.dll (.NETCoreApp,Version=v10.0)
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:   180, Skipped:     0, Total:   180, Duration: 18 s - FoodLoop.Infrastructure.Tests.dll (net10.0)
+Passed!  - Failed:     0, Passed:   186, Skipped:     0, Total:   186, Duration: 17 s - FoodLoop.Infrastructure.Tests.dll (net10.0)
 ```
