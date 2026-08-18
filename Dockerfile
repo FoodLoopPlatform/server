@@ -28,6 +28,12 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
+# Copy .env into the runtime container
+COPY .env .env
+
+# Copy firebase.json into the runtime container
+COPY firebase.json firebase.json
+
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
