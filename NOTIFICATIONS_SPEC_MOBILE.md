@@ -90,6 +90,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
 ## 4. Real-World JSON Examples (Per Event Category)
 
 ### 4.1 Support Ticket Reply
+*   *Note:* The `userId` in the `data` block is the distinct recipient customer's user ID.
 ```json
 {
   "message": {
@@ -100,7 +101,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
     },
     "data": {
       "type": "SupportTicketReply",
-      "userId": "e93fca41-5839-4d6d-9781-807d8dcd8da9",
+      "userId": "11111111-1111-1111-1111-111111111111",
       "title": "Support Ticket Reply",
       "body": "You have received a new reply on your support ticket regarding: Billing."
     }
@@ -119,7 +120,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
     },
     "data": {
       "type": "AdminWarning",
-      "userId": "a5c7f8a9-1234-456d-89ef-b07d8dc12da1",
+      "userId": "22222222-2222-2222-2222-222222222222",
       "title": "Account Warning",
       "body": "Your account has received a warning due to policy violation."
     }
@@ -128,6 +129,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
 ```
 
 ### 4.3 Order Placed (Consumer Side)
+*   *Note:* The `userId` in the `data` block is the distinct placing customer's user ID. The order ID `#d7a123f1` is visible only in the message text.
 ```json
 {
   "message": {
@@ -138,7 +140,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
     },
     "data": {
       "type": "OrderPlaced",
-      "userId": "d7a123f1-4321-4def-9abc-c0812e123456",
+      "userId": "33333333-3333-3333-3333-333333333333",
       "title": "Order Placed Successfully",
       "body": "Your order #d7a123f1 has been placed successfully."
     }
@@ -147,6 +149,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
 ```
 
 ### 4.4 Order Received (Merchant Side)
+*   *Note:* The `userId` in the `data` block is the distinct merchant owner's user ID who receives the push notification.
 ```json
 {
   "message": {
@@ -157,7 +160,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
     },
     "data": {
       "type": "OrderReceived",
-      "userId": "f8b234a2-8765-4bcd-8def-d0923f234567",
+      "userId": "44444444-4444-4444-4444-444444444444",
       "title": "New Order Received",
       "body": "Store 'Bakery' received order #f8b234a2 for pickup."
     }
@@ -176,7 +179,7 @@ Currently, the server dispatches a flat key-value collection in the `data` block
     },
     "data": {
       "type": "OrderConfirmed",
-      "userId": "b1c345d3-9876-4cba-9fed-e0a34f345678",
+      "userId": "55555555-5555-5555-5555-555555555555",
       "title": "Order Confirmed",
       "body": "Your order has been confirmed by the merchant."
     }

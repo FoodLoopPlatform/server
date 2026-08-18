@@ -434,8 +434,11 @@ public class NotificationSystemTests : IDisposable
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    [Fact]
-    public async Task SendAdminNote_should_dispatch_exactly_one_notification_if_not_internal()
+    [Theory]
+    [InlineData("Warning", "AdminWarning")]
+    [InlineData("Urgent", "AdminUrgent")]
+    [InlineData("Notice", "AdminNotice")]
+    public async Task SendAdminNote_should_dispatch_exactly_one_notification_of_correct_type_if_not_internal(string category, string expectedNotificationType)
     {
         // Arrange
         var admin = new ApplicationUser { Id = Guid.NewGuid(), UserName = "admin@example.com", FullName = "Admin User" };
@@ -451,7 +454,7 @@ public class NotificationSystemTests : IDisposable
         var mockAudit = new Mock<IAuditLogService>();
         var handler = new SendAdminNoteCommandHandler(_db, mockUserManager.Object, mockNotification.Object, mockAudit.Object);
 
-        var command = new SendAdminNoteCommand(admin.Id, recipient.Id, "Warning", null, "Warning Note", "This is a warning note.", false);
+        var command = new SendAdminNoteCommand(admin.Id, recipient.Id, category, null, "Warning Note", "This is a warning note.", false);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -461,7 +464,7 @@ public class NotificationSystemTests : IDisposable
             recipient.Id,
             "Warning Note",
             "This is a warning note.",
-            "AdminWarning",
+            expectedNotificationType,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -565,8 +568,13 @@ public class NotificationSystemTests : IDisposable
             It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
-    [Fact]
-    public async Task UpdateOrderStatus_should_dispatch_exactly_one_customer_notification()
+    [Theory]
+    [InlineData("Confirmed", "OrderConfirmed", "Your order has been confirmed by the merchant.")]
+    [InlineData("Preparing", "OrderPreparing", "Your order is being prepared.")]
+    [InlineData("ReadyForPickup", "OrderReadyForPickup", "Your order is ready for pickup!")]
+    [InlineData("Completed", "OrderCompleted", "Your order has been completed. Thank you!")]
+    [InlineData("Cancelled", "OrderCancelled", "Your order has been cancelled and refunded.")]
+    public async Task UpdateOrderStatus_should_dispatch_exactly_one_customer_notification_of_correct_type(string statusStr, string expectedNotificationType, string expectedBody)
     {
         // Arrange
         var customer = new ApplicationUser { Id = _userId, UserName = "cust-status@example.com", Email = "cust-status@example.com", FullName = "Customer Name", Status = UserStatus.Active };
@@ -620,7 +628,7 @@ public class NotificationSystemTests : IDisposable
         var mockAudit = new Mock<IAuditLogService>();
         var handler = new UpdateOrderStatusCommandHandler(_db, mockAudit.Object, mockNotification.Object);
 
-        var command = new UpdateOrderStatusCommand(merchant.Id, order.Id, "Confirmed");
+        var command = new UpdateOrderStatusCommand(merchant.Id, order.Id, statusStr);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -631,9 +639,9 @@ public class NotificationSystemTests : IDisposable
         // Assert consumer notification is dispatched once
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
             customer.Id,
-            "Order Confirmed",
-            "Your order has been confirmed by the merchant.",
-            "OrderConfirmed",
+            $"Order {statusStr}",
+            expectedBody,
+            expectedNotificationType,
             It.IsAny<CancellationToken>()), Times.Once);
 
         // Assert total dispatches is exactly 1
