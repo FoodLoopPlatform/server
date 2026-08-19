@@ -440,7 +440,7 @@ public class NotificationInboxIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateProduct_should_not_notify_admins_when_product_is_not_pending_moderation()
+    public async Task CreateProduct_should_notify_admins_even_with_high_confidence_client_state_due_to_fail_closed_mitigation()
     {
         // Arrange
         using var db = new E2ETestApplicationDbContext(_dbOptions);
@@ -480,23 +480,30 @@ public class NotificationInboxIntegrationTests : IDisposable
             DiscountedPrice: 2.0m,
             QuantityAvailable: 1,
             ExpirationDate: DateOnly.FromDateTime(DateTime.Today.AddDays(2)),
-            ExpiryVerificationState: ExpiryVerificationState.AiVerified
+            ExpiryVerificationState: ExpiryVerificationState.AiVerified // Client attempts to bypass
         );
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
+        // 1. Verify status is forced to PendingModeration
+        var dbProduct = await db.Products.FindAsync(result.Id);
+        dbProduct.Should().NotBeNull();
+        dbProduct!.Status.Should().Be(ProductStatus.PendingModeration);
+        dbProduct.ExpiryVerificationState.Should().Be(ExpiryVerificationState.AiVerified); // client-supplied state retained
+
+        // 2. Verify admin notification was still sent
         mockNotification.Verify(
             n => n.SendNotificationToRoleAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<Guid?>(),
+                "Admin",
+                "Product Requires Moderation",
+                It.Is<string>(s => s.Contains("Fresh Milk")),
+                "ProductUploaded",
+                "Product",
+                result.Id,
                 It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Once);
     }
 
     [Fact]

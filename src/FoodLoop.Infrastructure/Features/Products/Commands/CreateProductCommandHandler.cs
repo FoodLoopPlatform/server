@@ -56,7 +56,13 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         }
 
         var state = command.ExpiryVerificationState ?? ExpiryVerificationState.Manual;
-        var status = state == ExpiryVerificationState.AiLowConfidence ? ProductStatus.PendingModeration : ProductStatus.Active;
+        
+        // FAIL-CLOSED DEFAULT: While the AI service integration is paused, we ignore client-supplied
+        // ExpiryVerificationState for status determination and force ProductStatus.PendingModeration
+        // to prevent client-side bypass of the moderation queue. The client-supplied state is still
+        // retained in the entity for later AI reconciliation.
+        // TODO: Revert to trusting AI-derived confidence once the AI service is restored.
+        var status = ProductStatus.PendingModeration;
 
         var product = new Product
         {
