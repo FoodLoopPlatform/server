@@ -8,6 +8,7 @@ using FoodLoop.Infrastructure.Features.Organizations;
 using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,11 +23,19 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
+    private readonly IRealTimeNotificationService _notificationService;
+    private readonly ILogger<BulkUploadProductsCommandHandler> _logger;
 
-    public BulkUploadProductsCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
+    public BulkUploadProductsCommandHandler(
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogService,
+        IRealTimeNotificationService notificationService,
+        ILogger<BulkUploadProductsCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<ProductDto>> Handle(BulkUploadProductsCommand command, CancellationToken cancellationToken)
@@ -118,6 +127,13 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
                 (c.NameAr != null && c.NameAr.Equals(categoryName, StringComparison.OrdinalIgnoreCase)))
                 ?? throw new ArgumentException($"Row {rowNum}: Category '{categoryName}' not found.");
 
+            var verificationStateStr = GetCsvValue(headers, values, "expiryverificationstate");
+            var verificationState = ExpiryVerificationState.Manual;
+            if (!string.IsNullOrWhiteSpace(verificationStateStr) && Enum.TryParse<ExpiryVerificationState>(verificationStateStr, true, out var parsedState))
+            {
+                verificationState = parsedState;
+            }
+
             var product = new Product
             {
                 OrganizationId = organization.Id,
@@ -129,7 +145,8 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
                 DiscountedPrice = discountedPrice,
                 QuantityAvailable = quantity,
                 ExpirationDate = expirationDate,
-                Status = ProductStatus.Active
+                ExpiryVerificationState = verificationState,
+                Status = ProductStatus.PendingModeration
             };
 
             _unitOfWork.Repository<Product>().Add(product);
@@ -154,6 +171,28 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (_notificationService != null)
+        {
+            foreach (var product in resultProducts)
+            {
+                try
+                {
+                    await _notificationService.SendNotificationToRoleAsync(
+                        "Admin",
+                        "Product Requires Moderation",
+                        $"Product '{product.Title}' listed by '{organization.Name}' requires moderation review due to bulk CSV upload.",
+                        "ProductUploaded",
+                        "Product",
+                        product.Id,
+                        cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to send ProductUploaded notification for bulk-imported product {ProductId}.", product.Id);
+                }
+            }
+        }
 
         await _auditLogService.LogAsync(
             command.OwnerId,

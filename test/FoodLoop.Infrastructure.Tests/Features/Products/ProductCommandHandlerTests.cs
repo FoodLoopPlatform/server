@@ -216,6 +216,139 @@ public class ProductCommandHandlerTests : IDisposable
         deleteResult.Should().NotBeNull();
         deleteResult.Images.Should().BeEmpty();
     }
+
+    // ---------- BulkUploadProductsCommandHandler ----------
+
+    [Fact]
+    public async Task BulkUpload_should_create_products_in_PendingModeration_status_and_retain_ExpiryVerificationState_and_notify_per_item()
+    {
+        // Arrange
+        var csvContent = "title,originalprice,discountedprice,quantityavailable,expirationdate,categoryname,expiryverificationstate\n" +
+                         "CSV Product 1,10.00,5.00,5,2026-12-31,Test Category,AiVerified\n" +
+                         "CSV Product 2,20.00,10.00,10,2026-12-31,Test Category,AiLowConfidence";
+        
+        var uploadRequest = new FileUploadRequest
+        {
+            Content = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent)),
+            FileName = "products.csv",
+            ContentType = "text/csv"
+        };
+
+        var handler = new BulkUploadProductsCommandHandler(
+            _unitOfWork,
+            _auditLogService.Object,
+            _notificationService.Object,
+            new Mock<Microsoft.Extensions.Logging.ILogger<BulkUploadProductsCommandHandler>>().Object
+        );
+
+        var command = new BulkUploadProductsCommand(_ownerId, uploadRequest);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().HaveCount(2);
+
+        // Verify Database state
+        var dbProducts = await _dbContext.Products
+            .Where(p => p.Title.StartsWith("CSV Product"))
+            .OrderBy(p => p.Title)
+            .ToListAsync();
+
+        dbProducts.Should().HaveCount(2);
+
+        // 1st product:
+        dbProducts[0].Title.Should().Be("CSV Product 1");
+        dbProducts[0].Status.Should().Be(ProductStatus.PendingModeration); // Forced fail-closed
+        dbProducts[0].ExpiryVerificationState.Should().Be(ExpiryVerificationState.AiVerified); // Retained
+
+        // 2nd product:
+        dbProducts[1].Title.Should().Be("CSV Product 2");
+        dbProducts[1].Status.Should().Be(ProductStatus.PendingModeration); // Forced fail-closed
+        dbProducts[1].ExpiryVerificationState.Should().Be(ExpiryVerificationState.AiLowConfidence); // Retained
+
+        // Verify Notifications
+        _notificationService.Verify(n => n.SendNotificationToRoleAsync(
+            "Admin",
+            "Product Requires Moderation",
+            It.Is<string>(s => s.Contains("CSV Product 1")),
+            "ProductUploaded",
+            "Product",
+            dbProducts[0].Id,
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        _notificationService.Verify(n => n.SendNotificationToRoleAsync(
+            "Admin",
+            "Product Requires Moderation",
+            It.Is<string>(s => s.Contains("CSV Product 2")),
+            "ProductUploaded",
+            "Product",
+            dbProducts[1].Id,
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task BulkUpload_should_isolate_notification_failures_and_continue_processing()
+    {
+        // Arrange
+        var csvContent = "title,originalprice,discountedprice,quantityavailable,expirationdate,categoryname,expiryverificationstate\n" +
+                         "CSV Product Fail,10.00,5.00,5,2026-12-31,Test Category,AiVerified\n" +
+                         "CSV Product Success,20.00,10.00,10,2026-12-31,Test Category,AiLowConfidence";
+        
+        var uploadRequest = new FileUploadRequest
+        {
+            Content = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(csvContent)),
+            FileName = "products.csv",
+            ContentType = "text/csv"
+        };
+
+        // Set up notification service to throw for CSV Product Fail, but succeed for CSV Product Success
+        _notificationService.Setup(n => n.SendNotificationToRoleAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.Is<string>(s => s.Contains("CSV Product Fail")),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<Guid?>(),
+            It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("SignalR/FCM transient failure"));
+
+        var handler = new BulkUploadProductsCommandHandler(
+            _unitOfWork,
+            _auditLogService.Object,
+            _notificationService.Object,
+            new Mock<Microsoft.Extensions.Logging.ILogger<BulkUploadProductsCommandHandler>>().Object
+        );
+
+        var command = new BulkUploadProductsCommand(_ownerId, uploadRequest);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().HaveCount(2);
+
+        // Verify both products were saved in DB
+        var dbProducts = await _dbContext.Products
+            .Where(p => p.Title.StartsWith("CSV Product"))
+            .OrderBy(p => p.Title)
+            .ToListAsync();
+
+        dbProducts.Should().HaveCount(2);
+
+        // Verify the notification for the second product was still attempted
+        _notificationService.Verify(n => n.SendNotificationToRoleAsync(
+            "Admin",
+            "Product Requires Moderation",
+            It.Is<string>(s => s.Contains("CSV Product Success")),
+            "ProductUploaded",
+            "Product",
+            dbProducts[1].Id,
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }
 
 
