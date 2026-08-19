@@ -87,11 +87,12 @@ public class MarketplaceController : ControllerBase
 
 public class ReportProductRequest
 {
-    /// <summary>MisleadingInfo | WrongExpiry | Spam | Inappropriate | Other</summary>
+    /// <summary>MisleadingInfo | WrongExpiry | Expired | Spam | Inappropriate | Other</summary>
     [Required]
     public string Reason { get; set; } = null!;
     public string? Details { get; set; }
 
+    [Required(ErrorMessage = "Evidence image is required.")]
     [MaxLength(500)]
-    public string? ImageUrl { get; set; }
+    public string ImageUrl { get; set; } = null!;
 }

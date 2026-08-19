@@ -580,7 +580,7 @@ public class NotificationInboxIntegrationTests : IDisposable
         db.SaveChanges();
 
         var handler = new ReportProductCommandHandler(db, mockAudit.Object, mockNotification.Object);
-        var command = new ReportProductCommand(reporterId, productId, "Expired", "Apples are rotten.");
+        var command = new ReportProductCommand(reporterId, productId, "Expired", "Apples are rotten.", "https://example.com/rotten-apples.jpg");
 
         // Act
         await handler.Handle(command, CancellationToken.None);

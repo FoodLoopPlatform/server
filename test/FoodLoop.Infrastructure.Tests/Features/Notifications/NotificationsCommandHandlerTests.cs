@@ -174,11 +174,8 @@ public class NotificationsCommandHandlerTests : IDisposable
     public async Task RegisterDeviceToken_should_save_device_token_successfully()
     {
         // Arrange
-        var user = new ApplicationUser { Id = _userId, UserName = "device@test.com", Email = "device@test.com" };
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
-
-        var handler = new RegisterDeviceTokenCommandHandler(_db);
+        var mockTokenService = new Mock<IUserDeviceTokenService>();
+        var handler = new RegisterDeviceTokenCommandHandler(mockTokenService.Object);
         var command = new RegisterDeviceTokenCommand(_userId, "sample-fcm-token-12345", "Android");
 
         // Act
@@ -186,9 +183,9 @@ public class NotificationsCommandHandlerTests : IDisposable
 
         // Assert
         result.Success.Should().BeTrue();
-        var updatedUser = await _db.Users.FindAsync(_userId);
-        updatedUser.Should().NotBeNull();
-        updatedUser!.DeviceToken.Should().Be("sample-fcm-token-12345");
+        mockTokenService.Verify(
+            s => s.UpsertAsync(_userId, "sample-fcm-token-12345", "Android", It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

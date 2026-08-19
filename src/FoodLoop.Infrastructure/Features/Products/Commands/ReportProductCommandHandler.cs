@@ -45,7 +45,10 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
         if (!System.Array.Exists(validReasons, r => r == request.Reason))
             throw new ArgumentException($"Invalid reason. Allowed: {string.Join(", ", validReasons)}");
 
-        if (request.ImageUrl != null && request.ImageUrl.Length > 500)
+        if (string.IsNullOrWhiteSpace(request.ImageUrl))
+            throw new ArgumentException("Evidence image is required.");
+
+        if (request.ImageUrl.Length > 500)
             throw new ArgumentException("ImageUrl must be 500 characters or fewer.");
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);

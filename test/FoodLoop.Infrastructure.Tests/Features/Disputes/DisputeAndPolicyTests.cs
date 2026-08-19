@@ -146,7 +146,7 @@ public class DisputeAndPolicyTests : IDisposable
     }
 
     [Fact]
-    public async Task Report_WithoutImage_Succeeds()
+    public async Task Report_WithoutImage_ThrowsArgumentException()
     {
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
@@ -156,10 +156,7 @@ public class DisputeAndPolicyTests : IDisposable
         var act = async () => await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().NotThrowAsync();
-        var report = await _dbContext.ProductReports.FirstOrDefaultAsync(r => r.ProductId == _productId && r.Reason == "Spam");
-        report.Should().NotBeNull();
-        report!.ImageUrl.Should().BeNull();
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Evidence image is required.");
     }
 
     [Fact]
@@ -173,8 +170,8 @@ public class DisputeAndPolicyTests : IDisposable
         var expProd2 = new Product { Id = Guid.NewGuid(), OrganizationId = _organizationId, Title = "Exp2", ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-3)) };
         _dbContext.Products.AddRange(expProd1, expProd2);
 
-        var rep1 = new ProductReport { ProductId = expProd1.Id, ReportedBy = _reporterId, Reason = "Expired", CreatedAt = DateTimeOffset.UtcNow };
-        var rep2 = new ProductReport { ProductId = expProd2.Id, ReportedBy = _reporterId, Reason = "WrongExpiry", CreatedAt = DateTimeOffset.UtcNow };
+        var rep1 = new ProductReport { ProductId = expProd1.Id, ReportedBy = _reporterId, Reason = "Expired", ImageUrl = "https://example.com/proof1.png", CreatedAt = DateTimeOffset.UtcNow };
+        var rep2 = new ProductReport { ProductId = expProd2.Id, ReportedBy = _reporterId, Reason = "WrongExpiry", ImageUrl = "https://example.com/proof2.png", CreatedAt = DateTimeOffset.UtcNow };
         _dbContext.ProductReports.AddRange(rep1, rep2);
         await _dbContext.SaveChangesAsync();
 
@@ -183,7 +180,7 @@ public class DisputeAndPolicyTests : IDisposable
         _dbContext.Products.Add(expProd3);
         await _dbContext.SaveChangesAsync();
 
-        var command = new ReportProductCommand(_reporterId, expProd3.Id, "Expired", "Third expired product reported.");
+        var command = new ReportProductCommand(_reporterId, expProd3.Id, "Expired", "Third expired product reported.", "https://example.com/proof3.png");
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -207,7 +204,7 @@ public class DisputeAndPolicyTests : IDisposable
         // Add 5 non-expired reports
         for (int i = 0; i < 5; i++)
         {
-            var command = new ReportProductCommand(_reporterId, _productId, "Spam", $"Non-expired report {i}.");
+            var command = new ReportProductCommand(_reporterId, _productId, "Spam", $"Non-expired report {i}.", "https://example.com/spam-proof.png");
             await handler.Handle(command, CancellationToken.None);
         }
 
