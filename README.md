@@ -219,3 +219,35 @@ graph TD
 ```
 
 *Note: Environment variables (`SMTP_HOST`, `CLOUDINARY_URL`, etc.) loaded from a `.env` file override standard configurations automatically at startup.*
+
+---
+
+## 9. Documentation Index (`/docs`)
+
+All technical specifications, endpoint maps, and testing guides are organized in the [`docs/`](file:///c:/ITI/server/docs/) directory:
+
+| Guide / Specification | Location | Description |
+| :--- | :--- | :--- |
+| **Backend Architecture** | [`docs/backend-architecture.md`](file:///c:/ITI/server/docs/backend-architecture.md) | Clean Architecture layers, CQRS with MediatR, and persistence. |
+| **Screens to Endpoints Map** | [`docs/screens-to-endpoints.md`](file:///c:/ITI/server/docs/screens-to-endpoints.md) | UI screen-to-API routing and method mapping. |
+| **Complete API Testing Guide** | [`docs/api_testing_guide.md`](file:///c:/ITI/server/docs/api_testing_guide.md) | Endpoint testing manual with payloads for all controllers. |
+| **Notification Specification** | [`docs/notifications-spec.md`](file:///c:/ITI/server/docs/notifications-spec.md) | Hybrid SignalR WebSocket & FCM push, write-time localization. |
+| **Payment Specification** | [`docs/payment-spec.md`](file:///c:/ITI/server/docs/payment-spec.md) | Paymob Unified Checkout, Webhooks, Wallet balance, and Refunds. |
+| **Authentication Flow** | [`docs/auth-flow.md`](file:///c:/ITI/server/docs/auth-flow.md) | Multi-role registration, JWT token rotation, and verification gates. |
+| **Data Storage Schema** | [`docs/data-storage.md`](file:///c:/ITI/server/docs/data-storage.md) | Relational database schema, indexes, and soft-delete policies. |
+| **AI Role & Integration** | [`docs/ai-role.md`](file:///c:/ITI/server/docs/ai-role.md) | OCR scanning, price recommendations, and fail-closed mitigations. |
+| **Verification & Step Reports**| [`docs/reports/`](file:///c:/ITI/server/docs/reports/) | Step-by-step test reports and cross-service audit logs. |
+
+---
+
+## 10. Automated Test Suite
+
+Run the full test suite across all layers:
+```powershell
+dotnet test FoodLoop.sln
+```
+*   **Total Tests**: 321 / 321 Passing (100% Green)
+    *   `FoodLoop.Domain.Tests`: 50 tests
+    *   `FoodLoop.Application.Tests`: 134 tests
+    *   `FoodLoop.Infrastructure.Tests`: 137 tests
+

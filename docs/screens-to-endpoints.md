@@ -34,23 +34,27 @@ All endpoints are live at `https://foodloop.runasp.net`.
 | `search_network_error` | GET | `/marketplace/products` | Public | Network failure state (client-side) |
 | `product_details` | GET | `/marketplace/products/{id}` | Public | Single active product detail |
 | `checkout_order_review` | POST | `/orders` | Customer | Body: `{ items: [{ productId, quantity }] }` |
+| | POST | `/orders/{id}/paymob-checkout` | Customer | Generates Paymob Unified Checkout URL |
+| | POST | `/orders/{id}/wallet-checkout` | Customer | Charges order total to customer wallet balance |
+| | POST | `/payments/paymob-callback` | Public | Paymob transaction webhook listener |
 | `order_success` | GET | `/orders/{id}` | Customer | Returns placed order detail |
 | `order_tracking` | GET | `/orders/{id}/tracking` | Customer | Pipeline steps + store info |
 | `rate_your_experience` | POST | `/reviews` | Customer | Body: `{ orderId, rating, comment }` |
 | `rating_bottom_sheet_overlay` | POST | `/reviews` | Customer | Same as above |
 | `store_reputation` | GET | `/stores/{id}/reviews` | Public | Paginated store reviews |
-| `report_an_issue` | POST | `/marketplace/products/{id}/report` | Customer | reason = MisleadingInfo \| WrongExpiry \| Spam \| Inappropriate \| Other |
+| `report_an_issue` | POST | `/marketplace/products/{id}/report` | Customer | Mandatory `imageUrl`, reason = MisleadingInfo \| WrongExpiry \| Expired \| Spam \| Inappropriate \| Other |
 | `report_issue_bottom_sheet_overlay` | POST | `/marketplace/products/{id}/report` | Customer | Same as above |
 
 ---
 
-## User Profile
+## User Profile & Wallet
 
 | Screen | Method | Endpoint | Auth | Notes |
 |---|---|---|---|---|
 | `profile_settings` | GET | `/users/me` | Any | Returns current user |
 | | PATCH | `/users/me` | Any | Updates fullName / language / phone |
 | | PATCH | `/users/me/preferences` | Any | orderUpdatesEnabled / marketingNotificationsEnabled |
+| `user_wallet_overview` | GET | `/users/me/wallet` | Any | Returns wallet balance & transaction history |
 | `add_address` | POST | `/users/me/addresses` | Any | Creates a delivery address |
 | `location_delivery_settings` | GET | `/users/me/addresses` | Any | Lists all addresses |
 | | PATCH | `/users/me/addresses/{id}` | Any | Updates address |
@@ -153,12 +157,15 @@ All endpoints are live at `https://foodloop.runasp.net`.
 ---
 
 ## Notifications
-
+ 
 | Screen | Method | Endpoint | Auth | Notes |
 |---|---|---|---|---|
-| *(notification bell / feed)* | GET | `/notifications` | Any | Lists caller's notifications |
+| *(notification bell / feed)* | GET | `/notifications` | Any | Lists caller's notifications with pagination |
+| *(notification details)* | GET | `/notifications/{id}` | Any | Detailed single notification record |
+| *(unread badge counter)* | GET | `/notifications/unread-count` | Any | Returns unread notification count |
 | | PATCH | `/notifications/{id}/read` | Any | Marks one notification as read |
 | | PATCH | `/notifications/read-all` | Any | Marks all notifications as read |
+| | POST | `/notifications/device-token` | Any | Registers/updates mobile FCM device token |
 
 ---
 

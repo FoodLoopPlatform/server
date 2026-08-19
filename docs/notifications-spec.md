@@ -104,19 +104,61 @@ To prevent cross-tenant message leakage (e.g., when a user logs into a device pr
 
 ---
 
+---
+
 ## 7. Business Event Triggers & Dispatch Rules
 
-The following table documents the active business events that trigger notifications, their target audience, and dispatch parameters:
+All notification dispatch handlers use **write-time per-recipient localization** via `CultureScope`, resolving resx keys into the recipient's preferred language (`en` / `ar`) at the moment of creation.
 
-| Business Event | Trigger Handler | Target Audience | Payload Category | Delivery Channels |
+| Business Event | Trigger Handler | Target Audience | Notification Type | Key Metadata / Resx Keys |
 | :--- | :--- | :--- | :--- | :--- |
-| **Support Ticket Reply** | `ReplyToSupportTicketCommandHandler` | Customer | `SupportTicketReply` | SignalR + Firebase |
-| **Admin Note Sent** | `SendAdminNoteCommandHandler` | User | `AdminWarning` (if public) | SignalR + Firebase |
-| **Order Placed** | `CreateOrderCommandHandler` | Customer | `OrderPlaced` | SignalR + Firebase |
-| **Order Received** | `CreateOrderCommandHandler` | Merchant Owner | `OrderReceived` | SignalR + Firebase |
-| **Order Status Updated**| `UpdateOrderStatusCommandHandler` | Customer | `OrderConfirmed` etc. | SignalR + Firebase |
+| **Order Placed** | `CreateOrderCommandHandler` | Customer | `OrderPlaced` | `NotifOrderPlacedTitle` / `NotifOrderPlacedBody` (`#orderNumber`) |
+| **Order Received** | `CreateOrderCommandHandler` | Merchant Owner | `OrderReceived` | `NotifOrderReceivedTitle` / `NotifOrderReceivedBody` (`#orderNumber`, customer name) |
+| **Order Status Update** | `UpdateOrderStatusCommandHandler` | Customer | `OrderConfirmed`, `OrderPreparing`, `OrderReadyForPickup`, `OrderCompleted`, `OrderCancelled`, `OrderPending` | Status-specific title/body keys |
+| **Product Moderation (Single/OCR)** | `CreateProductCommandHandler` | Admin Role | `ProductUploaded` | `NotifProductModerationTitle` / `NotifProductModerationBodyOcr` (product title, store name) |
+| **Product Moderation (CSV Bulk)** | `BulkUploadProductsCommandHandler` | Admin Role | `ProductUploaded` | `NotifProductModerationTitle` / `NotifProductModerationBodyCsv` (product title, store name) |
+| **Product Dispute Report** | `ReportProductCommandHandler` | Admin Role | `ProductReported` | `NotifProductReportedTitle` / `NotifProductReportedBody` (product title, reason) |
+| **New Support Ticket** | `CreateSupportTicketCommandHandler` | Admin Role | `SupportTicketCreated` | `NotifSupportTicketCreatedTitle` / `NotifSupportTicketCreatedBody` (category, username) |
+| **Support Ticket Reply** | `ReplyToSupportTicketCommandHandler` | Ticket Creator | `SupportTicketReply` | `NotifSupportTicketReplyTitle` / `NotifSupportTicketReplyBody` (subject/category) |
+| **New User Registration** | `RegisterCommandHandler` / `CreateUserCommandHandler` | Admin Role | `AccountCreated` | `NotifNewUserRegisteredTitle` / `NotifNewUserRegisteredBody` (email, full name) |
+| **Admin Direct Note** | `SendAdminNoteCommandHandler` | User | `AdminWarning`, `AdminUrgent`, `AdminNotice` | Custom note title & body (internal notes excluded) |
 
-### 7.1 Out-of-Scope Triggers
-The following triggers are explicitly **out of scope** for the current release phase:
-*   **AI Recommendations:** Staging, approvals, rejections, and auto-execution events do not trigger user notifications.
-*   **Donations:** Donation listings, matches, and pickups do not trigger push or WebSocket notifications in the current sprint.
+---
+
+## 8. Client REST API Endpoints
+
+All endpoints are hosted at `/notifications` and require `[Authorize]`:
+
+| HTTP Method & Route | Description | Query Parameters / Body | Response Payload |
+| :--- | :--- | :--- | :--- |
+| `GET /notifications` | List caller's notification inbox | `pageNumber` (int, default 1)<br>`pageSize` (int, default 20)<br>`isRead` (bool, optional) | `ApiResponse<IReadOnlyList<NotificationDto>>` |
+| `GET /notifications/{id:guid}` | Get single notification detail | Route parameter: `id` | `ApiResponse<NotificationDto>` (404 if not found or unauthorized) |
+| `GET /notifications/unread-count` | Get total unread count for badge | None | `ApiResponse<int>` |
+| `PATCH /notifications/{id:guid}/read` | Mark single notification as read | Route parameter: `id` | `ApiResponse<NotificationDto>` (sets `isRead = true`, `readAt = UtcNow`) |
+| `PATCH /notifications/read-all` | Mark all caller's notifications as read | None | `204 NoContent` |
+| `POST /notifications/device-token` | Register/update mobile FCM token | `{ "token": "string", "platform": "Android\|iOS" }` | `ApiResponse<{ success: true }>` |
+
+### 8.1 Notification DTO & Deep Linking Schema
+
+```json
+{
+  "id": "8fa1b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  "userId": "11111111-1111-1111-1111-111111111111",
+  "title": "Product Requires Moderation",
+  "body": "Product 'Fresh Greek Yogurt' listed by 'Spinneys' requires moderation review.",
+  "type": "ProductUploaded",
+  "isRead": false,
+  "readAt": null,
+  "entityType": "Product",
+  "entityId": "66666666-6666-6666-6666-666666666666",
+  "createdAt": "2026-08-19T18:00:00Z"
+}
+```
+
+* **`entityType` Navigation:**
+  * `"Product"` $\rightarrow$ Navigates to `/admin/moderation/products/{entityId}` or `/marketplace/products/{entityId}`
+  * `"Order"` $\rightarrow$ Navigates to `/orders/{entityId}` or `/stores/me/orders/{entityId}`
+  * `"SupportTicket"` $\rightarrow$ Navigates to `/support-tickets/{entityId}`
+  * `"ProductReport"` $\rightarrow$ Navigates to `/admin/disputes/{entityId}`
+  * `"User"` $\rightarrow$ Navigates to `/admin/users/{entityId}`
+

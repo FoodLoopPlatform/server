@@ -1115,3 +1115,167 @@ The backend uses the strongly-typed **Options Pattern** for configuring external
       "message": "Support ticket closed successfully."
     }
     ```
+
+---
+
+## 🔔 Notifications Module (`/notifications`)
+
+### 1. List Notifications Feed (Paginated)
+*   **Endpoint**: `GET /notifications?pageNumber=1&pageSize=20&isRead=false`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": [
+        {
+          "id": "8fa1b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+          "userId": "11111111-1111-1111-1111-111111111111",
+          "title": "New Order Received",
+          "body": "Store 'Spinneys' received order #ord_1234 for pickup.",
+          "type": "OrderReceived",
+          "isRead": false,
+          "readAt": null,
+          "entityType": "Order",
+          "entityId": "22222222-2222-2222-2222-222222222222",
+          "createdAt": "2026-08-19T18:00:00Z"
+        }
+      ]
+    }
+    ```
+
+### 2. Get Single Notification Detail
+*   **Endpoint**: `GET /notifications/8fa1b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (200 OK)**: Returns full `NotificationDto`.
+
+### 3. Get Unread Count Badge
+*   **Endpoint**: `GET /notifications/unread-count`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": 3
+    }
+    ```
+
+### 4. Mark Single Notification Read
+*   **Endpoint**: `PATCH /notifications/8fa1b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c/read`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "id": "8fa1b2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+        "isRead": true,
+        "readAt": "2026-08-19T18:05:00Z"
+      }
+    }
+    ```
+
+### 5. Mark All Notifications Read
+*   **Endpoint**: `PATCH /notifications/read-all`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (204 No Content)**
+
+### 6. Register Mobile FCM Push Token
+*   **Endpoint**: `POST /notifications/device-token`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Request Body**:
+    ```json
+    {
+      "token": "fcm_device_registration_token_xyz",
+      "platform": "Android"
+    }
+    ```
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": { "success": true }
+    }
+    ```
+
+---
+
+## 💳 Payments & Wallet Module (`/orders`, `/payments`, `/users/me/wallet`)
+
+### 1. Paymob Online Checkout Initiation
+*   **Endpoint**: `POST /orders/22222222-2222-2222-2222-222222222222/paymob-checkout`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "orderId": "22222222-2222-2222-2222-222222222222",
+        "paymentToken": "paymob_session_client_secret_token",
+        "checkoutUrl": "https://accept.paymob.com/unifiedcheckout/?publicKey=pk_test_...&clientSecret=paymob_session_client_secret_token"
+      }
+    }
+    ```
+
+### 2. Pay With Wallet Balance
+*   **Endpoint**: `POST /orders/22222222-2222-2222-2222-222222222222/wallet-checkout`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "orderId": "22222222-2222-2222-2222-222222222222",
+        "paymentStatus": "Paid",
+        "orderStatus": "Confirmed",
+        "amountCharged": 60.00,
+        "remainingWalletBalance": 40.00
+      }
+    }
+    ```
+
+### 3. Get User Wallet Balance & Transactions
+*   **Endpoint**: `GET /users/me/wallet`
+*   **Headers**: `Authorization: Bearer <token>`
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "walletBalance": 125.00,
+        "transactions": [
+          {
+            "id": "33333333-3333-3333-3333-333333333333",
+            "amount": 50.00,
+            "type": "Refund",
+            "description": "Refund for order #ord_1234",
+            "createdAt": "2026-08-19T17:30:00Z"
+          }
+        ]
+      }
+    }
+    ```
+
+### 4. Refund Order (Merchant / Admin)
+*   **Endpoint**: `POST /orders/22222222-2222-2222-2222-222222222222/refund`
+*   **Headers**: `Authorization: Bearer <merchant_or_admin_token>`
+*   **Request Body**:
+    ```json
+    {
+      "amount": 60.00,
+      "reason": "Customer cancelled before preparation"
+    }
+    ```
+*   **Response (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "orderId": "22222222-2222-2222-2222-222222222222",
+        "refundedAmount": 60.00,
+        "paymentStatus": "Refunded",
+        "orderStatus": "Cancelled"
+      }
+    }
+    ```
+

@@ -27,8 +27,8 @@ FoodLoop.sln
 
 Contains the core business model. Has zero external dependencies.
 
-- **Entities**: `Store`, `ProductListing`, `Order`, `Review`, `AIRecognitionResult`, `Address`, `StoreVerification`, `RefreshToken`, `Category`, `Notification`, `SupportTicket` etc.
-- **Enums**: `AppRole`, `UserStatus`, `VerificationStatus`, `BusinessCategory`, `ListingStatus`, `OrderStatus`, `DocumentTypes`
+- **Entities**: `Organization`, `Product`, `ProductReport`, `Order`, `OrderItem`, `Payment`, `WalletTransaction`, `Review`, `AuditLog`, `SystemSettings`, `UserDeviceToken`, `Address`, `Category`, `Notification`, `SupportTicket`, `TicketMessage`, `RefreshToken`
+- **Enums**: `AppRole`, `UserStatus`, `VerificationStatus`, `ProductStatus`, `OrderStatus`, `PaymentStatus`, `PaymentMethod`, `DocumentType`, `TicketPriority`, `TicketStatus`
 - **Base classes**: `BaseEntity` (audit fields), `ISoftDelete` (soft-delete contract)
 - All entities extend `BaseEntity` which gives them `Id`, `CreatedAt`, `UpdatedAt`, `CreatedBy`, `UpdatedBy`.
 
@@ -36,26 +36,27 @@ Contains the core business model. Has zero external dependencies.
 
 Defines what the system can do without caring how. Depends only on Domain.
 
-- **Commands and Queries** (MediatR): one file per use case, e.g. `LoginCommand`, `RegisterCommand`, `GetMyStoreQuery`
+- **Commands and Queries** (MediatR): one file per use case, e.g. `LoginCommand`, `RegisterCommand`, `CreateOrderCommand`, `ReportProductCommand`, `GetMyNotificationsQuery`
 - **DTOs**: request/response shapes for every endpoint
-- **Interfaces**: `IUnitOfWork`, `IStoreRepository`, `IEmailService`, `IJwtTokenService`, `IFileStorageService`, `ICurrentUserService`, `ILocalizationService`
-- **Common models**: `Result<T>`, `PagedResult<T>`, `FileUploadRequest`
+- **Interfaces**: `IApplicationDbContext`, `IUnitOfWork`, `IOrganizationRepository`, `IEmailService`, `IJwtTokenService`, `IFileStorageService`, `ICurrentUserService`, `ILocalizationService`, `IPaymentService`, `IRealTimeNotificationService`, `IFirebasePushNotificationService`, `IAuditLogService`
+- **Common models**: `Result<T>`, `PagedResult<T>`, `ApiResponse<T>`, `FileUploadRequest`
 
 ### Infrastructure (`FoodLoop.Infrastructure`)
 
-Implements every Application interface. Knows about databases, Identity, JWT, email, file storage, and localisation.
+Implements every Application interface. Knows about databases, Identity, JWT, Paymob payment gateways, Firebase Cloud Messaging, SignalR WebSocket hubs, email, file storage, and localisation.
 
 - **Handlers**: one file per command/query, co-located with the feature they implement
-- **EF Core**: `ApplicationDbContext`, all EF configurations, migrations, `UnitOfWork`, `Repository<T>`, bespoke repositories (`StoreRepository`, `AddressRepository`, `RefreshTokenRepository`)
+- **EF Core**: `ApplicationDbContext`, all EF configurations, migrations, `UnitOfWork`, `Repository<T>`, bespoke repositories (`OrganizationRepository`, `AddressRepository`, `RefreshTokenRepository`)
 - **Identity**: `ApplicationUser`, `ApplicationRole`, `IdentitySeeder` (seeds roles at startup)
-- **Services**: `JwtTokenService`, `LocalFileStorageService`, `NullEmailService`, `LocalizationService`
+- **Services**: `JwtTokenService`, `LocalFileStorageService`, `PaymobService`, `RealTimeNotificationService`, `FirebasePushNotificationService`, `UserDeviceTokenService`, `AuditLogService`, `LocalizationService`
+- **SignalR Hubs**: `NotificationHub` (`/hubs/notifications`)
 - **DI registration**: `InfrastructureServiceRegistration.AddInfrastructure()`
 
 ### API (`FoodLoop.API`)
 
 Entry point. Depends on Infrastructure only to wire DI; all business logic stays in Application/Infrastructure.
 
-- **Controllers**: `AuthController`, `UsersController`, `StoresController`, `AdminController`
+- **Controllers**: `AuthController`, `UsersController`, `StoresController`, `MarketplaceController`, `OrdersController`, `PaymentsController`, `NotificationsController`, `SupportTicketsController`, `CategoriesController`, `CharitiesController`, `ReviewsController`, `AdminController`, `AiRecommendationsController`
 - **Middleware**: `ExceptionHandlingMiddleware` — converts unhandled exceptions to the standard `{success, message, errors}` envelope
 - **Program.cs**: builds the DI container, configures the middleware pipeline, auto-migrates on development startup, seeds roles
 
