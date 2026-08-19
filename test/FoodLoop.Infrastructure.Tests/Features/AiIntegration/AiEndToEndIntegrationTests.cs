@@ -1202,6 +1202,9 @@ public class AiEndToEndIntegrationTests : IDisposable
         Func<Task> actFast = async () => await client.RecommendPricingAsync(request, CancellationToken.None);
         var exception = await actFast.Should().ThrowAsync<AiServiceUnavailableException>();
         exception.WithInnerException<BrokenCircuitException>();
+
+        // Verify that the second (fast-fail) call did not invoke SendAsync again (total invocations remain exactly 3)
+        mockHandler.Protected().Verify("SendAsync", Times.Exactly(3), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
     }
 
     [Fact]
