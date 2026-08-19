@@ -14,6 +14,7 @@ using FoodLoop.Infrastructure.Persistence;
 using FoodLoop.Infrastructure.Tests.TestSupport;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System;
@@ -759,5 +760,170 @@ public class PaymentAndWalletTests
         {
             connection.Close();
         }
+    }
+
+    [Fact]
+    public async Task CheckoutOrder_ValidPendingOrder_ShouldReturnCheckoutSession()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var customerId = Guid.NewGuid();
+        var customer = new ApplicationUser
+        {
+            Id = customerId,
+            UserName = "checkout@example.com",
+            Email = "checkout@example.com",
+            FullName = "Ahmed Hassan",
+            PhoneNumber = "+201012345678"
+        };
+        dbContext.Users.Add(customer);
+
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = customerId,
+            TotalAmount = 250.00m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.Pending
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        _mockPaymentService.Setup(p => p.GeneratePaymentTokenAsync(
+            order.Id,
+            250.00m,
+            "checkout@example.com",
+            "Ahmed",
+            "Hassan",
+            "+201012345678",
+            It.IsAny<CancellationToken>())).ReturnsAsync("payment_token_12345");
+
+        var inMemoryConfig = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Paymob:PublicKey"] = "pk_test_foodloop",
+                ["Paymob:BaseUrl"] = "https://accept.paymob.com"
+            })
+            .Build();
+
+        var handler = new CheckoutOrderCommandHandler(dbContext, _mockPaymentService.Object, inMemoryConfig);
+
+        // Act
+        var result = await handler.Handle(new CheckoutOrderCommand(order.Id, customerId), CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.OrderId.Should().Be(order.Id);
+        result.PaymentToken.Should().Be("payment_token_12345");
+        result.CheckoutUrl.Should().Contain("publicKey=pk_test_foodloop");
+        result.CheckoutUrl.Should().Contain("clientSecret=payment_token_12345");
+    }
+
+    [Fact]
+    public async Task CheckoutOrder_OrderNotFound_ShouldThrowNotFoundException()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var inMemoryConfig = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
+        var handler = new CheckoutOrderCommandHandler(dbContext, _mockPaymentService.Object, inMemoryConfig);
+
+        // Act & Assert
+        var act = async () => await handler.Handle(new CheckoutOrderCommand(Guid.NewGuid(), Guid.NewGuid()), CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task CheckoutOrder_UnauthorizedUser_ShouldThrowUnauthorizedAccessException()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var ownerId = Guid.NewGuid();
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = ownerId,
+            TotalAmount = 100.00m,
+            PaymentStatus = PaymentStatus.Pending
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var inMemoryConfig = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
+        var handler = new CheckoutOrderCommandHandler(dbContext, _mockPaymentService.Object, inMemoryConfig);
+
+        // Act & Assert
+        var differentUserId = Guid.NewGuid();
+        var act = async () => await handler.Handle(new CheckoutOrderCommand(order.Id, differentUserId), CancellationToken.None);
+        await act.Should().ThrowAsync<UnauthorizedAccessException>().WithMessage("You are not authorized to pay for this order.");
+    }
+
+    [Fact]
+    public async Task CheckoutOrder_AlreadyPaid_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var customerId = Guid.NewGuid();
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = customerId,
+            TotalAmount = 100.00m,
+            PaymentStatus = PaymentStatus.Paid
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var inMemoryConfig = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
+        var handler = new CheckoutOrderCommandHandler(dbContext, _mockPaymentService.Object, inMemoryConfig);
+
+        // Act & Assert
+        var act = async () => await handler.Handle(new CheckoutOrderCommand(order.Id, customerId), CancellationToken.None);
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("This order has already been paid.");
+    }
+
+    [Fact]
+    public async Task GetUserWallet_ShouldReturnBalanceAndTransactionHistory()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var userId = Guid.NewGuid();
+        var user = new ApplicationUser
+        {
+            Id = userId,
+            UserName = "walletuser@test.com",
+            Email = "walletuser@test.com",
+            WalletBalance = 75.50m
+        };
+        dbContext.Users.Add(user);
+
+        var tx1 = new WalletTransaction
+        {
+            UserId = userId,
+            Amount = 100.00m,
+            Type = "Credit",
+            Description = "Deposit",
+            CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-10)
+        };
+        var tx2 = new WalletTransaction
+        {
+            UserId = userId,
+            Amount = 24.50m,
+            Type = "Debit",
+            Description = "Order Payment",
+            CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-5)
+        };
+        dbContext.WalletTransactions.AddRange(tx1, tx2);
+        await dbContext.SaveChangesAsync();
+
+        var handler = new FoodLoop.Infrastructure.Features.Users.Queries.GetUserWalletQueryHandler(dbContext);
+
+        // Act
+        var result = await handler.Handle(new FoodLoop.Application.Features.Users.Queries.GetUserWalletQuery(userId), CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.WalletBalance.Should().Be(75.50m);
+        result.Transactions.Should().HaveCount(2);
+        result.Transactions.Select(t => t.Amount).Should().Contain(new[] { 100.00m, 24.50m });
     }
 }
