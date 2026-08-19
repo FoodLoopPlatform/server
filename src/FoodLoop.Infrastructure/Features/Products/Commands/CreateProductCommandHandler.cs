@@ -17,11 +17,16 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
+    private readonly IRealTimeNotificationService _notificationService;
 
-    public CreateProductCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
+    public CreateProductCommandHandler(
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogService,
+        IRealTimeNotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
     }
 
     public async Task<ProductDto> Handle(CreateProductCommand command, CancellationToken cancellationToken)
@@ -51,7 +56,13 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         }
 
         var state = command.ExpiryVerificationState ?? ExpiryVerificationState.Manual;
-        var status = state == ExpiryVerificationState.AiLowConfidence ? ProductStatus.PendingModeration : ProductStatus.Active;
+        
+        // FAIL-CLOSED DEFAULT: While the AI service integration is paused, we ignore client-supplied
+        // ExpiryVerificationState for status determination and force ProductStatus.PendingModeration
+        // to prevent client-side bypass of the moderation queue. The client-supplied state is still
+        // retained in the entity for later AI reconciliation.
+        // TODO: Revert to trusting AI-derived confidence once the AI service is restored.
+        var status = ProductStatus.PendingModeration;
 
         var product = new Product
         {
@@ -107,6 +118,19 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             $"Listed new product '{product.Title}'.",
             null,
             cancellationToken);
+
+        if (product.Status == ProductStatus.PendingModeration)
+        {
+            await _notificationService.SendNotificationToRoleAsync(
+                "Admin",
+                "NotifProductModerationTitle",
+                "NotifProductModerationBodyOcr",
+                "ProductUploaded",
+                new object[] { product.Title, organization.Name },
+                "Product",
+                product.Id,
+                cancellationToken);
+        }
 
         // Fetch category info to populate DTO
         product.Category = category;

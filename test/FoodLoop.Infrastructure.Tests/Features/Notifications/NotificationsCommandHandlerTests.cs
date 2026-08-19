@@ -74,6 +74,35 @@ public class NotificationsCommandHandlerTests : IDisposable
     }
 
     [Fact]
+    public async Task GetNotificationById_should_retrieve_single_notification_details()
+    {
+        // Arrange
+        var handler = new GetNotificationByIdQueryHandler(_db);
+        var query = new GetNotificationByIdQuery(_userId, _notificationId1);
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(_notificationId1);
+        result.Title.Should().Be("Alert 1");
+        result.Body.Should().Be("Welcome to FoodLoop");
+    }
+
+    [Fact]
+    public async Task GetNotificationById_should_throw_NotFoundException_for_invalid_or_unauthorized_id()
+    {
+        // Arrange
+        var handler = new GetNotificationByIdQueryHandler(_db);
+        var query = new GetNotificationByIdQuery(_userId, Guid.NewGuid());
+
+        // Act & Assert
+        await Assert.ThrowsAsync<FoodLoop.Application.Common.Exceptions.NotFoundException>(
+            () => handler.Handle(query, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task MarkNotificationRead_should_update_single_status()
     {
         // Arrange
@@ -87,6 +116,79 @@ public class NotificationsCommandHandlerTests : IDisposable
         result.Success.Should().BeTrue();
         var n = await _db.Notifications.FindAsync(_notificationId1);
         n!.IsRead.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetUnreadNotificationsCount_should_return_correct_count()
+    {
+        // Arrange
+        var handler = new GetUnreadNotificationsCountQueryHandler(_db);
+        var query = new GetUnreadNotificationsCountQuery(_userId);
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetMyNotifications_with_isRead_filter_should_filter_correctly()
+    {
+        // Arrange
+        var n = await _db.Notifications.FindAsync(_notificationId1);
+        n!.IsRead = true;
+        await _db.SaveChangesAsync();
+
+        var handler = new GetMyNotificationsQueryHandler(_db);
+
+        // Act
+        var readNotifications = await handler.Handle(new GetMyNotificationsQuery(_userId, 1, 10, true), CancellationToken.None);
+        var unreadNotifications = await handler.Handle(new GetMyNotificationsQuery(_userId, 1, 10, false), CancellationToken.None);
+
+        // Assert
+        readNotifications.Should().HaveCount(1);
+        readNotifications.First().Id.Should().Be(_notificationId1);
+
+        unreadNotifications.Should().HaveCount(1);
+        unreadNotifications.First().Id.Should().Be(_notificationId2);
+    }
+
+    [Fact]
+    public async Task MarkNotificationRead_should_fail_when_user_does_not_own_notification()
+    {
+        // Arrange
+        var handler = new MarkNotificationReadCommandHandler(_db);
+        var differentUserId = Guid.NewGuid();
+        var command = new MarkNotificationReadCommand(differentUserId, _notificationId1);
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Unauthorized");
+    }
+
+    [Fact]
+    public async Task RegisterDeviceToken_should_save_device_token_successfully()
+    {
+        // Arrange
+        var user = new ApplicationUser { Id = _userId, UserName = "device@test.com", Email = "device@test.com" };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        var handler = new RegisterDeviceTokenCommandHandler(_db);
+        var command = new RegisterDeviceTokenCommand(_userId, "sample-fcm-token-12345", "Android");
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        var updatedUser = await _db.Users.FindAsync(_userId);
+        updatedUser.Should().NotBeNull();
+        updatedUser!.DeviceToken.Should().Be("sample-fcm-token-12345");
     }
 
     [Fact]
@@ -116,14 +218,19 @@ public class NotificationsCommandHandlerTests : IDisposable
         mockHubContext.Setup(h => h.Clients).Returns(mockClients.Object);
         mockClients.Setup(c => c.User(It.IsAny<string>())).Returns(mockClientProxy.Object);
 
+        var mockLoc = new Mock<ILocalizationService>();
+        mockLoc.Setup(l => l[It.IsAny<string>()]).Returns<string>(k => k);
+        mockLoc.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns<string, object[]>((k, a) => k);
+
         var service = new RealTimeNotificationService(
             _db, 
             mockHubContext.Object, 
             new Mock<IFirebasePushNotificationService>().Object, 
+            mockLoc.Object,
             new Mock<ILogger<RealTimeNotificationService>>().Object);
 
         // Act
-        await service.SendNotificationToUserAsync(_userId, "Realtime Test", "SignalR is working", "OrderPlaced", CancellationToken.None);
+        await service.SendNotificationToUserAsync(_userId, "Realtime Test", "SignalR is working", "OrderPlaced", Array.Empty<object>(), CancellationToken.None);
 
         // Assert
         var inDb = _db.Notifications.Any(n => n.UserId == _userId && n.Title == "Realtime Test");

@@ -1,4 +1,5 @@
 using FoodLoop.Application.Common.Exceptions;
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Features.Products.Commands;
 using FoodLoop.Domain.Entities;
 using FoodLoop.Domain.Enums;
@@ -16,11 +17,23 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
 {
     private readonly ApplicationDbContext _db;
     private readonly FoodLoop.Application.Common.Interfaces.IAuditLogService _auditLogService;
+    private readonly IRealTimeNotificationService _notificationService;
 
-    public ReportProductCommandHandler(ApplicationDbContext db, FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService)
+    public ReportProductCommandHandler(
+        ApplicationDbContext db,
+        FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService)
+        : this(db, auditLogService, null!)
+    {
+    }
+
+    public ReportProductCommandHandler(
+        ApplicationDbContext db,
+        FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService,
+        IRealTimeNotificationService notificationService)
     {
         _db = db;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
     }
 
     public async Task<Unit> Handle(ReportProductCommand request, CancellationToken cancellationToken)
@@ -92,6 +105,19 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
             $"Customer reported product '{product.Title}'. Reason: {request.Reason}.",
             null,
             cancellationToken);
+
+        if (_notificationService != null)
+        {
+            await _notificationService.SendNotificationToRoleAsync(
+                "Admin",
+                "NotifProductReportedTitle",
+                "NotifProductReportedBody",
+                "ProductReported",
+                new object[] { product.Title, request.Reason },
+                "ProductReport",
+                report.Id,
+                cancellationToken);
+        }
 
         return Unit.Value;
     }

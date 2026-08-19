@@ -23,6 +23,7 @@ public class AdminUserCommandHandlerTests : IDisposable
     private readonly Mock<UserManager<ApplicationUser>> _userManager = MockUserManagerFactory.Create();
     private readonly ApplicationDbContext _dbContext = ApplicationDbContextFactory.Create();
     private readonly Mock<ILocalizationService> _loc = MockLocalizationServiceFactory.Create();
+    private readonly Mock<IRealTimeNotificationService> _notificationService = new();
 
     public void Dispose() => _dbContext.Dispose();
 
@@ -38,7 +39,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Customer))
             .ReturnsAsync(IdentityResult.Success);
 
-        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object);
+        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object, _notificationService.Object);
         var request = new CreateUserRequest
         {
             Email = "new@example.com",
@@ -57,13 +58,25 @@ public class AdminUserCommandHandlerTests : IDisposable
         result.Data.Should().NotBeNull();
         result.Data!.Email.Should().Be("new@example.com");
         result.Data.Roles.Should().Contain(AppRole.Customer);
+
+        _notificationService.Verify(
+            n => n.SendNotificationToRoleAsync(
+                "Admin",
+                "NotifNewUserRegisteredTitle",
+                "NotifNewUserRegisteredBody",
+                "AccountCreated",
+                It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "new@example.com" && (string)args[1] == "New User"),
+                "User",
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
     public async Task CreateUser_should_fail_for_invalid_role()
     {
         // Arrange
-        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object);
+        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object, _notificationService.Object);
         var request = new CreateUserRequest
         {
             Email = "new@example.com",

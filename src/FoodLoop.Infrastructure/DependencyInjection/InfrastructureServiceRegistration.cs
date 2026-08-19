@@ -225,9 +225,11 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICorrelationIdAccessor, CorrelationIdAccessor>();
         services.AddTransient<CorrelationIdDelegatingHandler>();
 
-        // 1. Business Resilience Pipeline (Exponential backoff retry with jitter, 30s timeout, circuit breaker)
-        services.AddResiliencePipeline<string, HttpResponseMessage>("AiServiceBusinessPipeline", builder =>
+        // 1. Business Resilience Pipeline (Exponential backoff retry with jitter, dynamic timeout, circuit breaker)
+        services.AddResiliencePipeline<string, HttpResponseMessage>("AiServiceBusinessPipeline", (builder, context) =>
         {
+            var options = context.ServiceProvider.GetRequiredService<IOptions<AiServiceOptions>>().Value;
+
             builder.AddRetry(new Polly.Retry.RetryStrategyOptions<HttpResponseMessage>
             {
                 MaxRetryAttempts = 3,
@@ -237,24 +239,24 @@ public static class InfrastructureServiceRegistration
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .Handle<HttpRequestException>()
                     .Handle<TimeoutRejectedException>()
-                    .HandleResult(response => (int)response.StatusCode >= 500)
+                    .HandleResult(response => (int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
             });
 
             builder.AddTimeout(new Polly.Timeout.TimeoutStrategyOptions
             {
-                Timeout = TimeSpan.FromSeconds(30)
+                Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds)
             });
 
             builder.AddCircuitBreaker(new Polly.CircuitBreaker.CircuitBreakerStrategyOptions<HttpResponseMessage>
             {
-                FailureRatio = 0.5,
+                FailureRatio = 0.6,
                 SamplingDuration = TimeSpan.FromSeconds(60),
-                MinimumThroughput = 5,
-                BreakDuration = TimeSpan.FromSeconds(30),
+                MinimumThroughput = 3,
+                BreakDuration = TimeSpan.FromMinutes(60),
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .Handle<HttpRequestException>()
                     .Handle<TimeoutRejectedException>()
-                    .HandleResult(response => (int)response.StatusCode >= 500)
+                    .HandleResult(response => (int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
             });
         });
 

@@ -61,5 +61,35 @@
   <data name="LoggedOut"><value>Logged out.</value></data>
   <data name="PasswordReset"><value>Password has been reset.</value></data>
   <data name="ForgotPasswordSent"><value>If that email is registered, a reset link has been sent.</value></data>
-  <data name="ListingDeletedSuccessfully"><value>Product listing deleted successfully.</value></data>
+  <!-- Notifications -->
+  <data name="NotifOrderPlacedTitle"><value>Order Placed Successfully</value></data>
+  <data name="NotifOrderPlacedBody"><value>Your order #{0} has been placed successfully.</value></data>
+  <data name="NotifOrderReceivedTitle"><value>New Order Received</value></data>
+  <data name="NotifOrderReceivedBody"><value>Store '{0}' received order #{1} for pickup.</value></data>
+  <data name="NotifOrderPendingTitle"><value>Order Pending</value></data>
+  <data name="NotifOrderPendingBody"><value>Your order is pending confirmation.</value></data>
+  <data name="NotifOrderConfirmedTitle"><value>Order Confirmed</value></data>
+  <data name="NotifOrderConfirmedBody"><value>Your order has been confirmed by the merchant.</value></data>
+  <data name="NotifOrderPreparingTitle"><value>Order Being Prepared</value></data>
+  <data name="NotifOrderPreparingBody"><value>Your order is being prepared.</value></data>
+  <data name="NotifOrderReadyForPickupTitle"><value>Order Ready for Pickup</value></data>
+  <data name="NotifOrderReadyForPickupBody"><value>Your order is ready for pickup!</value></data>
+  <data name="NotifOrderCompletedTitle"><value>Order Completed</value></data>
+  <data name="NotifOrderCompletedBody"><value>Your order has been completed. Thank you!</value></data>
+  <data name="NotifOrderCancelledTitle"><value>Order Cancelled</value></data>
+  <data name="NotifOrderCancelledBody"><value>Your order has been cancelled and refunded.</value></data>
+  <data name="NotifOrderStatusGenericTitle"><value>Order Status Updated</value></data>
+  <data name="NotifOrderStatusGenericBody"><value>Your order status has changed.</value></data>
+  <data name="NotifProductModerationTitle"><value>Product Requires Moderation</value></data>
+  <data name="NotifProductModerationBodyOcr"><value>Product '{0}' listed by '{1}' requires moderation review due to low OCR confidence.</value></data>
+  <data name="NotifProductModerationBodyCsv"><value>Product '{0}' listed by '{1}' requires moderation review due to bulk CSV upload.</value></data>
+  <data name="NotifProductReportedTitle"><value>Product Reported</value></data>
+  <data name="NotifProductReportedBody"><value>Product '{0}' was reported. Reason: {1}.</value></data>
+  <data name="NotifSupportTicketCreatedTitle"><value>New Support Ticket</value></data>
+  <data name="NotifSupportTicketCreatedBody"><value>New support ticket opened: {0} by {1}.</value></data>
+  <data name="NotifSupportTicketReplyTitle"><value>Support Ticket Reply</value></data>
+  <data name="NotifSupportTicketReplyBody"><value>You have received a new reply on your support ticket regarding: {0}.</value></data>
+  <data name="NotifNewUserRegisteredTitle"><value>New User Registered</value></data>
+  <data name="NotifNewUserRegisteredBody"><value>New account registered: {0} ({1}).</value></data>
+  <data name="NotifNewBusinessRegisteredBody"><value>New {0} account registered: {1} for organization '{2}'.</value></data>
 </root>

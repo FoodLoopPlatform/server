@@ -31,18 +31,44 @@ public class NotificationsController : ControllerBase
     private Guid UserId => _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
     /// <summary>
-    /// GET /notifications — list caller's notifications.
+    /// GET /notifications — list caller's notifications with optional paging and filtering.
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetMyNotifications(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMyNotifications(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] bool? isRead = null,
+        CancellationToken cancellationToken = default)
     {
-        var query = new GetMyNotificationsQuery(UserId);
+        var query = new GetMyNotificationsQuery(UserId, pageNumber, pageSize, isRead);
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<NotificationDto>>.Ok(result));
     }
 
     /// <summary>
-    /// PATCH /notifications/{id}/read — mark notification read.
+    /// GET /notifications/{id} — get details of a single notification.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetNotificationById(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetNotificationByIdQuery(UserId, id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<NotificationDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// GET /notifications/unread-count — get unread notifications count.
+    /// </summary>
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount(CancellationToken cancellationToken)
+    {
+        var query = new GetUnreadNotificationsCountQuery(UserId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<int>.Ok(result));
+    }
+
+    /// <summary>
+    /// PATCH /notifications/{id}/read — mark notification read and return navigation data.
     /// </summary>
     [HttpPatch("{id:guid}/read")]
     public async Task<IActionResult> MarkRead(Guid id, CancellationToken cancellationToken)
@@ -53,7 +79,7 @@ public class NotificationsController : ControllerBase
         {
             return BadRequest(ApiResponse.Fail(result.Message ?? "Failed to mark read"));
         }
-        return NoContent();
+        return Ok(ApiResponse<NotificationDto>.Ok(result.Data!));
     }
 
     /// <summary>

@@ -27,6 +27,7 @@ public class MarkAllNotificationsReadCommandHandler : IRequestHandler<MarkAllNot
         foreach (var n in notifications)
         {
             n.IsRead = true;
+            n.ReadAt = System.DateTimeOffset.UtcNow;
         }
 
         await _db.SaveChangesAsync(cancellationToken);
