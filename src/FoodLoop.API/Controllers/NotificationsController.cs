@@ -46,6 +46,17 @@ public class NotificationsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /notifications/{id} — get details of a single notification.
+    /// </summary>
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetNotificationById(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetNotificationByIdQuery(UserId, id);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(ApiResponse<NotificationDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /notifications/unread-count — get unread notifications count.
     /// </summary>
     [HttpGet("unread-count")]

@@ -58,6 +58,18 @@ public class AdminUserCommandHandlerTests : IDisposable
         result.Data.Should().NotBeNull();
         result.Data!.Email.Should().Be("new@example.com");
         result.Data.Roles.Should().Contain(AppRole.Customer);
+
+        _notificationService.Verify(
+            n => n.SendNotificationToRoleAsync(
+                "Admin",
+                "NotifNewUserRegisteredTitle",
+                "NotifNewUserRegisteredBody",
+                "AccountCreated",
+                It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "new@example.com" && (string)args[1] == "New User"),
+                "User",
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
