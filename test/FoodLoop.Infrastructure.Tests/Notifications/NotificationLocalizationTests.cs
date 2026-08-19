@@ -76,6 +76,107 @@ public class NotificationLocalizationTests : IDisposable
         notification.Body.Should().Be(expectedBody);
     }
 
+    [Theory]
+    [InlineData("en", "NotifOrderReceivedTitle", "NotifOrderReceivedBody", new object[] { "1234", "John Doe" }, "New Order Received", "New order #1234 received from John Doe.")]
+    [InlineData("ar", "NotifOrderReceivedTitle", "NotifOrderReceivedBody", new object[] { "1234", "جون دو" }, "طلب جديد مستلم", "تم استلام طلب جديد #1234 من جون دو.")]
+    [InlineData("en", "NotifOrderConfirmedTitle", "NotifOrderConfirmedBody", new object[] { "1234" }, "Order Confirmed", "Your order #1234 has been confirmed by the store.")]
+    [InlineData("ar", "NotifOrderConfirmedTitle", "NotifOrderConfirmedBody", new object[] { "1234" }, "تم تأكيد الطلب", "تم تأكيد طلبك #1234 من قبل المتجر.")]
+    [InlineData("en", "NotifOrderReadyTitle", "NotifOrderReadyBody", new object[] { "1234" }, "Order Ready for Pickup", "Your order #1234 is now ready for pickup.")]
+    [InlineData("ar", "NotifOrderReadyTitle", "NotifOrderReadyBody", new object[] { "1234" }, "الطلب جاهز للاستلام", "طلبك #1234 جاهز الآن للاستلام.")]
+    [InlineData("en", "NotifOrderPickedUpTitle", "NotifOrderPickedUpBody", new object[] { "1234" }, "Order Picked Up", "Your order #1234 has been picked up.")]
+    [InlineData("ar", "NotifOrderPickedUpTitle", "NotifOrderPickedUpBody", new object[] { "1234" }, "تم استلام الطلب", "تم استلام طلبك #1234 بنجاح.")]
+    [InlineData("en", "NotifOrderCompletedTitle", "NotifOrderCompletedBody", new object[] { "1234" }, "Order Completed", "Your order #1234 is complete. Thank you for using FoodLoop!")]
+    [InlineData("ar", "NotifOrderCompletedTitle", "NotifOrderCompletedBody", new object[] { "1234" }, "اكتمل الطلب", "اكتمل طلبك #1234. شكراً لاستخدامك فودلوب!")]
+    [InlineData("en", "NotifOrderCancelledTitle", "NotifOrderCancelledBody", new object[] { "1234" }, "Order Cancelled", "Your order #1234 has been cancelled.")]
+    [InlineData("ar", "NotifOrderCancelledTitle", "NotifOrderCancelledBody", new object[] { "1234" }, "تم إلغاء الطلب", "تم إلغاء طلبك #1234.")]
+    [InlineData("en", "NotifProductModerationTitle", "NotifProductModerationBodyOcr", new object[] { "Milk", "Bakery" }, "Product Requires Moderation", "New product 'Milk' from 'Bakery' requires moderation.")]
+    [InlineData("ar", "NotifProductModerationTitle", "NotifProductModerationBodyOcr", new object[] { "حليب", "مخبز" }, "منتج يتطلب مراجعة", "المنتج الجديد 'حليب' من 'مخبز' يتطلب مراجعة الإدارة.")]
+    [InlineData("en", "NotifProductReportedTitle", "NotifProductReportedBody", new object[] { "Bread", "Expired" }, "Product Reported", "Product 'Bread' was reported. Reason: Expired.")]
+    [InlineData("ar", "NotifProductReportedTitle", "NotifProductReportedBody", new object[] { "خبز", "منتهي الصلاحية" }, "تم الإبلاغ عن منتج", "تم الإبلاغ عن المنتج 'خبز'. السبب: منتهي الصلاحية.")]
+    [InlineData("en", "NotifSupportTicketCreatedTitle", "NotifSupportTicketCreatedBody", new object[] { "Payment", "Alice" }, "New Support Ticket", "New support ticket created in category 'Payment' by Alice.")]
+    [InlineData("ar", "NotifSupportTicketCreatedTitle", "NotifSupportTicketCreatedBody", new object[] { "دفع", "أليس" }, "تذكرة دعم جديدة", "تم إنشاء تذكرة دعم جديدة في قسم 'دفع' بواسطة أليس.")]
+    [InlineData("en", "NotifSupportTicketReplyTitle", "NotifSupportTicketReplyBody", new object[] { "Payment Issue" }, "Support Ticket Update", "There is a new update on your support ticket 'Payment Issue'.")]
+    [InlineData("ar", "NotifSupportTicketReplyTitle", "NotifSupportTicketReplyBody", new object[] { "مشكلة دفع" }, "تحديث على تذكرة الدعم", "هناك رد جديد على تذكرة الدعم الخاصة بك 'مشكلة دفع'.")]
+    [InlineData("en", "NotifNewUserRegisteredTitle", "NotifNewUserRegisteredBody", new object[] { "user@test.com", "Bob" }, "New User Registered", "A new user 'user@test.com' (Bob) has registered on the platform.")]
+    [InlineData("ar", "NotifNewUserRegisteredTitle", "NotifNewUserRegisteredBody", new object[] { "user@test.com", "بوب" }, "تسجيل مستخدم جديد", "تم تسجيل مستخدم جديد 'user@test.com' (بوب) في المنصة.")]
+    public async Task RealTimeNotificationService_should_correctly_localize_all_notification_keys(
+        string lang, string titleKey, string bodyKey, object[] args, string expectedTitle, string expectedBody)
+    {
+        // Arrange
+        var user = new ApplicationUser
+        {
+            Id = Guid.NewGuid(),
+            UserName = $"user_{Guid.NewGuid()}@test.com",
+            Email = $"user_{Guid.NewGuid()}@test.com",
+            Language = lang
+        };
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
+
+        var localizerFactory = new ResourceManagerStringLocalizerFactoryWrapper();
+        var locService = new LocalizationService(localizerFactory);
+        var mockHub = new Mock<Microsoft.AspNetCore.SignalR.IHubContext<FoodLoop.Infrastructure.Hubs.NotificationHub, FoodLoop.Infrastructure.Hubs.INotificationHubClient>>();
+        var mockFcm = new Mock<IFirebasePushNotificationService>();
+        var mockLogger = new Mock<ILogger<RealTimeNotificationService>>();
+
+        var service = new RealTimeNotificationService(_db, mockHub.Object, mockFcm.Object, locService, mockLogger.Object);
+
+        // Act
+        await service.SendNotificationToUserAsync(
+            user.Id,
+            titleKey,
+            bodyKey,
+            "GenericTest",
+            args);
+
+        // Assert
+        var notification = await _db.Notifications.FirstOrDefaultAsync(n => n.UserId == user.Id);
+        notification.Should().NotBeNull();
+        notification!.Title.Should().Be(expectedTitle);
+        notification.Body.Should().Be(expectedBody);
+    }
+
+    [Fact]
+    public async Task SendNotificationToRoleAsync_should_localize_per_admin_language()
+    {
+        // Arrange
+        var adminEn = new ApplicationUser { Id = Guid.NewGuid(), UserName = "admin_en@test.com", FullName = "Admin EN", Language = "en" };
+        var adminAr = new ApplicationUser { Id = Guid.NewGuid(), UserName = "admin_ar@test.com", FullName = "Admin AR", Language = "ar" };
+        _db.Users.AddRange(adminEn, adminAr);
+        await _db.SaveChangesAsync();
+
+        var mockUserStore = new Mock<Microsoft.AspNetCore.Identity.IUserStore<ApplicationUser>>();
+        var mockUserManager = new Mock<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>(mockUserStore.Object, null, null, null, null, null, null, null, null);
+        mockUserManager.Setup(m => m.GetUsersInRoleAsync("Admin")).ReturnsAsync(new List<ApplicationUser> { adminEn, adminAr });
+
+        var localizerFactory = new ResourceManagerStringLocalizerFactoryWrapper();
+        var locService = new LocalizationService(localizerFactory);
+        var mockHub = new Mock<Microsoft.AspNetCore.SignalR.IHubContext<FoodLoop.Infrastructure.Hubs.NotificationHub, FoodLoop.Infrastructure.Hubs.INotificationHubClient>>();
+        var mockFcm = new Mock<IFirebasePushNotificationService>();
+        var mockLogger = new Mock<ILogger<RealTimeNotificationService>>();
+
+        var service = new RealTimeNotificationService(_db, mockHub.Object, mockFcm.Object, mockUserManager.Object, locService, mockLogger.Object);
+
+        // Act
+        await service.SendNotificationToRoleAsync(
+            "Admin",
+            "NotifNewUserRegisteredTitle",
+            "NotifNewUserRegisteredBody",
+            "AccountCreated",
+            new object[] { "newbie@test.com", "Newbie" });
+
+        // Assert
+        var notifEn = await _db.Notifications.FirstOrDefaultAsync(n => n.UserId == adminEn.Id);
+        notifEn.Should().NotBeNull();
+        notifEn!.Title.Should().Be("New User Registered");
+        notifEn.Body.Should().Be("A new user 'newbie@test.com' (Newbie) has registered on the platform.");
+
+        var notifAr = await _db.Notifications.FirstOrDefaultAsync(n => n.UserId == adminAr.Id);
+        notifAr.Should().NotBeNull();
+        notifAr!.Title.Should().Be("تسجيل مستخدم جديد");
+        notifAr.Body.Should().Be("تم تسجيل مستخدم جديد 'newbie@test.com' (Newbie) في المنصة.");
+    }
+
     [Fact]
     public async Task UpdateOrderStatus_Pending_should_map_to_NotifOrderPending_keys()
     {
