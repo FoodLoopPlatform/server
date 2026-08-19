@@ -1005,6 +1005,92 @@ public class HistoricalIngestionTests
         _mockAiClient.Verify(x => x.IngestHistoricalPricingAsync(It.IsAny<HistoricalIngestionRequestDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task Handle_should_resolve_and_resend_original_corrected_episode_under_original_EventId_even_if_new_PriceHistory_row_inserted()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Store A" };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
+        var today = DateOnly.FromDateTime(_mockTimeProvider.Object.GetUtcNow().DateTime);
+
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            Title = "Apples",
+            OriginalPrice = 10m,
+            DiscountedPrice = 9m, // current discounted price within 15% bounds (10%)
+            QuantityAvailable = 0, // qualifies for sweep (sold out)
+            ExpirationDate = today.AddDays(5),
+            Organization = org,
+            Category = category,
+            CreatedAt = _mockTimeProvider.Object.GetUtcNow().AddDays(-10)
+        };
+
+        dbContext.Organizations.Add(org);
+        dbContext.Categories.Add(category);
+        dbContext.Products.Add(product);
+
+        // Add a pending corrected episode with IngestedAt = null and a specific EventId (e.g. -nodisc)
+        var pendingEpisode = new ProductPricingEpisode
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            EventId = $"ep-{product.Id}-nodisc",
+            RecordedAt = product.CreatedAt,
+            IngestedAt = null, // pending correction!
+            Outcome = "SOLD_OUT",
+            DiscountPercentage = 12.5, // corrected discount within safety bounds
+            SellThroughRate = 1.0
+        };
+        dbContext.ProductPricingEpisodes.Add(pendingEpisode);
+
+        // Insert a NEW qualifying PriceHistory row before running the sweep
+        var newPriceHistory = new PriceHistory
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            OldOriginalPrice = 10m,
+            OldDiscountedPrice = 10m,
+            NewDiscountedPrice = 7m, // qualifying discount (7 < 10)
+            CreatedAt = _mockTimeProvider.Object.GetUtcNow().AddDays(-2),
+            ChangeReason = "Merchant Discount Update"
+        };
+        dbContext.PriceHistories.Add(newPriceHistory);
+
+        await dbContext.SaveChangesAsync();
+
+        HistoricalIngestionRequestDto? capturedRequest = null;
+        _mockAiClient.Setup(x => x.IngestHistoricalPricingAsync(It.IsAny<HistoricalIngestionRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((HistoricalIngestionRequestDto req, CancellationToken ct) =>
+            {
+                capturedRequest = req;
+                var docIds = req.Events.Select(e => e.EventId).ToList();
+                return new HistoricalIngestionResponseDto(docIds.Count, docIds.Count, 0, docIds);
+            });
+
+        var handler = CreateHandler(dbContext);
+
+        // Act
+        var result = await handler.Handle(new RunHistoricalIngestionCommand(), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Events.Should().HaveCount(1);
+        
+        // The sweep MUST resolve and resend under the ORIGINAL corrected EventId ("ep-product-nodisc"),
+        // not the new EventId derived from the new PriceHistory ("ep-product-newPriceHistoryId")
+        capturedRequest.Events[0].EventId.Should().Be($"ep-{product.Id}-nodisc");
+        capturedRequest.Events[0].DiscountPercentage.Should().Be(12.5); // corrected value preserved
+
+        // Verify it was marked ingested in database
+        var dbEpisode = await dbContext.ProductPricingEpisodes.FindAsync(pendingEpisode.Id);
+        dbEpisode!.IngestedAt.Should().NotBeNull();
+        dbEpisode.IngestionCorrelationId.Should().Be("test-correlation-id");
+    }
+
     private FoodLoop.Infrastructure.Persistence.ApplicationDbContext CreateSqliteContext()
     {
         var connection = new Microsoft.Data.Sqlite.SqliteConnection("DataSource=:memory:");
