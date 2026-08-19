@@ -219,6 +219,15 @@ public static class InfrastructureServiceRegistration
         // ── AI Service Client Registration ──
         services.AddOptions<AiServiceOptions>()
             .Bind(configuration.GetSection(AiServiceOptions.SectionName))
+            .Configure(options =>
+            {
+                if (string.IsNullOrEmpty(options.BaseUrl))
+                {
+                    options.BaseUrl = configuration["AI_SERVICE_BASE_URL"] 
+                        ?? Environment.GetEnvironmentVariable("AI_SERVICE_BASE_URL") 
+                        ?? "http://54.92.183.187:8000";
+                }
+            })
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
