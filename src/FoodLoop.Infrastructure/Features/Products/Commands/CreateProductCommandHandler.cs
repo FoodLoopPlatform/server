@@ -119,7 +119,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             null,
             cancellationToken);
 
-        if (product.Status == ProductStatus.PendingModeration && _notificationService != null)
+        if (product.Status == ProductStatus.PendingModeration)
         {
             await _notificationService.SendNotificationToRoleAsync(
                 "Admin",

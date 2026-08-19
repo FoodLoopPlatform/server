@@ -172,25 +172,22 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        if (_notificationService != null)
+        foreach (var product in resultProducts)
         {
-            foreach (var product in resultProducts)
+            try
             {
-                try
-                {
-                    await _notificationService.SendNotificationToRoleAsync(
-                        "Admin",
-                        "Product Requires Moderation",
-                        $"Product '{product.Title}' listed by '{organization.Name}' requires moderation review due to bulk CSV upload.",
-                        "ProductUploaded",
-                        "Product",
-                        product.Id,
-                        cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to send ProductUploaded notification for bulk-imported product {ProductId}.", product.Id);
-                }
+                await _notificationService.SendNotificationToRoleAsync(
+                    "Admin",
+                    "Product Requires Moderation",
+                    $"Product '{product.Title}' listed by '{organization.Name}' requires moderation review due to bulk CSV upload.",
+                    "ProductUploaded",
+                    "Product",
+                    product.Id,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send ProductUploaded notification for bulk-imported product {ProductId}.", product.Id);
             }
         }
 
