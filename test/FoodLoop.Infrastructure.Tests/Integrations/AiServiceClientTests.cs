@@ -822,7 +822,9 @@ public class AiServiceClientTests
             Timestamp: DateTimeOffset.UtcNow
         );
 
-        // 1. Send 5 failed requests to trigger circuit breaker (MinimumThroughput is 5)
+        // 1. Send 5 failed requests to trigger circuit breaker.
+        // Note: This unit test intentionally registers and uses a looser local pipeline configuration
+        // (MinimumThroughput = 4) than production (MinimumThroughput = 3) to test client class resilience logic in isolation.
         for (int i = 0; i < 5; i++)
         {
             try
