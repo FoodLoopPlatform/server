@@ -80,6 +80,7 @@ public class SendAdminNoteCommandHandler : IRequestHandler<SendAdminNoteCommand,
                 request.Title,
                 request.Body,
                 notificationType,
+                Array.Empty<object>(),
                 cancellationToken);
         }
 

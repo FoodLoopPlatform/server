@@ -14,11 +14,16 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILocalizationService _loc;
+    private readonly IRealTimeNotificationService _notificationService;
 
-    public CreateUserCommandHandler(UserManager<ApplicationUser> userManager, ILocalizationService loc)
+    public CreateUserCommandHandler(
+        UserManager<ApplicationUser> userManager,
+        ILocalizationService loc,
+        IRealTimeNotificationService notificationService)
     {
         _userManager = userManager;
         _loc = loc;
+        _notificationService = notificationService;
     }
 
     public async Task<Result<UserDto>> Handle(CreateUserCommand command, CancellationToken cancellationToken)
@@ -62,6 +67,19 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
         }
 
         await _userManager.AddToRoleAsync(user, request.Role);
+
+        if (_notificationService != null)
+        {
+            await _notificationService.SendNotificationToRoleAsync(
+                "Admin",
+                "NotifNewUserRegisteredTitle",
+                "NotifNewUserRegisteredBody",
+                "AccountCreated",
+                new object[] { user.Email!, user.FullName },
+                "User",
+                user.Id,
+                cancellationToken);
+        }
 
         var roles = new List<string> { request.Role };
         return Result<UserDto>.Ok(user.ToDto(roles));

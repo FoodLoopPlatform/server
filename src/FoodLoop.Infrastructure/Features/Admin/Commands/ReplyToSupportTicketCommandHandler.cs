@@ -51,9 +51,10 @@ public class ReplyToSupportTicketCommandHandler : IRequestHandler<ReplyToSupport
         // Send Realtime Notification to Customer
         await _notification.SendNotificationToUserAsync(
             ticket.UserId,
-            "Support Ticket Reply",
-            $"You have received a new reply on your support ticket regarding: {ticket.Category}.",
+            "NotifSupportTicketReplyTitle",
+            "NotifSupportTicketReplyBody",
             "SupportTicketReply",
+            new object[] { ticket.Category },
             cancellationToken);
 
         var senderName = await _context.Users

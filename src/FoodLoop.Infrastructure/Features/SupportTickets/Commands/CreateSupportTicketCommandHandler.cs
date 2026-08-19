@@ -19,11 +19,16 @@ public class CreateSupportTicketCommandHandler
 {
     private readonly ApplicationDbContext _db;
     private readonly IAuditLogService _auditLogService;
+    private readonly IRealTimeNotificationService _notificationService;
 
-    public CreateSupportTicketCommandHandler(ApplicationDbContext db, IAuditLogService auditLogService)
+    public CreateSupportTicketCommandHandler(
+        ApplicationDbContext db,
+        IAuditLogService auditLogService,
+        IRealTimeNotificationService notificationService)
     {
         _db = db;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
     }
 
     public async Task<SupportTicketDto> Handle(CreateSupportTicketCommand request, CancellationToken cancellationToken)
@@ -61,6 +66,19 @@ public class CreateSupportTicketCommandHandler
             $"Ticket: {ticket.Category} — {ticket.Status}.",
             null,
             cancellationToken);
+
+        if (_notificationService != null)
+        {
+            await _notificationService.SendNotificationToRoleAsync(
+                "Admin",
+                "NotifSupportTicketCreatedTitle",
+                "NotifSupportTicketCreatedBody",
+                "SupportTicketCreated",
+                new object[] { ticket.Category, user.FullName },
+                "SupportTicket",
+                ticket.Id,
+                cancellationToken);
+        }
 
         return new SupportTicketDto
         {

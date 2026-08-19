@@ -124,32 +124,69 @@ public class RunHistoricalIngestionCommandHandler : IRequestHandler<RunHistorica
 
             foreach (var product in batch)
             {
-                // Find discountEvent - the earliest PriceHistory row where NewDiscountedPrice < OldDiscountedPrice
-                var discountEvent = priceHistories
-                    .Where(ph => ph.ProductId == product.Id && 
-                                 ph.NewDiscountedPrice < ph.OldDiscountedPrice &&
-                                 !existingEpisodes.Any(pe => pe.EventId == $"ep-{product.Id}-{ph.Id}"))
-                    .OrderBy(ph => ph.CreatedAt)
-                    .FirstOrDefault();
+                var pendingCorrection = allEpisodes.FirstOrDefault(pe => pe.ProductId == product.Id && pe.IngestedAt == null);
 
                 string candidateEventId;
                 DateTimeOffset recordedAt;
                 decimal originalPrice;
                 decimal currentPrice;
+                PriceHistory? discountEvent = null;
 
-                if (discountEvent != null)
+                if (pendingCorrection != null)
                 {
-                    candidateEventId = $"ep-{product.Id}-{discountEvent.Id}";
-                    recordedAt = discountEvent.CreatedAt;
-                    originalPrice = discountEvent.OldOriginalPrice;
-                    currentPrice = discountEvent.NewDiscountedPrice;
+                    candidateEventId = pendingCorrection.EventId;
+                    
+                    if (candidateEventId.EndsWith("-nodisc"))
+                    {
+                        recordedAt = product.CreatedAt;
+                        originalPrice = product.OriginalPrice;
+                        currentPrice = product.DiscountedPrice;
+                    }
+                    else
+                    {
+                        var parts = candidateEventId.Split('-');
+                        if (parts.Length >= 3 && Guid.TryParse(parts.Last(), out var phId))
+                        {
+                            discountEvent = priceHistories.FirstOrDefault(ph => ph.Id == phId);
+                        }
+
+                        if (discountEvent != null)
+                        {
+                            recordedAt = discountEvent.CreatedAt;
+                            originalPrice = discountEvent.OldOriginalPrice;
+                            currentPrice = discountEvent.NewDiscountedPrice;
+                        }
+                        else
+                        {
+                            recordedAt = pendingCorrection.RecordedAt;
+                            originalPrice = product.OriginalPrice;
+                            currentPrice = product.DiscountedPrice;
+                        }
+                    }
                 }
                 else
                 {
-                    candidateEventId = $"ep-{product.Id}-nodisc";
-                    recordedAt = product.CreatedAt;
-                    originalPrice = product.OriginalPrice;
-                    currentPrice = product.DiscountedPrice;
+                    discountEvent = priceHistories
+                        .Where(ph => ph.ProductId == product.Id && 
+                                     ph.NewDiscountedPrice < ph.OldDiscountedPrice &&
+                                     !existingEpisodes.Any(pe => pe.EventId == $"ep-{product.Id}-{ph.Id}"))
+                        .OrderBy(ph => ph.CreatedAt)
+                        .FirstOrDefault();
+
+                    if (discountEvent != null)
+                    {
+                        candidateEventId = $"ep-{product.Id}-{discountEvent.Id}";
+                        recordedAt = discountEvent.CreatedAt;
+                        originalPrice = discountEvent.OldOriginalPrice;
+                        currentPrice = discountEvent.NewDiscountedPrice;
+                    }
+                    else
+                    {
+                        candidateEventId = $"ep-{product.Id}-nodisc";
+                        recordedAt = product.CreatedAt;
+                        originalPrice = product.OriginalPrice;
+                        currentPrice = product.DiscountedPrice;
+                    }
                 }
 
                 // Check membership using unique lookup on ProductId + EventId

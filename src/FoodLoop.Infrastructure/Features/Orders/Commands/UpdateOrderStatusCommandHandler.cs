@@ -83,22 +83,24 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
             null,
             cancellationToken);
 
-        // Send Realtime Notification to Customer
-        var statusMessage = newStatus switch
+        // Send Realtime Notification to Customer — each OrderStatus value has its own resx key.
+        var (titleKey, bodyKey, notifType) = newStatus switch
         {
-            OrderStatus.Confirmed => "Your order has been confirmed by the merchant.",
-            OrderStatus.Preparing => "Your order is being prepared.",
-            OrderStatus.ReadyForPickup => "Your order is ready for pickup!",
-            OrderStatus.Completed => "Your order has been completed. Thank you!",
-            OrderStatus.Cancelled => "Your order has been cancelled and refunded.",
-            _ => $"Your order status is now: {newStatus}."
+            OrderStatus.Pending        => ("NotifOrderPendingTitle",        "NotifOrderPendingBody",        "OrderPending"),
+            OrderStatus.Confirmed      => ("NotifOrderConfirmedTitle",      "NotifOrderConfirmedBody",      "OrderConfirmed"),
+            OrderStatus.Preparing      => ("NotifOrderPreparingTitle",      "NotifOrderPreparingBody",      "OrderPreparing"),
+            OrderStatus.ReadyForPickup => ("NotifOrderReadyForPickupTitle", "NotifOrderReadyForPickupBody", "OrderReadyForPickup"),
+            OrderStatus.Completed      => ("NotifOrderCompletedTitle",      "NotifOrderCompletedBody",      "OrderCompleted"),
+            OrderStatus.Cancelled      => ("NotifOrderCancelledTitle",      "NotifOrderCancelledBody",      "OrderCancelled"),
+            _                          => ("NotifOrderStatusGenericTitle",   "NotifOrderStatusGenericBody",   "OrderStatusUpdated")
         };
 
         await _notification.SendNotificationToUserAsync(
             order.UserId,
-            $"Order {newStatus}",
-            statusMessage,
-            $"Order{newStatus}",
+            titleKey,
+            bodyKey,
+            notifType,
+            Array.Empty<object>(),
             cancellationToken);
 
         var user = await _db.Users.FindAsync(new object[] { order.UserId }, cancellationToken);

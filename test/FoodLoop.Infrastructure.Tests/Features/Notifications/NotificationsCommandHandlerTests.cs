@@ -116,14 +116,19 @@ public class NotificationsCommandHandlerTests : IDisposable
         mockHubContext.Setup(h => h.Clients).Returns(mockClients.Object);
         mockClients.Setup(c => c.User(It.IsAny<string>())).Returns(mockClientProxy.Object);
 
+        var mockLoc = new Mock<ILocalizationService>();
+        mockLoc.Setup(l => l[It.IsAny<string>()]).Returns<string>(k => k);
+        mockLoc.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns<string, object[]>((k, a) => k);
+
         var service = new RealTimeNotificationService(
             _db, 
             mockHubContext.Object, 
             new Mock<IFirebasePushNotificationService>().Object, 
+            mockLoc.Object,
             new Mock<ILogger<RealTimeNotificationService>>().Object);
 
         // Act
-        await service.SendNotificationToUserAsync(_userId, "Realtime Test", "SignalR is working", "OrderPlaced", CancellationToken.None);
+        await service.SendNotificationToUserAsync(_userId, "Realtime Test", "SignalR is working", "OrderPlaced", Array.Empty<object>(), CancellationToken.None);
 
         // Assert
         var inDb = _db.Notifications.Any(n => n.UserId == _userId && n.Title == "Realtime Test");

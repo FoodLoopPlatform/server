@@ -371,11 +371,15 @@ public class NotificationSystemTests : IDisposable
         mockFirebase.Setup(f => f.SendToUserAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Throws(new Exception("Firebase gateway timeout"));
 
+        var mockLoc = new Mock<ILocalizationService>();
+        mockLoc.Setup(l => l[It.IsAny<string>()]).Returns<string>(k => k);
+        mockLoc.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns<string, object[]>((k, a) => k);
+
         var mockLogger = new Mock<ILogger<RealTimeNotificationService>>();
-        var service = new RealTimeNotificationService(_db, mockHubContext.Object, mockFirebase.Object, mockLogger.Object);
+        var service = new RealTimeNotificationService(_db, mockHubContext.Object, mockFirebase.Object, mockLoc.Object, mockLogger.Object);
 
         // Act & Assert
-        Func<Task> act = async () => await service.SendNotificationToUserAsync(_userId, "Test Failure Isolation", "This is fine", "Test", CancellationToken.None);
+        Func<Task> act = async () => await service.SendNotificationToUserAsync(_userId, "Test Failure Isolation", "This is fine", "Test", Array.Empty<object>(), CancellationToken.None);
         await act.Should().NotThrowAsync();
 
         // Ensure database state is still saved
@@ -396,10 +400,14 @@ public class NotificationSystemTests : IDisposable
 
         var mockFirebase = new Mock<IFirebasePushNotificationService>();
         var mockLogger = new Mock<ILogger<RealTimeNotificationService>>();
-        var service = new RealTimeNotificationService(_db, mockHubContext.Object, mockFirebase.Object, mockLogger.Object);
+        var mockLoc = new Mock<ILocalizationService>();
+        mockLoc.Setup(l => l[It.IsAny<string>()]).Returns<string>(k => k);
+        mockLoc.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns<string, object[]>((k, a) => k);
+
+        var service = new RealTimeNotificationService(_db, mockHubContext.Object, mockFirebase.Object, mockLoc.Object, mockLogger.Object);
 
         // Act & Assert
-        Func<Task> act = async () => await service.SendNotificationToUserAsync(_userId, "Test Offline User", "SignalR is fire-and-forget", "Test", CancellationToken.None);
+        Func<Task> act = async () => await service.SendNotificationToUserAsync(_userId, "Test Offline User", "SignalR is fire-and-forget", "Test", Array.Empty<object>(), CancellationToken.None);
         await act.Should().NotThrowAsync();
     }
 
@@ -428,9 +436,10 @@ public class NotificationSystemTests : IDisposable
         // Assert - Verify single dispatch
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
             _userId,
-            "Support Ticket Reply",
-            It.Is<string>(s => s.Contains("Billing")),
+            "NotifSupportTicketReplyTitle",
+            "NotifSupportTicketReplyBody",
             "SupportTicketReply",
+            It.Is<object[]>(args => args.Length == 1 && (string)args[0] == "Billing"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -465,6 +474,7 @@ public class NotificationSystemTests : IDisposable
             "Warning Note",
             "This is a warning note.",
             expectedNotificationType,
+            It.IsAny<object[]>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -492,7 +502,7 @@ public class NotificationSystemTests : IDisposable
 
         // Assert - Verify no dispatch
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
-            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -550,31 +560,33 @@ public class NotificationSystemTests : IDisposable
         // 1. Assert consumer notification is dispatched once
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
             customer.Id,
-            "Order Placed Successfully",
-            It.Is<string>(s => s.Contains("placed successfully")),
+            "NotifOrderPlacedTitle",
+            "NotifOrderPlacedBody",
             "OrderPlaced",
+            It.IsAny<object[]>(),
             It.IsAny<CancellationToken>()), Times.Once);
 
         // 2. Assert merchant notification is dispatched once
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
             merchant.Id,
-            "New Order Received",
-            It.Is<string>(s => s.Contains("received order")),
+            "NotifOrderReceivedTitle",
+            "NotifOrderReceivedBody",
             "OrderReceived",
+            It.IsAny<object[]>(),
             It.IsAny<CancellationToken>()), Times.Once);
             
         // 3. Assert total dispatches is exactly 2
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
-            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Theory]
-    [InlineData("Confirmed", "OrderConfirmed", "Your order has been confirmed by the merchant.")]
-    [InlineData("Preparing", "OrderPreparing", "Your order is being prepared.")]
-    [InlineData("ReadyForPickup", "OrderReadyForPickup", "Your order is ready for pickup!")]
-    [InlineData("Completed", "OrderCompleted", "Your order has been completed. Thank you!")]
-    [InlineData("Cancelled", "OrderCancelled", "Your order has been cancelled and refunded.")]
-    public async Task UpdateOrderStatus_should_dispatch_exactly_one_customer_notification_of_correct_type(string statusStr, string expectedNotificationType, string expectedBody)
+    [InlineData("Confirmed", "NotifOrderConfirmedTitle", "NotifOrderConfirmedBody", "OrderConfirmed")]
+    [InlineData("Preparing", "NotifOrderPreparingTitle", "NotifOrderPreparingBody", "OrderPreparing")]
+    [InlineData("ReadyForPickup", "NotifOrderReadyForPickupTitle", "NotifOrderReadyForPickupBody", "OrderReadyForPickup")]
+    [InlineData("Completed", "NotifOrderCompletedTitle", "NotifOrderCompletedBody", "OrderCompleted")]
+    [InlineData("Cancelled", "NotifOrderCancelledTitle", "NotifOrderCancelledBody", "OrderCancelled")]
+    public async Task UpdateOrderStatus_should_dispatch_exactly_one_customer_notification_of_correct_type(string statusStr, string expectedTitleKey, string expectedBodyKey, string expectedNotificationType)
     {
         // Arrange
         var customer = new ApplicationUser { Id = _userId, UserName = "cust-status@example.com", Email = "cust-status@example.com", FullName = "Customer Name", Status = UserStatus.Active };
@@ -639,13 +651,14 @@ public class NotificationSystemTests : IDisposable
         // Assert consumer notification is dispatched once
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
             customer.Id,
-            $"Order {statusStr}",
-            expectedBody,
+            expectedTitleKey,
+            expectedBodyKey,
             expectedNotificationType,
+            It.IsAny<object[]>(),
             It.IsAny<CancellationToken>()), Times.Once);
 
         // Assert total dispatches is exactly 1
         mockNotification.Verify(n => n.SendNotificationToUserAsync(
-            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object[]>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -24,6 +24,7 @@ public class RegisterCommandHandlerTests : IDisposable
 
     private readonly Mock<ILocalizationService> _loc = MockLocalizationServiceFactory.Create();
     private readonly Mock<IAuditLogService> _auditLogService = new();
+    private readonly Mock<IRealTimeNotificationService> _notificationService = new();
 
     public void Dispose() => _dbContext.Dispose();
 
@@ -35,7 +36,8 @@ public class RegisterCommandHandlerTests : IDisposable
             unitOfWork,
             _emailService.Object,
             _loc.Object,
-            _auditLogService.Object);
+            _auditLogService.Object,
+            _notificationService.Object);
     }
 
     private static RegisterRequest ConsumerRegisterRequest() => new()

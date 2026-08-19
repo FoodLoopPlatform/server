@@ -61,5 +61,35 @@
   <data name="LoggedOut"><value>تم تسجيل الخروج.</value></data>
   <data name="PasswordReset"><value>تم إعادة تعيين كلمة المرور.</value></data>
   <data name="ForgotPasswordSent"><value>إذا كان البريد الإلكتروني مسجلاً، فسيتم إرسال رابط إعادة التعيين.</value></data>
-  <data name="ListingDeletedSuccessfully"><value>تم حذف المنتج بنجاح.</value></data>
+  <!-- Notifications -->
+  <data name="NotifOrderPlacedTitle"><value>تم تقديم الطلب بنجاح</value></data>
+  <data name="NotifOrderPlacedBody"><value>تم تقديم طلبك #{0} بنجاح.</value></data>
+  <data name="NotifOrderReceivedTitle"><value>تم استلام طلب جديد</value></data>
+  <data name="NotifOrderReceivedBody"><value>تلقى متجر '{0}' طلبًا #{1} للاستلام.</value></data>
+  <data name="NotifOrderPendingTitle"><value>الطلب قيد الانتظار</value></data>
+  <data name="NotifOrderPendingBody"><value>طلبك في انتظار التأكيد.</value></data>
+  <data name="NotifOrderConfirmedTitle"><value>تم تأكيد الطلب</value></data>
+  <data name="NotifOrderConfirmedBody"><value>تم تأكيد طلبك من قِبل التاجر.</value></data>
+  <data name="NotifOrderPreparingTitle"><value>جارٍ تحضير الطلب</value></data>
+  <data name="NotifOrderPreparingBody"><value>جارٍ تحضير طلبك.</value></data>
+  <data name="NotifOrderReadyForPickupTitle"><value>الطلب جاهز للاستلام</value></data>
+  <data name="NotifOrderReadyForPickupBody"><value>طلبك جاهز للاستلام!</value></data>
+  <data name="NotifOrderCompletedTitle"><value>تم إتمام الطلب</value></data>
+  <data name="NotifOrderCompletedBody"><value>تم إتمام طلبك. شكرًا لك!</value></data>
+  <data name="NotifOrderCancelledTitle"><value>تم إلغاء الطلب</value></data>
+  <data name="NotifOrderCancelledBody"><value>تم إلغاء طلبك واسترداد المبلغ.</value></data>
+  <data name="NotifOrderStatusGenericTitle"><value>تم تحديث حالة الطلب</value></data>
+  <data name="NotifOrderStatusGenericBody"><value>تغيّرت حالة طلبك.</value></data>
+  <data name="NotifProductModerationTitle"><value>المنتج في انتظار المراجعة</value></data>
+  <data name="NotifProductModerationBodyOcr"><value>المنتج '{0}' المُدرج بواسطة '{1}' يتطلب مراجعة بسبب انخفاض دقة التعرف الضوئي.</value></data>
+  <data name="NotifProductModerationBodyCsv"><value>المنتج '{0}' المُدرج بواسطة '{1}' يتطلب مراجعة بسبب الرفع المجمّع عبر CSV.</value></data>
+  <data name="NotifProductReportedTitle"><value>تم الإبلاغ عن منتج</value></data>
+  <data name="NotifProductReportedBody"><value>تم الإبلاغ عن المنتج '{0}'. السبب: {1}.</value></data>
+  <data name="NotifSupportTicketCreatedTitle"><value>تذكرة دعم جديدة</value></data>
+  <data name="NotifSupportTicketCreatedBody"><value>تم فتح تذكرة دعم جديدة: {0} بواسطة {1}.</value></data>
+  <data name="NotifSupportTicketReplyTitle"><value>رد على تذكرة الدعم</value></data>
+  <data name="NotifSupportTicketReplyBody"><value>لقد تلقيت ردًا جديدًا على تذكرة الدعم الخاصة بك بشأن: {0}.</value></data>
+  <data name="NotifNewUserRegisteredTitle"><value>مستخدم جديد مسجل</value></data>
+  <data name="NotifNewUserRegisteredBody"><value>تم تسجيل حساب جديد: {0} ({1}).</value></data>
+  <data name="NotifNewBusinessRegisteredBody"><value>تم تسجيل حساب {0} جديد: {1} لمنظمة '{2}'.</value></data>
 </root>
