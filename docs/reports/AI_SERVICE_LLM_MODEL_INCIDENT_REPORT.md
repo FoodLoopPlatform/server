@@ -1,239 +1,190 @@
-# FoodLoop AI Microservice — LLM Model 404 Incident Report & Fix Guide
+# FoodLoop AI Microservice — LLM Model & Gateway Resolution Report
 
-**Document Version:** 1.0.0  
-**Date:** 19 August 2026  
-**Target Audience:** AI Engineering Lead / Autonomous AI Agent (Claude, ChatGPT, Cursor, Copilot)  
-**Service Host:** AWS EC2 (`http://54.92.183.187:8000`)  
+**Document Version:** 2.0.0  
+**Date:** 20 August 2026  
+**Target Audience:** AI Engineering Team / Autonomous AI Agent (Claude, ChatGPT, Cursor, Copilot)  
+**Service Hosts:** AWS EC2 (`http://54.92.183.187:8000`, `http://184.72.169.156:8000`)  
 **Status:** High Priority — Active Deterministic Fallback Triggered  
 
 ---
 
 ## 1. Executive Summary
 
-The FoodLoop AI Microservice deployed on AWS at `http://54.92.183.187:8000` is currently failing its primary LLM inference requests due to an upstream **HTTP 404 `model_not_found`** exception. 
+The FoodLoop AI Microservice deployed on AWS is currently bypassing its primary LLM inference requests and falling back to internal deterministic rule-based algorithms.
 
-The service is attempting to invoke `gemma-2-27b-it`, which was recently deprecated / removed from Groq's active model catalog. 
+During investigation and live testing against `http://184.72.169.156:8000`, two root causes were identified:
+1. **Upstream Model Deprecation:** The previous model `gemma-2-27b-it` was removed from Groq's active model catalog.
+2. **Gateway Route & Schema Mismatch (ITI Student API):** When attempting to use the ITI gateway (`apiaccess.iti.net.eg`), configuring standard `OPENAI_BASE_URL="http://apiaccess.iti.net.eg/api/v1"` caused `404 - {'detail': 'Not Found'}` because standard OpenAI clients append `/chat/completions`, whereas the ITI gateway exposes `/student/chat` with a custom payload schema.
 
-Because the microservice was engineered with high-resilience fallback handlers, the API does not crash and continues returning HTTP `200 OK` via its deterministic rule-based algorithms. However, **all dynamic natural-language reasoning, multi-context weighting, and LLM discount synthesis are completely bypassed**.
+Because the AI microservice was engineered with fallback handlers, the API does not crash and continues returning HTTP `200 OK`. However, **all dynamic natural-language reasoning, multi-context weighting, and LLM discount synthesis are bypassed** with fallback strings like `"(Fallback evaluation)"` and `"(rule-based fallback)"`.
 
 ---
 
-## 2. Observed Error Logs & Exceptions
+## 2. Observed Error Logs & Root Cause Analysis
 
-### 2.1 Server Console Log Traces (AWS Container)
-
+### 2.1 Live Server Log Traces
 ```text
-INFO:     127.0.0.1:36804 - "GET /health HTTP/1.1" 200 OK
-
-Context analysis LLM failed (Error code: 404 - {'error': {'code': 'model_not_found', 'message': 'The model gemma-2-27b-it does not exist or you do not have access to it.', 'param': 'model', 'type': 'invalid_request_error'}, 'request_id': 'a31c648c'}), falling back to deterministic sufficiency check.
-
-Risk assessment LLM failed (Error code: 404 - {'error': {'code': 'model_not_found', 'message': 'The model gemma-2-27b-it does not exist or you do not have access to it.', 'param': 'model', 'type': 'invalid_request_error'}, 'request_id': '2cda6741'}), falling back to deterministic risk signals.
-
-INFO:     156.195.194.54:53164 - "POST /api/v1/monitoring/analyze HTTP/1.1" 200 OK
-
-Pricing recommendation LLM failed (Error code: 404 - {'error': {'code': 'model_not_found', 'message': 'The model gemma-2-27b-it does not exist or you do not have access to it.', 'param': 'model', 'type': 'invalid_request_error'}, 'request_id': '95e4aa38'}), falling back to deterministic business pricing logic.
-
-INFO:     156.195.194.54:53164 - "POST /api/v1/pricing/recommend HTTP/1.1" 200 OK
+INFO:     156.195.194.54:52586 - "GET /docs HTTP/1.1" 200 OK
+INFO:     156.195.194.54:52586 - "GET /openapi.json HTTP/1.1" 200 OK
+Context analysis LLM failed (Error code: 404 - {'detail': 'Not Found'}), falling back to deterministic sufficiency check.
+Risk assessment LLM failed (Error code: 404 - {'detail': 'Not Found'}), falling back to deterministic risk signals.
+INFO:     156.195.194.54:60774 - "POST /api/v1/monitoring/analyze HTTP/1.1" 200 OK
+Pricing recommendation LLM failed (Error code: 404 - {'detail': 'Not Found'}), falling back to deterministic business pricing logic.
+INFO:     156.195.194.54:58458 - "POST /api/v1/pricing/recommend HTTP/1.1" 200 OK
 ```
 
-### 2.2 Upstream Provider Exception Payload
-When the application attempts to initialize or invoke the chat model:
-```json
-{
-  "error": {
-    "code": "model_not_found",
-    "message": "The model gemma-2-27b-it does not exist or you do not have access to it.",
-    "param": "model",
-    "type": "invalid_request_error"
-  },
-  "request_id": "a31c648c"
-}
-```
+### 2.2 Root Cause 1: Groq Catalog (`gemma-2-27b-it` Deprecation)
+On Groq's official API (`https://api.groq.com/openai/v1`), `gemma-2-27b-it` has been retired. Requesting it returns `model_not_found`.
 
----
+### 2.3 Root Cause 2: ITI Student Gateway Mismatch (`{'detail': 'Not Found'}`)
+The ITI API Gateway at `http://apiaccess.iti.net.eg` is a custom FastAPI service that does **not** adhere to standard OpenAI URL routing or schemas:
 
-## 3. Impacted Endpoints & Pipeline Symptoms
-
-| Endpoint | Intended Behavior (Tier 1) | Current Behavior (Tier 2 Fallback) |
+| Attribute | Standard OpenAI Client (LangChain / `ChatOpenAI`) | ITI Gateway (`apiaccess.iti.net.eg`) |
 | :--- | :--- | :--- |
-| `POST /api/v1/monitoring/analyze` | Evaluates inventory context, holiday/weather external data, and uses LLM to generate reasoned risk assessment. | Catches 404 $\rightarrow$ executes rule-based formula $\rightarrow$ appends `"(Fallback evaluation)"` to `reason`. |
-| `POST /api/v1/pricing/recommend` | Queries Qdrant vector store, retrieves historical episodes, and uses LLM to generate optimal discount % (0–15%) and explanation. | Catches 404 $\rightarrow$ executes linear discount scaling $\rightarrow$ appends `"(rule-based fallback)"` to `reason`. |
+| **Endpoint URL** | Automatically appends `/chat/completions` (e.g. `http://apiaccess.iti.net.eg/api/v1/chat/completions` ➔ **404**) | **`http://apiaccess.iti.net.eg/api/v1/student/chat`** |
+| **Model Field** | `"model": "..."` | `"model_id": "google.gemma-3-27b-it"` |
+| **System Prompt** | Sent as message `{"role": "system", "content": "..."}` | Sent as top-level field `"system_prompt": "..."` |
+| **Response Field** | `choices[0].message.content` | `output_text` |
 
-### Sample Response Indicating Fallback State
+#### Verified Working ITI Curl Request:
+```bash
+curl -X POST "http://apiaccess.iti.net.eg/api/v1/student/chat" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <API_KEY>" \
+  -d '{
+    "model_id": "google.gemma-3-27b-it",
+    "messages": [{"role": "user", "content": "Hello, are you working?"}],
+    "system_prompt": "You are a helpful AI assistant."
+  }'
+```
+**Response:**
 ```json
 {
-  "route": "PRICING",
-  "risk_level": "CRITICAL",
-  "reason": "CRITICAL risk: 16.0 hours remaining, high inventory pressure. (Fallback evaluation)",
-  "confidence": 0.8
+  "request_id": "73061c7f-a6d1-46e3-a3cc-862c01b989fa",
+  "model_id": "google.gemma-3-27b-it",
+  "region": "us-east-1",
+  "output_text": "Yes, I am! I'm always working, ready to help. 😊",
+  "usage": { "input_tokens": 23, "output_tokens": 35, "total_tokens": 58, "fallback_used": false },
+  "status": "active"
 }
 ```
 
 ---
 
-## 4. Root Cause
+## 3. Backend Impact & Current Mitigation
 
-1. **Provider Catalog Update:** Groq removed the model ID `gemma-2-27b-it` from its active API endpoints.
-2. **Hardcoded or Stale Configuration:** The environment variable `LLM_MODEL` (or internal default in `app/core/config.py` / `llm_factory.py`) is set to `gemma-2-27b-it`.
+### 3.1 Backend Fail-Closed Moderation Safeguard
+While the AI microservice is in fallback mode, the backend (`FoodLoop.API`) has implemented the following security mitigation:
+- In `CreateProductCommandHandler`, the `ExpiryVerificationState` field is client-supplied but is **strictly ignored for automatic product activation**.
+- All newly created products are forced to `ProductStatus.PendingModeration` to prevent client-side bypass of the moderation queue and ensure the admin `ProductUploaded` notification always fires.
+- Once the AI microservice restores true LLM reasoning and OCR verification, the backend can re-enable automated `Active` transitions for high-confidence predictions.
 
 ---
 
-## 5. Step-by-Step Resolution Guide (For AI Service Repository)
+## 4. Actionable Fix Options for the AI Service Team
 
-> **Workflow Note:** You only need to update the AI service codebase locally in your repository, test it locally, and push your changes to Git. The deployment team will handle pulling and restarting on the AWS server.
+The AI Service team can choose one of the following two implementation paths:
 
-### Step 1: Update Model Configuration in Code & Config Files
-In your local AI service codebase, replace all occurrences of `gemma-2-27b-it` with `llama-3.3-70b-versatile`:
+---
 
-1. **`app/core/config.py` (or `settings.py`):**
-   Ensure the default model fallback is updated:
+### Option A: Use Groq Directly (Recommended for Zero Code Changes)
+If you want to use standard LangChain / `ChatOpenAI` without custom HTTP client adapters:
+
+1. **Update `.env`:**
+   ```ini
+   LLM_PROVIDER=groq
+   LLM_MODEL=llama-3.3-70b-versatile
+   GROQ_API_KEY=gsk_your_active_groq_key_here
+   # Remove any custom OPENAI_BASE_URL pointing to iti.net.eg
+   ```
+2. **Update `app/core/config.py` default:**
    ```python
-   # Before:
-   llm_model: str = "gemma-2-27b-it"
-
-   # After:
    llm_model: str = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
    ```
 
-2. **`.env` & `.env.example`:**
+---
+
+### Option B: Use the ITI Student Gateway (`google.gemma-3-27b-it`)
+If you are required to use the ITI gateway at `http://apiaccess.iti.net.eg/api/v1/student/chat`, implement a custom client adapter in the AI service:
+
+1. **`app/services/iti_llm_client.py`:**
+   ```python
+   import httpx
+   from app.core.config import settings
+
+   class ITIStudentChatClient:
+       def __init__(self):
+           self.url = f"{settings.OPENAI_BASE_URL.rstrip('/')}/student/chat"
+           self.headers = {
+               "Content-Type": "application/json",
+               "Authorization": f"Bearer {settings.OPENAI_API_KEY}"
+           }
+           self.model_id = getattr(settings, "OPENAI_MODEL", "google.gemma-3-27b-it")
+
+       async def generate(self, user_prompt: str, system_prompt: str = "You are a helpful AI pricing assistant.") -> str:
+           payload = {
+               "model_id": self.model_id,
+               "messages": [{"role": "user", "content": user_prompt}],
+               "system_prompt": system_prompt
+           }
+           async with httpx.AsyncClient(timeout=settings.OPENAI_TIMEOUT_SECONDS) as client:
+               response = await client.post(self.url, json=payload, headers=self.headers)
+               response.raise_for_status()
+               data = response.json()
+               return data["output_text"]
+   ```
+
+2. **`.env` configuration for Option B:**
    ```ini
-   # LLM Model Configuration
-   LLM_MODEL=llama-3.3-70b-versatile
-   ```
-
-3. **`docker-compose.yml` (if applicable):**
-   Update the default environment block:
-   ```yaml
-   environment:
-     - LLM_MODEL=llama-3.3-70b-versatile
-   ```
-
-4. **`app/services/llm_factory.py` (or where LLM instances are initialized):**
-   Ensure the LangChain/Groq model factory uses `settings.LLM_MODEL` and has no hardcoded fallback strings to `gemma-2-27b-it`.
-
----
-
-### Step 2: Local Verification (Before Pushing to Git)
-
-1. **Run Local Unit & Integration Tests:**
-   ```bash
-   pytest
-   ```
-
-2. **Start the Service Locally:**
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-3. **Test Local Monitoring Endpoint:**
-   ```bash
-   curl -X POST "http://localhost:8000/api/v1/monitoring/analyze" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "product_id": "prod-verify-01",
-       "product_name": "Fresh Whole Milk 1L",
-       "category": "Dairy",
-       "store_id": "store-cairo-01",
-       "inventory": { "quantity": 25, "original_price": 45.0, "current_price": 45.0, "price_floor": 25.0 },
-       "demand": { "sales_velocity": 2.0, "historical_average_daily_sales": 6.0 },
-       "expiry": { "expires_at": "2026-08-20T12:00:00Z", "hours_remaining": 16.0 },
-       "location": { "latitude": 30.0444, "longitude": 31.2357, "store_id": "store-cairo-01" },
-       "timestamp": "2026-08-19T20:00:00Z"
-     }'
-   ```
-
-4. **Test Local Pricing Recommendation Endpoint:**
-   ```bash
-   curl -X POST "http://localhost:8000/api/v1/pricing/recommend" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "store_id": "store-cairo-01",
-       "store_policy": { "store_id": "store-cairo-01", "operating_mode": "autonomous" },
-       "products": [
-         {
-           "product_id": "prod-verify-01",
-           "product_name": "Fresh Whole Milk 1L",
-           "category": "Dairy",
-           "inventory": { "quantity": 25, "original_price": 45.0, "current_price": 45.0, "price_floor": 25.0 },
-           "demand": { "sales_velocity": 2.0, "historical_average_daily_sales": 6.0 },
-           "expiry": { "expires_at": "2026-08-20T12:00:00Z", "hours_remaining": 16.0 }
-         }
-       ]
-     }'
+   OPENAI_BASE_URL=http://apiaccess.iti.net.eg/api/v1
+   OPENAI_MODEL=google.gemma-3-27b-it
+   OPENAI_API_KEY=sbg_your_iti_token_here
+   OPENAI_TIMEOUT_SECONDS=30.0
    ```
 
 ---
 
-### Step 3: Git Commit & Push
-Once local verification passes with zero fallback logs:
+## 5. Verification Checklist & Acceptance Criteria
+
+After deploying either Option A or Option B, run the following verification checks:
+
+### 1. Test Monitoring Analysis:
 ```bash
-git add .
-git commit -m "fix(llm): update default LLM model from deprecated gemma-2-27b-it to llama-3.3-70b-versatile"
-git push origin <your-branch>
-```
-Notify the deployment team with your commit hash so they can pull the updates to the server.
-
----
-
-### Verification Test 2: Dynamic Pricing Batch Recommendation
-```bash
-curl -X POST "http://54.92.183.187:8000/api/v1/pricing/recommend" \
+curl -X POST "http://localhost:8000/api/v1/monitoring/analyze" \
   -H "Content-Type: application/json" \
   -d '{
-    "store_id": "store-cairo-01",
-    "store_policy": { "store_id": "store-cairo-01", "operating_mode": "autonomous" },
+    "product": { "id": "prod-001", "name": "Whole Milk", "category": "Dairy" },
+    "inventory": { "quantity": 8, "original_price": 45.0, "current_price": 45.0, "price_floor": 30.0 },
+    "demand": { "sales_velocity": 0.2, "historical_sales": { "average_daily_sales": 3.0 } },
+    "expiry": { "expires_at": "2026-08-20T14:00:00Z", "hours_remaining": 14.0 },
+    "location": { "latitude": 30.0444, "longitude": 31.2357, "store_id": "store-001" },
+    "store_policy": { "store_id": "store-001", "operating_mode": "autonomous" },
+    "timestamp": "2026-08-20T00:00:00Z"
+  }'
+```
+
+### 2. Test Pricing Recommendation:
+```bash
+curl -X POST "http://localhost:8000/api/v1/pricing/recommend" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "store_id": "store-001",
+    "store_policy": { "store_id": "store-001", "operating_mode": "autonomous" },
     "products": [
       {
-        "product_id": "prod-verify-01",
-        "product_name": "Fresh Milk 1L",
+        "product_id": "prod-001",
+        "product_name": "Whole Milk",
         "category": "Dairy",
-        "inventory": { "quantity": 25, "original_price": 45.0, "current_price": 45.0, "price_floor": 25.0 },
-        "demand": { "sales_velocity": 2.0, "historical_average_daily_sales": 6.0 },
-        "expiry": { "expires_at": "2026-08-20T12:00:00Z", "hours_remaining": 16.0 }
+        "inventory": { "quantity": 8, "original_price": 45.0, "current_price": 45.0, "price_floor": 30.0 },
+        "demand": { "sales_velocity": 0.2, "historical_sales": { "average_daily_sales": 3.0 } },
+        "expiry": { "expires_at": "2026-08-20T14:00:00Z", "hours_remaining": 14.0 },
+        "risk_assessment": { "risk_level": "HIGH", "reason": "Low velocity with 14h remaining", "confidence": 0.9 }
       }
     ]
   }'
 ```
 
-**Success Criteria:**
-1. Server logs show `200 OK` with zero LLM failure warnings.
-2. The `decisions[0].reason` contains LLM generated rationale and `action_requirement` matches `"AUTOMATIC_EXECUTION_ELIGIBLE"`.
-
----
-
-## 7. ⚠️ Mandatory Quality Gate & Pre-Handoff Checklist
-
-> **IMPORTANT REQUIREMENT FOR THE ENGINEER / AI AGENT:**  
-> Do **NOT** notify the backend team or mark this task complete until you have performed the following checks and verified that the service produces pure LLM-driven output without triggering fallbacks.
-
-### ✅ Sign-Off Checklist (Must Pass All 4 Items)
-
-- [ ] **1. Live Container Log Audit:**
-  Run `docker logs -f <container_name>` (or inspect console logs) while firing the verification requests. Confirm **ZERO** occurrences of:
-  * `Error code: 404`
-  * `model_not_found`
-  * `Context analysis LLM failed`
-  * `Risk assessment LLM failed`
-  * `Pricing recommendation LLM failed`
-  * `falling back to deterministic`
-
-- [ ] **2. No Fallback Strings in Responses:**
-  Inspect the JSON returned by both `/api/v1/monitoring/analyze` and `/api/v1/pricing/recommend`. Verify that the `reason` field:
-  * ❌ Does **NOT** contain `(Fallback evaluation)`
-  * ❌ Does **NOT** contain `(rule-based fallback)`
-  * ❌ Does **NOT** contain `(Fallback`
-  * ✅ Contains dynamic, contextual reasoning sentences generated by Llama 3.3.
-
-- [ ] **3. Readiness and Health Checks:**
-  Ensure `GET /health` and `GET /ready` both return HTTP 200:
-  ```bash
-  curl -s http://54.92.183.187:8000/health
-  # Expected: {"status":"ok"}
-  
-  curl -s http://54.92.183.187:8000/ready
-  # Expected: {"status":"ready","checks":{"configuration":"ok",...}}
-  ```
-
-- [ ] **4. Handoff Confirmation Output:**
-  When asking the backend team to resume testing, include the actual JSON output of the verification cURL requests in your reply as proof that Tier 1 (LLM Reasoning) is active.
-
+### 3. Acceptance Sign-Off Criteria:
+- [ ] Container logs show **ZERO** `Error code: 404` or `Context analysis LLM failed`.
+- [ ] Response `reason` field does **NOT** contain `(Fallback evaluation)` or `(rule-based fallback)`.
+- [ ] Response contains genuine dynamic LLM reasoning text.
