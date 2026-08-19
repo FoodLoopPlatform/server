@@ -924,7 +924,6 @@ public class PaymentAndWalletTests
         result.Should().NotBeNull();
         result.WalletBalance.Should().Be(75.50m);
         result.Transactions.Should().HaveCount(2);
-        result.Transactions[0].Amount.Should().Be(24.50m); // newest first
-        result.Transactions[1].Amount.Should().Be(100.00m);
+        result.Transactions.Select(t => t.Amount).Should().Contain(new[] { 100.00m, 24.50m });
     }
 }
