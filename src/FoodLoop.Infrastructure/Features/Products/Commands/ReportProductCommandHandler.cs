@@ -110,9 +110,10 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
         {
             await _notificationService.SendNotificationToRoleAsync(
                 "Admin",
-                "Product Reported",
-                $"Product '{product.Title}' was reported. Reason: {request.Reason}.",
+                "NotifProductReportedTitle",
+                "NotifProductReportedBody",
                 "ProductReported",
+                new object[] { product.Title, request.Reason },
                 "ProductReport",
                 report.Id,
                 cancellationToken);

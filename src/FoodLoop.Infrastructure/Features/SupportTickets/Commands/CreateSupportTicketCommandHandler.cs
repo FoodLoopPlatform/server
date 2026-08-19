@@ -71,9 +71,10 @@ public class CreateSupportTicketCommandHandler
         {
             await _notificationService.SendNotificationToRoleAsync(
                 "Admin",
-                "New Support Ticket",
-                $"New support ticket opened: {ticket.Category} by {user.FullName}.",
+                "NotifSupportTicketCreatedTitle",
+                "NotifSupportTicketCreatedBody",
                 "SupportTicketCreated",
+                new object[] { ticket.Category, user.FullName },
                 "SupportTicket",
                 ticket.Id,
                 cancellationToken);

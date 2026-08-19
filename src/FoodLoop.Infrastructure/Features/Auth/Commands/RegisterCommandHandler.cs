@@ -148,11 +148,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
             {
                 await _notificationService.SendNotificationToRoleAsync(
                     "Admin",
-                    "New User Registered",
-                    isBusinessOrCharityRole 
-                        ? $"New {request.Role.ToLower()} account registered: {user.Email} for organization '{request.BusinessName!.Trim()}'."
-                        : $"New account registered: {user.Email} ({user.FullName}).",
+                    "NotifNewUserRegisteredTitle",
+                    isBusinessOrCharityRole ? "NotifNewBusinessRegisteredBody" : "NotifNewUserRegisteredBody",
                     "AccountCreated",
+                    isBusinessOrCharityRole
+                        ? new object[] { request.Role.ToLower(), user.Email!, request.BusinessName!.Trim() }
+                        : new object[] { user.Email!, user.FullName },
                     "User",
                     user.Id,
                     cancellationToken);

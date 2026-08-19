@@ -20,14 +20,16 @@ public class RealTimeNotificationService : IRealTimeNotificationService
     private readonly IHubContext<NotificationHub, INotificationHubClient> _hubContext;
     private readonly IFirebasePushNotificationService _firebasePushNotificationService;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ILocalizationService _localizationService;
     private readonly ILogger<RealTimeNotificationService> _logger;
 
     public RealTimeNotificationService(
         ApplicationDbContext db,
         IHubContext<NotificationHub, INotificationHubClient> hubContext,
         IFirebasePushNotificationService firebasePushNotificationService,
+        ILocalizationService localizationService,
         ILogger<RealTimeNotificationService> logger)
-        : this(db, hubContext, firebasePushNotificationService, null!, logger)
+        : this(db, hubContext, firebasePushNotificationService, null!, localizationService, logger)
     {
     }
 
@@ -36,34 +38,50 @@ public class RealTimeNotificationService : IRealTimeNotificationService
         IHubContext<NotificationHub, INotificationHubClient> hubContext,
         IFirebasePushNotificationService firebasePushNotificationService,
         UserManager<ApplicationUser> userManager,
+        ILocalizationService localizationService,
         ILogger<RealTimeNotificationService> logger)
     {
         _db = db;
         _hubContext = hubContext;
         _firebasePushNotificationService = firebasePushNotificationService;
         _userManager = userManager;
+        _localizationService = localizationService;
         _logger = logger;
     }
 
     public Task SendNotificationToUserAsync(
         Guid userId,
-        string title,
-        string body,
+        string titleKey,
+        string bodyKey,
         string type,
+        object[] bodyArgs,
         CancellationToken cancellationToken = default)
     {
-        return SendNotificationToUserAsync(userId, title, body, type, null, null, cancellationToken);
+        return SendNotificationToUserAsync(userId, titleKey, bodyKey, type, bodyArgs, null, null, cancellationToken);
     }
 
     public async Task SendNotificationToUserAsync(
         Guid userId,
-        string title,
-        string body,
+        string titleKey,
+        string bodyKey,
         string type,
+        object[] bodyArgs,
         string? entityType,
         Guid? entityId,
         CancellationToken cancellationToken = default)
     {
+        var user = await _db.Users.FindAsync(new object[] { userId }, cancellationToken);
+        var lang = user?.Language ?? "en";
+
+        string title;
+        string body;
+
+        using (new CultureScope(lang))
+        {
+            title = _localizationService[titleKey];
+            body = _localizationService[bodyKey, bodyArgs];
+        }
+
         var notification = new Notification
         {
             UserId = userId,
@@ -93,7 +111,6 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 
         try
         {
-            // Push real-time SignalR message to the specific user connection group.
             await _hubContext.Clients.User(userId.ToString()).ReceiveNotification(dto);
         }
         catch (Exception ex)
@@ -103,7 +120,6 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 
         try
         {
-            // Best-practice hybrid delivery: web via SignalR, mobile via Firebase push.
             await _firebasePushNotificationService.SendToUserAsync(userId, title, body, type, cancellationToken);
         }
         catch (Exception ex)
@@ -114,9 +130,10 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 
     public async Task SendNotificationToRoleAsync(
         string roleName,
-        string title,
-        string body,
+        string titleKey,
+        string bodyKey,
         string type,
+        object[] bodyArgs,
         string? entityType = null,
         Guid? entityId = null,
         CancellationToken cancellationToken = default)
@@ -129,6 +146,15 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 
         foreach (var user in users)
         {
+            string title;
+            string body;
+
+            using (new CultureScope(user.Language ?? "en"))
+            {
+                title = _localizationService[titleKey];
+                body = _localizationService[bodyKey, bodyArgs];
+            }
+
             Notification notification;
             try
             {
@@ -167,7 +193,6 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 
             try
             {
-                // Push real-time SignalR message to the specific user group.
                 await _hubContext.Clients.User(user.Id.ToString()).ReceiveNotification(dto);
             }
             catch (Exception ex)
@@ -177,7 +202,6 @@ public class RealTimeNotificationService : IRealTimeNotificationService
 
             try
             {
-                // Firebase push.
                 await _firebasePushNotificationService.SendToUserAsync(user.Id, title, body, type, cancellationToken);
             }
             catch (Exception ex)
@@ -185,5 +209,27 @@ public class RealTimeNotificationService : IRealTimeNotificationService
                 _logger.LogWarning(ex, "DELIVERY FAILED: Notification persisted but failed to dispatch real-time message (SignalR/FCM) to user {UserId} during role broadcast {RoleName}", user.Id, roleName);
             }
         }
+    }
+}
+
+public class CultureScope : IDisposable
+{
+    private readonly System.Globalization.CultureInfo _originalCulture;
+    private readonly System.Globalization.CultureInfo _originalUiCulture;
+
+    public CultureScope(string cultureName)
+    {
+        _originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+        _originalUiCulture = System.Globalization.CultureInfo.CurrentUICulture;
+
+        var culture = new System.Globalization.CultureInfo(cultureName);
+        System.Globalization.CultureInfo.CurrentCulture = culture;
+        System.Globalization.CultureInfo.CurrentUICulture = culture;
+    }
+
+    public void Dispose()
+    {
+        System.Globalization.CultureInfo.CurrentCulture = _originalCulture;
+        System.Globalization.CultureInfo.CurrentUICulture = _originalUiCulture;
     }
 }

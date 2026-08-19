@@ -184,13 +184,16 @@ public class NotificationInboxIntegrationTests : IDisposable
         var mockLogger = new Mock<ILogger<RealTimeNotificationService>>();
         var mockUserStore = new Mock<IUserStore<ApplicationUser>>();
         var mockUserManager = new Mock<UserManager<ApplicationUser>>(mockUserStore.Object, null, null, null, null, null, null, null, null);
+        var mockLoc = new Mock<ILocalizationService>();
+        mockLoc.Setup(l => l[It.IsAny<string>()]).Returns<string>(k => k);
+        mockLoc.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns<string, object[]>((k, a) => k);
 
-        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLogger.Object);
+        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLoc.Object, mockLogger.Object);
         var recipientId = Guid.NewGuid();
         var entityId = Guid.NewGuid();
 
         // Act
-        await service.SendNotificationToUserAsync(recipientId, "Title", "Body", "OrderConfirmed", "Product", entityId);
+        await service.SendNotificationToUserAsync(recipientId, "Title", "Body", "OrderConfirmed", Array.Empty<object>(), "Product", entityId);
 
         // Assert
         var dbRecord = db.Notifications.FirstOrDefault(n => n.UserId == recipientId);
@@ -219,12 +222,15 @@ public class NotificationInboxIntegrationTests : IDisposable
         var mockLogger = new Mock<ILogger<RealTimeNotificationService>>();
         var mockUserStore = new Mock<IUserStore<ApplicationUser>>();
         var mockUserManager = new Mock<UserManager<ApplicationUser>>(mockUserStore.Object, null, null, null, null, null, null, null, null);
+        var mockLoc = new Mock<ILocalizationService>();
+        mockLoc.Setup(l => l[It.IsAny<string>()]).Returns<string>(k => k);
+        mockLoc.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns<string, object[]>((k, a) => k);
 
-        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLogger.Object);
+        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLoc.Object, mockLogger.Object);
         var recipientId = Guid.NewGuid();
 
         // Act & Assert
-        Func<Task> act = async () => await service.SendNotificationToUserAsync(recipientId, "Legacy Title", "Legacy Body", "LegacyType");
+        Func<Task> act = async () => await service.SendNotificationToUserAsync(recipientId, "Legacy Title", "Legacy Body", "LegacyType", Array.Empty<object>());
         await act.Should().NotThrowAsync();
 
         var dbRecord = db.Notifications.FirstOrDefault(n => n.UserId == recipientId);
@@ -247,11 +253,12 @@ public class NotificationInboxIntegrationTests : IDisposable
         var mockUserManager = new Mock<UserManager<ApplicationUser>>(mockUserStore.Object, null, null, null, null, null, null, null, null);
         mockUserManager.Setup(m => m.GetUsersInRoleAsync(It.IsAny<string>()))
             .ReturnsAsync(new List<ApplicationUser>()); // No users in role
+        var mockLoc = new Mock<ILocalizationService>();
 
-        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLogger.Object);
+        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLoc.Object, mockLogger.Object);
 
         // Act & Assert
-        Func<Task> act = async () => await service.SendNotificationToRoleAsync("Admin", "Title", "Body", "Event");
+        Func<Task> act = async () => await service.SendNotificationToRoleAsync("Admin", "Title", "Body", "Event", Array.Empty<object>());
         await act.Should().NotThrowAsync();
     }
 
@@ -282,10 +289,14 @@ public class NotificationInboxIntegrationTests : IDisposable
         mockFcm.Setup(f => f.SendToUserAsync(admin1.Id, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("FCM failure"));
 
-        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLogger.Object);
+        var mockLoc = new Mock<ILocalizationService>();
+        mockLoc.Setup(l => l[It.IsAny<string>()]).Returns<string>(k => k);
+        mockLoc.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns<string, object[]>((k, a) => k);
+
+        var service = new RealTimeNotificationService(db, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLoc.Object, mockLogger.Object);
 
         // Act
-        await service.SendNotificationToRoleAsync("Admin", "Role Title", "Role Body", "RoleEvent");
+        await service.SendNotificationToRoleAsync("Admin", "Role Title", "Role Body", "RoleEvent", Array.Empty<object>());
 
         // Assert
         db.Notifications.Count(n => n.UserId == admin1.Id).Should().Be(1);
@@ -326,10 +337,11 @@ public class NotificationInboxIntegrationTests : IDisposable
         mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DbUpdateException("DB write failure"));
 
-        var service = new RealTimeNotificationService(mockContext.Object, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLogger.Object);
+        var mockLoc = new Mock<ILocalizationService>();
+        var service = new RealTimeNotificationService(mockContext.Object, mockHub.Object, mockFcm.Object, mockUserManager.Object, mockLoc.Object, mockLogger.Object);
 
         // Act
-        await service.SendNotificationToRoleAsync("Admin", "Role Title", "Role Body", "RoleEvent");
+        await service.SendNotificationToRoleAsync("Admin", "Role Title", "Role Body", "RoleEvent", Array.Empty<object>());
 
         // Assert - verify DB error was logged with correct format and next user was processed (loop not terminated)
         mockLogger.Verify(
@@ -430,9 +442,10 @@ public class NotificationInboxIntegrationTests : IDisposable
         mockNotification.Verify(
             n => n.SendNotificationToRoleAsync(
                 "Admin",
-                "Product Requires Moderation",
-                It.Is<string>(s => s.Contains("Expired Milk")),
+                "NotifProductModerationTitle",
+                "NotifProductModerationBodyOcr",
                 "ProductUploaded",
+                It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "Expired Milk" && (string)args[1] == "Test Org"),
                 "Product",
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
@@ -497,15 +510,15 @@ public class NotificationInboxIntegrationTests : IDisposable
         mockNotification.Verify(
             n => n.SendNotificationToRoleAsync(
                 "Admin",
-                "Product Requires Moderation",
-                It.Is<string>(s => s.Contains("Fresh Milk")),
+                "NotifProductModerationTitle",
+                "NotifProductModerationBodyOcr",
                 "ProductUploaded",
+                It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "Fresh Milk" && (string)args[1] == "Test Org"),
                 "Product",
                 result.Id,
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
-
     [Fact]
     public async Task CreateSupportTicket_should_notify_admins()
     {
@@ -529,9 +542,10 @@ public class NotificationInboxIntegrationTests : IDisposable
         mockNotification.Verify(
             n => n.SendNotificationToRoleAsync(
                 "Admin",
-                "New Support Ticket",
-                It.Is<string>(s => s.Contains("TechnicalIssue") && s.Contains("Support User")),
+                "NotifSupportTicketCreatedTitle",
+                "NotifSupportTicketCreatedBody",
                 "SupportTicketCreated",
+                It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "TechnicalIssue" && (string)args[1] == "Support User"),
                 "SupportTicket",
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
@@ -575,9 +589,10 @@ public class NotificationInboxIntegrationTests : IDisposable
         mockNotification.Verify(
             n => n.SendNotificationToRoleAsync(
                 "Admin",
-                "Product Reported",
-                It.Is<string>(s => s.Contains("Bad Apples")),
+                "NotifProductReportedTitle",
+                "NotifProductReportedBody",
                 "ProductReported",
+                It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "Bad Apples" && (string)args[1] == "Expired"),
                 "ProductReport",
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),
@@ -621,9 +636,10 @@ public class NotificationInboxIntegrationTests : IDisposable
         mockNotification.Verify(
             n => n.SendNotificationToRoleAsync(
                 "Admin",
-                "New User Registered",
-                It.Is<string>(s => s.Contains("register@example.com")),
+                "NotifNewUserRegisteredTitle",
+                "NotifNewUserRegisteredBody",
                 "AccountCreated",
+                It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "register@example.com" && (string)args[1] == "Register User"),
                 "User",
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()),

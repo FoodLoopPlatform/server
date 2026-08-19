@@ -270,9 +270,10 @@ public class ProductCommandHandlerTests : IDisposable
         // Verify Notifications
         _notificationService.Verify(n => n.SendNotificationToRoleAsync(
             "Admin",
-            "Product Requires Moderation",
-            It.Is<string>(s => s.Contains("CSV Product 1")),
+            "NotifProductModerationTitle",
+            "NotifProductModerationBodyCsv",
             "ProductUploaded",
+            It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "CSV Product 1" && (string)args[1] == "Test Organization"),
             "Product",
             dbProducts[0].Id,
             It.IsAny<CancellationToken>()),
@@ -280,9 +281,10 @@ public class ProductCommandHandlerTests : IDisposable
 
         _notificationService.Verify(n => n.SendNotificationToRoleAsync(
             "Admin",
-            "Product Requires Moderation",
-            It.Is<string>(s => s.Contains("CSV Product 2")),
+            "NotifProductModerationTitle",
+            "NotifProductModerationBodyCsv",
             "ProductUploaded",
+            It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "CSV Product 2" && (string)args[1] == "Test Organization"),
             "Product",
             dbProducts[1].Id,
             It.IsAny<CancellationToken>()),
@@ -308,8 +310,9 @@ public class ProductCommandHandlerTests : IDisposable
         _notificationService.Setup(n => n.SendNotificationToRoleAsync(
             It.IsAny<string>(),
             It.IsAny<string>(),
-            It.Is<string>(s => s.Contains("CSV Product Fail")),
             It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "CSV Product Fail" && (string)args[1] == "Test Organization"),
             It.IsAny<string>(),
             It.IsAny<Guid?>(),
             It.IsAny<CancellationToken>()))
@@ -341,9 +344,10 @@ public class ProductCommandHandlerTests : IDisposable
         // Verify the notification for the second product was still attempted
         _notificationService.Verify(n => n.SendNotificationToRoleAsync(
             "Admin",
-            "Product Requires Moderation",
-            It.Is<string>(s => s.Contains("CSV Product Success")),
+            "NotifProductModerationTitle",
+            "NotifProductModerationBodyCsv",
             "ProductUploaded",
+            It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "CSV Product Success" && (string)args[1] == "Test Organization"),
             "Product",
             dbProducts[1].Id,
             It.IsAny<CancellationToken>()),

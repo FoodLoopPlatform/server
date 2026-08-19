@@ -123,9 +123,10 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         {
             await _notificationService.SendNotificationToRoleAsync(
                 "Admin",
-                "Product Requires Moderation",
-                $"Product '{product.Title}' listed by '{organization.Name}' requires moderation review due to low OCR confidence.",
+                "NotifProductModerationTitle",
+                "NotifProductModerationBodyOcr",
                 "ProductUploaded",
+                new object[] { product.Title, organization.Name },
                 "Product",
                 product.Id,
                 cancellationToken);

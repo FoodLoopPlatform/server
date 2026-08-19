@@ -126,9 +126,10 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
         await _notification.SendNotificationToUserAsync(
             request.UserId,
-            "Order Placed Successfully",
-            $"Your order #{order.Id.ToString().Substring(0, 8)} has been placed successfully.",
+            "NotifOrderPlacedTitle",
+            "NotifOrderPlacedBody",
             "OrderPlaced",
+            new object[] { order.Id.ToString().Substring(0, 8) },
             cancellationToken);
 
         // 2. Merchant side
@@ -148,9 +149,10 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             {
                 await _notification.SendNotificationToUserAsync(
                     org.OwnerId,
-                    "New Order Received",
-                    $"Store '{org.Name}' received order #{order.Id.ToString().Substring(0, 8)} for pickup.",
+                    "NotifOrderReceivedTitle",
+                    "NotifOrderReceivedBody",
                     "OrderReceived",
+                    new object[] { org.Name, order.Id.ToString().Substring(0, 8) },
                     cancellationToken);
             }
         }

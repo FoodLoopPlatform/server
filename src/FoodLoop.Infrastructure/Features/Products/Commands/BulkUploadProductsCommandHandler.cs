@@ -178,9 +178,10 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
             {
                 await _notificationService.SendNotificationToRoleAsync(
                     "Admin",
-                    "Product Requires Moderation",
-                    $"Product '{product.Title}' listed by '{organization.Name}' requires moderation review due to bulk CSV upload.",
+                    "NotifProductModerationTitle",
+                    "NotifProductModerationBodyCsv",
                     "ProductUploaded",
+                    new object[] { product.Title, organization.Name },
                     "Product",
                     product.Id,
                     cancellationToken);

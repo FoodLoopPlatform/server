@@ -72,9 +72,10 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
         {
             await _notificationService.SendNotificationToRoleAsync(
                 "Admin",
-                "New User Registered",
-                $"New account registered: {user.Email} ({user.FullName}).",
+                "NotifNewUserRegisteredTitle",
+                "NotifNewUserRegisteredBody",
                 "AccountCreated",
+                new object[] { user.Email!, user.FullName },
                 "User",
                 user.Id,
                 cancellationToken);
