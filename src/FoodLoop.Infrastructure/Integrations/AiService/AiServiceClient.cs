@@ -71,6 +71,7 @@ public class AiServiceClient : IAiServiceClient
             throw new AiServiceUnavailableException("AI Service call timed out.", ex);
         }
 
+        await response.Content.LoadIntoBufferAsync();
         var responseBody = await response.Content.ReadAsStringAsync(ct);
 
         if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)
@@ -145,6 +146,7 @@ public class AiServiceClient : IAiServiceClient
             throw new AiServiceUnavailableException("AI Service call timed out.", ex);
         }
 
+        await response.Content.LoadIntoBufferAsync();
         var responseBody = await response.Content.ReadAsStringAsync(ct);
 
         if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)
@@ -373,6 +375,7 @@ public class AiServiceClient : IAiServiceClient
             throw new AiServiceUnavailableException("AI Service call timed out.", ex);
         }
 
+        await response.Content.LoadIntoBufferAsync();
         var responseBody = await response.Content.ReadAsStringAsync(ct);
 
         if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity)

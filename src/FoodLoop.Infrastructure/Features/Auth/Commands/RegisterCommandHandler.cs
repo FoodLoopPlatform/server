@@ -18,19 +18,22 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
     private readonly IEmailService _emailService;
     private readonly ILocalizationService _loc;
     private readonly IAuditLogService _auditLogService;
+    private readonly IRealTimeNotificationService _notificationService;
 
     public RegisterCommandHandler(
         UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork,
         IEmailService emailService,
         ILocalizationService loc,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+        IRealTimeNotificationService notificationService)
     {
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
         _loc = loc;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
     }
 
     public async Task<Result<AuthResponse>> Handle(RegisterCommand command, CancellationToken cancellationToken)
@@ -138,6 +141,20 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
                     "Account Created",
                     $"New account registered with email {user.Email}.",
                     command.IpAddress,
+                    cancellationToken);
+            }
+
+            if (_notificationService != null)
+            {
+                await _notificationService.SendNotificationToRoleAsync(
+                    "Admin",
+                    "New User Registered",
+                    isBusinessOrCharityRole 
+                        ? $"New {request.Role.ToLower()} account registered: {user.Email} for organization '{request.BusinessName!.Trim()}'."
+                        : $"New account registered: {user.Email} ({user.FullName}).",
+                    "AccountCreated",
+                    "User",
+                    user.Id,
                     cancellationToken);
             }
         }

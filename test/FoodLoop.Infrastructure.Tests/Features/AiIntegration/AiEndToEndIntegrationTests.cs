@@ -225,7 +225,7 @@ public class AiEndToEndIntegrationTests : IDisposable
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .Handle<HttpRequestException>()
                     .Handle<Polly.Timeout.TimeoutRejectedException>()
-                    .HandleResult(response => (int)response.StatusCode >= 500)
+                    .HandleResult(response => (int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
             });
 
             builder.AddTimeout(new Polly.Timeout.TimeoutStrategyOptions
@@ -235,14 +235,14 @@ public class AiEndToEndIntegrationTests : IDisposable
 
             builder.AddCircuitBreaker(new Polly.CircuitBreaker.CircuitBreakerStrategyOptions<HttpResponseMessage>
             {
-                FailureRatio = 0.5,
+                FailureRatio = 0.6,
                 SamplingDuration = TimeSpan.FromSeconds(10),
-                MinimumThroughput = 4,
-                BreakDuration = TimeSpan.FromMilliseconds(500),
+                MinimumThroughput = 3,
+                BreakDuration = TimeSpan.FromMinutes(60),
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .Handle<HttpRequestException>()
                     .Handle<Polly.Timeout.TimeoutRejectedException>()
-                    .HandleResult(response => (int)response.StatusCode >= 500)
+                    .HandleResult(response => (int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
             });
         });
 
@@ -1191,19 +1191,12 @@ public class AiEndToEndIntegrationTests : IDisposable
         });
 
         // Act & Assert
-        // Request 1: should retry 3 times internally, then fail with AiServiceUnavailableException
+        // Request 1: should retry internally, trip breaker on 3rd attempt, and fail
         Func<Task> act1 = async () => await client.RecommendPricingAsync(request, CancellationToken.None);
-        await act1.Should().ThrowAsync<AiServiceUnavailableException>();
+        var ex1 = await act1.Should().ThrowAsync<AiServiceUnavailableException>();
+        ex1.WithInnerException<BrokenCircuitException>();
         
-        mockHandler.Protected().Verify("SendAsync", Times.Exactly(4), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
-
-        // Request 2: should also fail (making total failures = 2, minimum throughput is 4)
-        Func<Task> act2 = async () => await client.RecommendPricingAsync(request, CancellationToken.None);
-        await act2.Should().ThrowAsync<AiServiceUnavailableException>();
-
-        // Request 3: should also fail (exceeds minimum throughput of 4, trips circuit breaker)
-        Func<Task> act3 = async () => await client.RecommendPricingAsync(request, CancellationToken.None);
-        await act3.Should().ThrowAsync<AiServiceUnavailableException>();
+        mockHandler.Protected().Verify("SendAsync", Times.Exactly(3), ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>());
 
         // Circuit breaker is now open. Subsequent call should throw BrokenCircuitException immediately without calling downstream handler
         Func<Task> actFast = async () => await client.RecommendPricingAsync(request, CancellationToken.None);

@@ -17,11 +17,16 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditLogService _auditLogService;
+    private readonly IRealTimeNotificationService _notificationService;
 
-    public CreateProductCommandHandler(IUnitOfWork unitOfWork, IAuditLogService auditLogService)
+    public CreateProductCommandHandler(
+        IUnitOfWork unitOfWork,
+        IAuditLogService auditLogService,
+        IRealTimeNotificationService notificationService)
     {
         _unitOfWork = unitOfWork;
         _auditLogService = auditLogService;
+        _notificationService = notificationService;
     }
 
     public async Task<ProductDto> Handle(CreateProductCommand command, CancellationToken cancellationToken)
@@ -107,6 +112,18 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
             $"Listed new product '{product.Title}'.",
             null,
             cancellationToken);
+
+        if (product.Status == ProductStatus.PendingModeration && _notificationService != null)
+        {
+            await _notificationService.SendNotificationToRoleAsync(
+                "Admin",
+                "Product Requires Moderation",
+                $"Product '{product.Title}' listed by '{organization.Name}' requires moderation review due to low OCR confidence.",
+                "ProductUploaded",
+                "Product",
+                product.Id,
+                cancellationToken);
+        }
 
         // Fetch category info to populate DTO
         product.Category = category;

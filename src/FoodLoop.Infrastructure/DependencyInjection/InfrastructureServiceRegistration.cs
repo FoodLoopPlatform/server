@@ -239,7 +239,7 @@ public static class InfrastructureServiceRegistration
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .Handle<HttpRequestException>()
                     .Handle<TimeoutRejectedException>()
-                    .HandleResult(response => (int)response.StatusCode >= 500)
+                    .HandleResult(response => (int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
             });
 
             builder.AddTimeout(new Polly.Timeout.TimeoutStrategyOptions
@@ -249,14 +249,14 @@ public static class InfrastructureServiceRegistration
 
             builder.AddCircuitBreaker(new Polly.CircuitBreaker.CircuitBreakerStrategyOptions<HttpResponseMessage>
             {
-                FailureRatio = 0.5,
+                FailureRatio = 0.6,
                 SamplingDuration = TimeSpan.FromSeconds(60),
-                MinimumThroughput = 5,
-                BreakDuration = TimeSpan.FromSeconds(30),
+                MinimumThroughput = 3,
+                BreakDuration = TimeSpan.FromMinutes(60),
                 ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
                     .Handle<HttpRequestException>()
                     .Handle<TimeoutRejectedException>()
-                    .HandleResult(response => (int)response.StatusCode >= 500)
+                    .HandleResult(response => (int)response.StatusCode == 429 || (int)response.StatusCode >= 500)
             });
         });
 

@@ -30,6 +30,7 @@ public class ProductCommandHandlerTests : IDisposable
     private readonly Guid _organizationId = Guid.NewGuid();
     private readonly Guid _categoryId = Guid.NewGuid();
     private readonly Mock<IAuditLogService> _auditLogService = new();
+    private readonly Mock<IRealTimeNotificationService> _notificationService = new();
 
     public ProductCommandHandlerTests()
     {
@@ -63,7 +64,7 @@ public class ProductCommandHandlerTests : IDisposable
     public async Task CreateProduct_should_create_product_successfully()
     {
         // Arrange
-        var handler = new CreateProductCommandHandler(_unitOfWork, _auditLogService.Object);
+        var handler = new CreateProductCommandHandler(_unitOfWork, _auditLogService.Object, _notificationService.Object);
         var command = new CreateProductCommand(
             OwnerId: _ownerId,
             CategoryId: _categoryId,
@@ -93,7 +94,7 @@ public class ProductCommandHandlerTests : IDisposable
     public async Task CreateProduct_should_fail_when_discounted_price_greater_than_original()
     {
         // Arrange
-        var handler = new CreateProductCommandHandler(_unitOfWork, _auditLogService.Object);
+        var handler = new CreateProductCommandHandler(_unitOfWork, _auditLogService.Object, _notificationService.Object);
         var command = new CreateProductCommand(
             OwnerId: _ownerId,
             CategoryId: _categoryId,

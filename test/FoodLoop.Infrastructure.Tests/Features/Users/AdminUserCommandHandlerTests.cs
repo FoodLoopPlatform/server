@@ -23,6 +23,7 @@ public class AdminUserCommandHandlerTests : IDisposable
     private readonly Mock<UserManager<ApplicationUser>> _userManager = MockUserManagerFactory.Create();
     private readonly ApplicationDbContext _dbContext = ApplicationDbContextFactory.Create();
     private readonly Mock<ILocalizationService> _loc = MockLocalizationServiceFactory.Create();
+    private readonly Mock<IRealTimeNotificationService> _notificationService = new();
 
     public void Dispose() => _dbContext.Dispose();
 
@@ -38,7 +39,7 @@ public class AdminUserCommandHandlerTests : IDisposable
         _userManager.Setup(m => m.AddToRoleAsync(It.IsAny<ApplicationUser>(), AppRole.Customer))
             .ReturnsAsync(IdentityResult.Success);
 
-        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object);
+        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object, _notificationService.Object);
         var request = new CreateUserRequest
         {
             Email = "new@example.com",
@@ -63,7 +64,7 @@ public class AdminUserCommandHandlerTests : IDisposable
     public async Task CreateUser_should_fail_for_invalid_role()
     {
         // Arrange
-        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object);
+        var handler = new CreateUserCommandHandler(_userManager.Object, _loc.Object, _notificationService.Object);
         var request = new CreateUserRequest
         {
             Email = "new@example.com",
