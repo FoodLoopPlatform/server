@@ -77,28 +77,26 @@ public class NotificationLocalizationTests : IDisposable
     }
 
     [Theory]
-    [InlineData("en", "NotifOrderReceivedTitle", "NotifOrderReceivedBody", new object[] { "1234", "John Doe" }, "New Order Received", "New order #1234 received from John Doe.")]
-    [InlineData("ar", "NotifOrderReceivedTitle", "NotifOrderReceivedBody", new object[] { "1234", "جون دو" }, "طلب جديد مستلم", "تم استلام طلب جديد #1234 من جون دو.")]
-    [InlineData("en", "NotifOrderConfirmedTitle", "NotifOrderConfirmedBody", new object[] { "1234" }, "Order Confirmed", "Your order #1234 has been confirmed by the store.")]
-    [InlineData("ar", "NotifOrderConfirmedTitle", "NotifOrderConfirmedBody", new object[] { "1234" }, "تم تأكيد الطلب", "تم تأكيد طلبك #1234 من قبل المتجر.")]
-    [InlineData("en", "NotifOrderReadyTitle", "NotifOrderReadyBody", new object[] { "1234" }, "Order Ready for Pickup", "Your order #1234 is now ready for pickup.")]
-    [InlineData("ar", "NotifOrderReadyTitle", "NotifOrderReadyBody", new object[] { "1234" }, "الطلب جاهز للاستلام", "طلبك #1234 جاهز الآن للاستلام.")]
-    [InlineData("en", "NotifOrderPickedUpTitle", "NotifOrderPickedUpBody", new object[] { "1234" }, "Order Picked Up", "Your order #1234 has been picked up.")]
-    [InlineData("ar", "NotifOrderPickedUpTitle", "NotifOrderPickedUpBody", new object[] { "1234" }, "تم استلام الطلب", "تم استلام طلبك #1234 بنجاح.")]
-    [InlineData("en", "NotifOrderCompletedTitle", "NotifOrderCompletedBody", new object[] { "1234" }, "Order Completed", "Your order #1234 is complete. Thank you for using FoodLoop!")]
-    [InlineData("ar", "NotifOrderCompletedTitle", "NotifOrderCompletedBody", new object[] { "1234" }, "اكتمل الطلب", "اكتمل طلبك #1234. شكراً لاستخدامك فودلوب!")]
-    [InlineData("en", "NotifOrderCancelledTitle", "NotifOrderCancelledBody", new object[] { "1234" }, "Order Cancelled", "Your order #1234 has been cancelled.")]
-    [InlineData("ar", "NotifOrderCancelledTitle", "NotifOrderCancelledBody", new object[] { "1234" }, "تم إلغاء الطلب", "تم إلغاء طلبك #1234.")]
-    [InlineData("en", "NotifProductModerationTitle", "NotifProductModerationBodyOcr", new object[] { "Milk", "Bakery" }, "Product Requires Moderation", "New product 'Milk' from 'Bakery' requires moderation.")]
-    [InlineData("ar", "NotifProductModerationTitle", "NotifProductModerationBodyOcr", new object[] { "حليب", "مخبز" }, "منتج يتطلب مراجعة", "المنتج الجديد 'حليب' من 'مخبز' يتطلب مراجعة الإدارة.")]
+    [InlineData("en", "NotifOrderReceivedTitle", "NotifOrderReceivedBody", new object[] { "Bakery", "1234" }, "New Order Received", "Store 'Bakery' received order #1234 for pickup.")]
+    [InlineData("ar", "NotifOrderReceivedTitle", "NotifOrderReceivedBody", new object[] { "المخبز", "1234" }, "تم استلام طلب جديد", "تلقى متجر 'المخبز' طلبًا #1234 للاستلام.")]
+    [InlineData("en", "NotifOrderConfirmedTitle", "NotifOrderConfirmedBody", new object[0], "Order Confirmed", "Your order has been confirmed by the merchant.")]
+    [InlineData("ar", "NotifOrderConfirmedTitle", "NotifOrderConfirmedBody", new object[0], "تم تأكيد الطلب", "تم تأكيد طلبك من قِبل التاجر.")]
+    [InlineData("en", "NotifOrderReadyForPickupTitle", "NotifOrderReadyForPickupBody", new object[0], "Order Ready for Pickup", "Your order is ready for pickup!")]
+    [InlineData("ar", "NotifOrderReadyForPickupTitle", "NotifOrderReadyForPickupBody", new object[0], "الطلب جاهز للاستلام", "طلبك جاهز للاستلام!")]
+    [InlineData("en", "NotifOrderCompletedTitle", "NotifOrderCompletedBody", new object[0], "Order Completed", "Your order has been completed. Thank you!")]
+    [InlineData("ar", "NotifOrderCompletedTitle", "NotifOrderCompletedBody", new object[0], "تم إتمام الطلب", "تم إتمام طلبك. شكرًا لك!")]
+    [InlineData("en", "NotifOrderCancelledTitle", "NotifOrderCancelledBody", new object[0], "Order Cancelled", "Your order has been cancelled and refunded.")]
+    [InlineData("ar", "NotifOrderCancelledTitle", "NotifOrderCancelledBody", new object[0], "تم إلغاء الطلب", "تم إلغاء طلبك واسترداد المبلغ.")]
+    [InlineData("en", "NotifProductModerationTitle", "NotifProductModerationBodyOcr", new object[] { "Milk", "Bakery" }, "Product Requires Moderation", "Product 'Milk' listed by 'Bakery' requires moderation review due to low OCR confidence.")]
+    [InlineData("ar", "NotifProductModerationTitle", "NotifProductModerationBodyOcr", new object[] { "حليب", "مخبز" }, "المنتج في انتظار المراجعة", "المنتج 'حليب' المُدرج بواسطة 'مخبز' يتطلب مراجعة بسبب انخفاض دقة التعرف الضوئي.")]
     [InlineData("en", "NotifProductReportedTitle", "NotifProductReportedBody", new object[] { "Bread", "Expired" }, "Product Reported", "Product 'Bread' was reported. Reason: Expired.")]
     [InlineData("ar", "NotifProductReportedTitle", "NotifProductReportedBody", new object[] { "خبز", "منتهي الصلاحية" }, "تم الإبلاغ عن منتج", "تم الإبلاغ عن المنتج 'خبز'. السبب: منتهي الصلاحية.")]
-    [InlineData("en", "NotifSupportTicketCreatedTitle", "NotifSupportTicketCreatedBody", new object[] { "Payment", "Alice" }, "New Support Ticket", "New support ticket created in category 'Payment' by Alice.")]
-    [InlineData("ar", "NotifSupportTicketCreatedTitle", "NotifSupportTicketCreatedBody", new object[] { "دفع", "أليس" }, "تذكرة دعم جديدة", "تم إنشاء تذكرة دعم جديدة في قسم 'دفع' بواسطة أليس.")]
-    [InlineData("en", "NotifSupportTicketReplyTitle", "NotifSupportTicketReplyBody", new object[] { "Payment Issue" }, "Support Ticket Update", "There is a new update on your support ticket 'Payment Issue'.")]
-    [InlineData("ar", "NotifSupportTicketReplyTitle", "NotifSupportTicketReplyBody", new object[] { "مشكلة دفع" }, "تحديث على تذكرة الدعم", "هناك رد جديد على تذكرة الدعم الخاصة بك 'مشكلة دفع'.")]
-    [InlineData("en", "NotifNewUserRegisteredTitle", "NotifNewUserRegisteredBody", new object[] { "user@test.com", "Bob" }, "New User Registered", "A new user 'user@test.com' (Bob) has registered on the platform.")]
-    [InlineData("ar", "NotifNewUserRegisteredTitle", "NotifNewUserRegisteredBody", new object[] { "user@test.com", "بوب" }, "تسجيل مستخدم جديد", "تم تسجيل مستخدم جديد 'user@test.com' (بوب) في المنصة.")]
+    [InlineData("en", "NotifSupportTicketCreatedTitle", "NotifSupportTicketCreatedBody", new object[] { "Payment", "Alice" }, "New Support Ticket", "New support ticket opened: Payment by Alice.")]
+    [InlineData("ar", "NotifSupportTicketCreatedTitle", "NotifSupportTicketCreatedBody", new object[] { "دفع", "أليس" }, "تذكرة دعم جديدة", "تم فتح تذكرة دعم جديدة: دفع بواسطة أليس.")]
+    [InlineData("en", "NotifSupportTicketReplyTitle", "NotifSupportTicketReplyBody", new object[] { "Payment Issue" }, "Support Ticket Reply", "You have received a new reply on your support ticket regarding: Payment Issue.")]
+    [InlineData("ar", "NotifSupportTicketReplyTitle", "NotifSupportTicketReplyBody", new object[] { "مشكلة دفع" }, "رد على تذكرة الدعم", "لقد تلقيت ردًا جديدًا على تذكرة الدعم الخاصة بك بشأن: مشكلة دفع.")]
+    [InlineData("en", "NotifNewUserRegisteredTitle", "NotifNewUserRegisteredBody", new object[] { "user@test.com", "Bob" }, "New User Registered", "New account registered: user@test.com (Bob).")]
+    [InlineData("ar", "NotifNewUserRegisteredTitle", "NotifNewUserRegisteredBody", new object[] { "user@test.com", "بوب" }, "مستخدم جديد مسجل", "تم تسجيل حساب جديد: user@test.com (بوب).")]
     public async Task RealTimeNotificationService_should_correctly_localize_all_notification_keys(
         string lang, string titleKey, string bodyKey, object[] args, string expectedTitle, string expectedBody)
     {
@@ -169,12 +167,12 @@ public class NotificationLocalizationTests : IDisposable
         var notifEn = await _db.Notifications.FirstOrDefaultAsync(n => n.UserId == adminEn.Id);
         notifEn.Should().NotBeNull();
         notifEn!.Title.Should().Be("New User Registered");
-        notifEn.Body.Should().Be("A new user 'newbie@test.com' (Newbie) has registered on the platform.");
+        notifEn.Body.Should().Be("New account registered: newbie@test.com (Newbie).");
 
         var notifAr = await _db.Notifications.FirstOrDefaultAsync(n => n.UserId == adminAr.Id);
         notifAr.Should().NotBeNull();
-        notifAr!.Title.Should().Be("تسجيل مستخدم جديد");
-        notifAr.Body.Should().Be("تم تسجيل مستخدم جديد 'newbie@test.com' (Newbie) في المنصة.");
+        notifAr!.Title.Should().Be("مستخدم جديد مسجل");
+        notifAr.Body.Should().Be("تم تسجيل حساب جديد: newbie@test.com (Newbie).");
     }
 
     [Fact]
