@@ -8,6 +8,7 @@ using FoodLoop.Infrastructure.Identity;
 using FoodLoop.Infrastructure.Mappings;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace FoodLoop.Infrastructure.Features.Auth.Commands;
 
@@ -109,12 +110,25 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Au
             Organization? org = null;
             if (isBusinessAccount || isCharityAccount)
             {
+                var settings = await _unitOfWork.Repository<SystemSettings>().Query()
+                    .FirstOrDefaultAsync(s => s.Id == SystemSettings.SingletonId, cancellationToken);
+                var autoVerify = settings?.AutoVerifyPartnerStores ?? false;
+                var defaultAutomationMode = settings?.NewBusinessDefaultAutomationMode ?? AutomationMode.Assisted;
+
                 org = new Organization
                 {
                     OwnerId = user.Id,
                     Name = request.BusinessName!.Trim(),
                     BusinessCategory = request.BusinessCategory,
-                    VerificationStatus = VerificationStatus.Unverified,
+                    VerificationStatus = autoVerify ? VerificationStatus.Verified : VerificationStatus.Unverified,
+                    AiOperatingMode = defaultAutomationMode switch
+                    {
+                        AutomationMode.Autonomous => AiOperatingMode.Autonomous,
+                        AutomationMode.Assisted => AiOperatingMode.Assisted,
+                        _ => AiOperatingMode.Manual
+                    },
+                    AiAutoDiscountEnabled = defaultAutomationMode != AutomationMode.Manual,
+                    AiAutoPricingEnabled = defaultAutomationMode == AutomationMode.Autonomous
                 };
                 _unitOfWork.Organizations.Add(org);
             }

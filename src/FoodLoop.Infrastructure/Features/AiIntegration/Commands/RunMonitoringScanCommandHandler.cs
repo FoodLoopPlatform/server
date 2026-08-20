@@ -87,8 +87,9 @@ public class RunMonitoringScanCommandHandler : IRequestHandler<RunMonitoringScan
             try
             {
                 // 3. Candidate Selection checks
-                // A. Expiration check
-                var isNearingExpiry = product.ExpirationDate <= expirationCutoff;
+                // A. Expiration check using store-specific threshold
+                var thresholdDays = org.AiAutoDiscountDaysBeforeExpiry > 0 ? org.AiAutoDiscountDaysBeforeExpiry : _options.ExpirationThresholdDays;
+                var isNearingExpiry = product.ExpirationDate <= today.AddDays(thresholdDays);
 
                 // B. Sales velocity check
                 var cutoffDate = _timeProvider.GetUtcNow().AddDays(-30);

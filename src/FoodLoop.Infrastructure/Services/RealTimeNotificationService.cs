@@ -109,22 +109,51 @@ public class RealTimeNotificationService : IRealTimeNotificationService
             CreatedAt = notification.CreatedAt
         };
 
-        try
+        // Check user preferences
+        var isOrderNotification = type is "OrderPlaced" or "OrderStatusUpdated" or "OrderRefunded" or "OrderCompleted" or "OrderCancelled" or "PaymentStatusUpdated" or "CashCheckoutPending";
+        var isMarketingNotification = type is "Marketing" or "Promotion" or "Deal" or "PriceDrop" or "ProductRecommendation";
+
+        var allowSignalR = true;
+        var allowPush = true;
+
+        if (user != null)
         {
-            await _hubContext.Clients.User(userId.ToString()).ReceiveNotification(dto);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to dispatch SignalR real-time notification to user {UserId}.", userId);
+            if (isOrderNotification && !user.OrderUpdatesEnabled)
+            {
+                allowSignalR = false;
+                allowPush = false;
+                _logger.LogInformation("Order notifications disabled for user {UserId}. Suppressing real-time and push alerts.", userId);
+            }
+            else if (isMarketingNotification && !user.MarketingNotificationsEnabled)
+            {
+                allowSignalR = false;
+                allowPush = false;
+                _logger.LogInformation("Marketing notifications disabled for user {UserId}. Suppressing real-time and push alerts.", userId);
+            }
         }
 
-        try
+        if (allowSignalR)
         {
-            await _firebasePushNotificationService.SendToUserAsync(userId, title, body, type, cancellationToken);
+            try
+            {
+                await _hubContext.Clients.User(userId.ToString()).ReceiveNotification(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to dispatch SignalR real-time notification to user {UserId}.", userId);
+            }
         }
-        catch (Exception ex)
+
+        if (allowPush)
         {
-            _logger.LogError(ex, "Failed to dispatch Firebase push notification to user {UserId}.", userId);
+            try
+            {
+                await _firebasePushNotificationService.SendToUserAsync(userId, title, body, type, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to dispatch Firebase push notification to user {UserId}.", userId);
+            }
         }
     }
 

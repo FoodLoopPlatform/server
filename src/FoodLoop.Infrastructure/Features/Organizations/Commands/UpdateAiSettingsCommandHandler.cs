@@ -34,15 +34,18 @@ public class UpdateAiSettingsCommandHandler : IRequestHandler<UpdateAiSettingsCo
             switch (request.AutomationMode.Value)
             {
                 case AutomationMode.Autonomous:
+                    org.AiOperatingMode = AiOperatingMode.Autonomous;
                     org.AiAutoDiscountEnabled = true;
                     org.AiAutoPricingEnabled = true;
                     break;
                 case AutomationMode.Assisted:
+                    org.AiOperatingMode = AiOperatingMode.Assisted;
                     org.AiAutoDiscountEnabled = true;
                     org.AiAutoPricingEnabled = false;
                     break;
                 case AutomationMode.Manual:
                 default:
+                    org.AiOperatingMode = AiOperatingMode.Manual;
                     org.AiAutoDiscountEnabled = false;
                     org.AiAutoPricingEnabled = false;
                     break;
@@ -54,6 +57,13 @@ public class UpdateAiSettingsCommandHandler : IRequestHandler<UpdateAiSettingsCo
                 org.AiAutoDiscountEnabled = request.AiAutoDiscountEnabled.Value;
             if (request.AiAutoPricingEnabled.HasValue)
                 org.AiAutoPricingEnabled = request.AiAutoPricingEnabled.Value;
+
+            if (org.AiAutoPricingEnabled)
+                org.AiOperatingMode = AiOperatingMode.Autonomous;
+            else if (org.AiAutoDiscountEnabled)
+                org.AiOperatingMode = AiOperatingMode.Assisted;
+            else
+                org.AiOperatingMode = AiOperatingMode.Manual;
         }
 
         org.AiAutoDiscountPercent = request.AiAutoDiscountPercent;

@@ -40,6 +40,13 @@ public class BulkUploadProductsCommandHandler : IRequestHandler<BulkUploadProduc
 
     public async Task<IReadOnlyList<ProductDto>> Handle(BulkUploadProductsCommand command, CancellationToken cancellationToken)
     {
+        var settings = await _unitOfWork.Repository<SystemSettings>().Query()
+            .FirstOrDefaultAsync(s => s.Id == SystemSettings.SingletonId, cancellationToken);
+        if (settings != null && !settings.BulkProductUploadEnabled)
+        {
+            throw new InvalidOperationException("Bulk product upload is currently disabled by system administrator.");
+        }
+
         var organization = await _unitOfWork.FindByOwnerOrThrowAsync(command.OwnerId, "Organization not found.", cancellationToken);
         if (organization.VerificationStatus != VerificationStatus.Verified)
         {
