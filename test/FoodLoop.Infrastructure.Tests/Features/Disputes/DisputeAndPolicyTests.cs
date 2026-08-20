@@ -261,4 +261,95 @@ public class DisputeAndPolicyTests : IDisposable
         // Assert
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("ImageUrl must be 500 characters or fewer.");
     }
+
+    [Theory]
+    [InlineData("InvalidReason")]
+    [InlineData("")]
+    [InlineData("HateSpeech")]
+    [InlineData("RandomString123")]
+    public async Task Report_InvalidReason_ThrowsArgumentException(string invalidReason)
+    {
+        // Arrange
+        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
+        var command = new ReportProductCommand(_reporterId, _productId, invalidReason, "Details");
+
+        // Act
+        var act = async () => await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Invalid reason. Allowed:*");
+    }
+
+    [Fact]
+    public async Task Report_NonExistentProduct_ThrowsNotFoundException()
+    {
+        // Arrange
+        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
+        var nonExistentId = Guid.NewGuid();
+        var command = new ReportProductCommand(_reporterId, nonExistentId, "Expired", "Details");
+
+        // Act
+        var act = async () => await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<FoodLoop.Application.Common.Exceptions.NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Report_SoftDeletedProduct_ThrowsNotFoundException()
+    {
+        // Arrange
+        var deletedProduct = new Product
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = _organizationId,
+            Title = "Deleted Item",
+            IsDeleted = true,
+            ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+        };
+        _dbContext.Products.Add(deletedProduct);
+        await _dbContext.SaveChangesAsync();
+
+        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
+        var command = new ReportProductCommand(_reporterId, deletedProduct.Id, "Expired", "Details");
+
+        // Act
+        var act = async () => await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<FoodLoop.Application.Common.Exceptions.NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Report_DispatchesNotificationAndAuditLog()
+    {
+        // Arrange
+        var mockNotification = new Mock<IRealTimeNotificationService>();
+        var mockAudit = new Mock<IAuditLogService>();
+        var handler = new ReportProductCommandHandler(_dbContext, mockAudit.Object, mockNotification.Object);
+        var command = new ReportProductCommand(_reporterId, _productId, "MisleadingInfo", "Price changed on shelf.", "https://example.com/receipt.jpg");
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        mockAudit.Verify(a => a.LogAsync(
+            _reporterId,
+            _organizationId,
+            "ProductReported",
+            "Product Reported by Customer",
+            It.Is<string>(msg => msg.Contains("Test Product") && msg.Contains("MisleadingInfo")),
+            null,
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        mockNotification.Verify(n => n.SendNotificationToRoleAsync(
+            "Admin",
+            "NotifProductReportedTitle",
+            "NotifProductReportedBody",
+            "ProductReported",
+            It.Is<object[]>(args => args.Length == 2 && (string)args[0] == "Test Product" && (string)args[1] == "MisleadingInfo"),
+            "ProductReport",
+            It.IsAny<Guid>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
