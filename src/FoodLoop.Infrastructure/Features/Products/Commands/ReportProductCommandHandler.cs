@@ -17,12 +17,13 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
 {
     private readonly ApplicationDbContext _db;
     private readonly FoodLoop.Application.Common.Interfaces.IAuditLogService _auditLogService;
-    private readonly IRealTimeNotificationService _notificationService;
+    private readonly IRealTimeNotificationService? _notificationService;
+    private readonly IFileStorageService? _fileStorage;
 
     public ReportProductCommandHandler(
         ApplicationDbContext db,
         FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService)
-        : this(db, auditLogService, null!)
+        : this(db, auditLogService, null!, null!)
     {
     }
 
@@ -30,10 +31,20 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
         ApplicationDbContext db,
         FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService,
         IRealTimeNotificationService notificationService)
+        : this(db, auditLogService, notificationService, null!)
+    {
+    }
+
+    public ReportProductCommandHandler(
+        ApplicationDbContext db,
+        FoodLoop.Application.Common.Interfaces.IAuditLogService auditLogService,
+        IRealTimeNotificationService notificationService,
+        IFileStorageService fileStorage)
     {
         _db = db;
         _auditLogService = auditLogService;
         _notificationService = notificationService;
+        _fileStorage = fileStorage;
     }
 
     public async Task<Unit> Handle(ReportProductCommand request, CancellationToken cancellationToken)
@@ -45,10 +56,13 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
         if (!System.Array.Exists(validReasons, r => r == request.Reason))
             throw new ArgumentException($"Invalid reason. Allowed: {string.Join(", ", validReasons)}");
 
-        if (string.IsNullOrWhiteSpace(request.ImageUrl))
-            throw new ArgumentException("Evidence image is required.");
+        string? finalImageUrl = request.ImageUrl;
+        if (request.ImageFile != null && _fileStorage != null)
+        {
+            finalImageUrl = await _fileStorage.SaveAsync(request.ImageFile, $"reports/{request.ProductId}", cancellationToken);
+        }
 
-        if (request.ImageUrl.Length > 500)
+        if (finalImageUrl != null && finalImageUrl.Length > 500)
             throw new ArgumentException("ImageUrl must be 500 characters or fewer.");
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -69,7 +83,7 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
             ReportedBy = request.ReportedBy,
             Reason = request.Reason,
             Details = request.Details,
-            ImageUrl = request.ImageUrl
+            ImageUrl = finalImageUrl
         };
 
         _db.ProductReports.Add(report);

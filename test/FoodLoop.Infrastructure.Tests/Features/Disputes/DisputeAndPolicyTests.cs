@@ -146,17 +146,47 @@ public class DisputeAndPolicyTests : IDisposable
     }
 
     [Fact]
-    public async Task Report_WithoutImage_ThrowsArgumentException()
+    public async Task Report_WithoutImage_SucceedsWithNullImageUrl()
     {
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
         var command = new ReportProductCommand(_reporterId, _productId, "Spam", "Spam listing.", null);
 
         // Act
-        var act = async () => await handler.Handle(command, CancellationToken.None);
+        await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Evidence image is required.");
+        var report = await _dbContext.ProductReports.FirstOrDefaultAsync(r => r.ProductId == _productId && r.Reason == "Spam");
+        report.Should().NotBeNull();
+        report!.ImageUrl.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Report_WithDirectImageFile_UploadsViaFileStorageServiceAndSavesUrl()
+    {
+        // Arrange
+        var mockStorage = new Mock<IFileStorageService>();
+        var uploadedUrl = "https://cloudinary.com/reports/evidence123.jpg";
+        mockStorage.Setup(s => s.SaveAsync(It.IsAny<FoodLoop.Application.Common.Models.FileUploadRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(uploadedUrl);
+
+        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object, null!, mockStorage.Object);
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "evidence.jpg",
+            ContentType = "image/jpeg",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
+        var command = new ReportProductCommand(_reporterId, _productId, "WrongExpiry", "Wrong expiry date on label.", null, fileUpload);
+
+        // Act
+        await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        var report = await _dbContext.ProductReports.FirstOrDefaultAsync(r => r.ProductId == _productId && r.Reason == "WrongExpiry");
+        report.Should().NotBeNull();
+        report!.ImageUrl.Should().Be(uploadedUrl);
+        mockStorage.Verify(s => s.SaveAsync(It.IsAny<FoodLoop.Application.Common.Models.FileUploadRequest>(), $"reports/{_productId}", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

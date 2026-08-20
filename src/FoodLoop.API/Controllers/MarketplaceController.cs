@@ -21,11 +21,13 @@ public class MarketplaceController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILocalizationService _loc;
 
-    public MarketplaceController(IMediator mediator, ICurrentUserService currentUser)
+    public MarketplaceController(IMediator mediator, ICurrentUserService currentUser, ILocalizationService loc)
     {
         _mediator = mediator;
         _currentUser = currentUser;
+        _loc = loc;
     }
 
     /// <summary>
@@ -73,14 +75,37 @@ public class MarketplaceController : ControllerBase
 
     /// <summary>
     /// POST /marketplace/products/{id}/report — report a listing (report_an_issue screen).
+    /// Accepts multipart/form-data with an optional image file (or image URL).
     /// Requires authentication so we can track who filed the report.
     /// </summary>
     [HttpPost("products/{id:guid}/report")]
+    [Consumes("multipart/form-data")]
     [Authorize]
-    public async Task<IActionResult> ReportProduct(Guid id, [FromBody] ReportProductRequest request, CancellationToken cancellationToken)
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> ReportProduct(Guid id, [FromForm] ReportProductRequest request, CancellationToken cancellationToken)
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
-        await _mediator.Send(new ReportProductCommand(userId, id, request.Reason, request.Details, request.ImageUrl), cancellationToken);
+
+        FoodLoop.Application.Common.Models.FileUploadRequest? fileUpload = null;
+        if (request.Image != null && request.Image.Length > 0)
+        {
+            var ext = System.IO.Path.GetExtension(request.Image.FileName).ToLowerInvariant();
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            if (!System.Linq.Enumerable.Contains(allowedExtensions, ext))
+            {
+                return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
+            }
+
+            var stream = request.Image.OpenReadStream();
+            fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+            {
+                Content = stream,
+                FileName = request.Image.FileName,
+                ContentType = request.Image.ContentType
+            };
+        }
+
+        await _mediator.Send(new ReportProductCommand(userId, id, request.Reason, request.Details, request.ImageUrl, fileUpload), cancellationToken);
         return Ok(ApiResponse.Ok("Report submitted. Our team will review it shortly."));
     }
 }
@@ -92,7 +117,10 @@ public class ReportProductRequest
     public string Reason { get; set; } = null!;
     public string? Details { get; set; }
 
-    [Required(ErrorMessage = "Evidence image is required.")]
+    /// <summary>Optional evidence image file uploaded directly from device camera or gallery.</summary>
+    public Microsoft.AspNetCore.Http.IFormFile? Image { get; set; }
+
+    /// <summary>Optional direct image URL if already hosted.</summary>
     [MaxLength(500)]
-    public string ImageUrl { get; set; } = null!;
+    public string? ImageUrl { get; set; }
 }
