@@ -92,4 +92,6 @@
   <data name="NotifNewUserRegisteredTitle"><value>New User Registered</value></data>
   <data name="NotifNewUserRegisteredBody"><value>New account registered: {0} ({1}).</value></data>
   <data name="NotifNewBusinessRegisteredBody"><value>New {0} account registered: {1} for organization '{2}'.</value></data>
+  <data name="EvidenceImageRequired"><value>Evidence image is required.</value></data>
+  <data name="InvalidImageFormat"><value>Invalid image format. Allowed formats: JPG, JPEG, PNG, WEBP, GIF.</value></data>
 </root>

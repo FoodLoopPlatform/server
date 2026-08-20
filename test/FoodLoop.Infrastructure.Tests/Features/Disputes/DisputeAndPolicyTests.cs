@@ -156,19 +156,17 @@ public class DisputeAndPolicyTests : IDisposable
     }
 
     [Fact]
-    public async Task Report_WithoutImage_SucceedsWithNullImageUrl()
+    public async Task Report_WithoutImage_ThrowsArgumentException()
     {
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
-        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.Spam, "Spam listing.");
+        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.Spam, "Spam listing.", null!);
 
         // Act
-        await handler.Handle(command, CancellationToken.None);
+        var act = async () => await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var report = await _dbContext.ProductReports.FirstOrDefaultAsync(r => r.ProductId == _productId && r.Reason == "Spam");
-        report.Should().NotBeNull();
-        report!.ImageUrl.Should().BeNull();
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Evidence image is required.");
     }
 
     [Fact]
@@ -220,7 +218,13 @@ public class DisputeAndPolicyTests : IDisposable
         _dbContext.Products.Add(expProd3);
         await _dbContext.SaveChangesAsync();
 
-        var command = new ReportProductCommand(_reporterId, expProd3.Id, ProductReportReason.Expired, "Third expired product reported.");
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "proof3.png",
+            ContentType = "image/png",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
+        var command = new ReportProductCommand(_reporterId, expProd3.Id, ProductReportReason.Expired, "Third expired product reported.", fileUpload);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -240,11 +244,17 @@ public class DisputeAndPolicyTests : IDisposable
     {
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "spam.png",
+            ContentType = "image/png",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
 
         // Add 5 non-expired reports
         for (int i = 0; i < 5; i++)
         {
-            var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.Spam, $"Non-expired report {i}.");
+            var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.Spam, $"Non-expired report {i}.", fileUpload);
             await handler.Handle(command, CancellationToken.None);
         }
 
@@ -263,7 +273,13 @@ public class DisputeAndPolicyTests : IDisposable
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
         var nonExistentId = Guid.NewGuid();
-        var command = new ReportProductCommand(_reporterId, nonExistentId, ProductReportReason.Expired, "Details");
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "proof.png",
+            ContentType = "image/png",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
+        var command = new ReportProductCommand(_reporterId, nonExistentId, ProductReportReason.Expired, "Details", fileUpload);
 
         // Act
         var act = async () => await handler.Handle(command, CancellationToken.None);
@@ -288,7 +304,13 @@ public class DisputeAndPolicyTests : IDisposable
         await _dbContext.SaveChangesAsync();
 
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
-        var command = new ReportProductCommand(_reporterId, deletedProduct.Id, ProductReportReason.Expired, "Details");
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "proof.png",
+            ContentType = "image/png",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
+        var command = new ReportProductCommand(_reporterId, deletedProduct.Id, ProductReportReason.Expired, "Details", fileUpload);
 
         // Act
         var act = async () => await handler.Handle(command, CancellationToken.None);
@@ -304,7 +326,13 @@ public class DisputeAndPolicyTests : IDisposable
         var mockNotification = new Mock<IRealTimeNotificationService>();
         var mockAudit = new Mock<IAuditLogService>();
         var handler = new ReportProductCommandHandler(_dbContext, mockAudit.Object, mockNotification.Object);
-        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.MisleadingInfo, "Price changed on shelf.");
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "proof.jpg",
+            ContentType = "image/jpeg",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
+        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.MisleadingInfo, "Price changed on shelf.", fileUpload);
 
         // Act
         await handler.Handle(command, CancellationToken.None);

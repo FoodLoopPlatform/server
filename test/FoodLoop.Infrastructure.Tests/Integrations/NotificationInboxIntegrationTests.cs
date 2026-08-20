@@ -579,8 +579,14 @@ public class NotificationInboxIntegrationTests : IDisposable
         db.Organizations.Add(org);
         db.SaveChanges();
 
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "evidence.jpg",
+            ContentType = "image/jpeg",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
         var handler = new ReportProductCommandHandler(db, mockAudit.Object, mockNotification.Object);
-        var command = new ReportProductCommand(reporterId, productId, ProductReportReason.Expired, "Apples are rotten.");
+        var command = new ReportProductCommand(reporterId, productId, ProductReportReason.Expired, "Apples are rotten.", fileUpload);
 
         // Act
         await handler.Handle(command, CancellationToken.None);

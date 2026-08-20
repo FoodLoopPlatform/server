@@ -52,11 +52,12 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
         var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == request.ProductId && !p.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Product", request.ProductId);
 
-        string? finalImageUrl = null;
-        if (request.ImageFile != null && _fileStorage != null)
-        {
-            finalImageUrl = await _fileStorage.SaveAsync(request.ImageFile, $"reports/{request.ProductId}", cancellationToken);
-        }
+        if (request.ImageFile == null || request.ImageFile.Content == null)
+            throw new ArgumentException("Evidence image is required.");
+
+        var finalImageUrl = _fileStorage != null 
+            ? await _fileStorage.SaveAsync(request.ImageFile, $"reports/{request.ProductId}", cancellationToken)
+            : null;
 
         if (finalImageUrl != null && finalImageUrl.Length > 500)
             throw new ArgumentException("ImageUrl must be 500 characters or fewer.");

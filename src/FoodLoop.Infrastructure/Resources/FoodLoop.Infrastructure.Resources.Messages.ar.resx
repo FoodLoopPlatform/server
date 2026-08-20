@@ -92,4 +92,6 @@
   <data name="NotifNewUserRegisteredTitle"><value>مستخدم جديد مسجل</value></data>
   <data name="NotifNewUserRegisteredBody"><value>تم تسجيل حساب جديد: {0} ({1}).</value></data>
   <data name="NotifNewBusinessRegisteredBody"><value>تم تسجيل حساب {0} جديد: {1} لمنظمة '{2}'.</value></data>
+  <data name="EvidenceImageRequired"><value>صورة الإثبات مطلوبة لتقديم البلاغ.</value></data>
+  <data name="InvalidImageFormat"><value>صيغة الصورة غير صالحة. الصيغ المسموحة: JPG, JPEG, PNG, WEBP, GIF.</value></data>
 </root>

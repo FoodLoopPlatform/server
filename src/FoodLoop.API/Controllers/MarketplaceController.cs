@@ -75,7 +75,7 @@ public class MarketplaceController : ControllerBase
 
     /// <summary>
     /// POST /marketplace/products/{id}/report — report a listing (report_an_issue screen).
-    /// Accepts multipart/form-data with an optional evidence image file.
+    /// Accepts multipart/form-data with a mandatory evidence image file.
     /// Requires authentication so we can track who filed the report.
     /// </summary>
     [HttpPost("products/{id:guid}/report")]
@@ -86,24 +86,25 @@ public class MarketplaceController : ControllerBase
     {
         var userId = _currentUser.UserId ?? throw new UnauthorizedAccessException();
 
-        FoodLoop.Application.Common.Models.FileUploadRequest? fileUpload = null;
-        if (request.Image != null && request.Image.Length > 0)
+        if (request.Image == null || request.Image.Length == 0)
         {
-            var ext = System.IO.Path.GetExtension(request.Image.FileName).ToLowerInvariant();
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-            if (!System.Linq.Enumerable.Contains(allowedExtensions, ext))
-            {
-                return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
-            }
-
-            var stream = request.Image.OpenReadStream();
-            fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
-            {
-                Content = stream,
-                FileName = request.Image.FileName,
-                ContentType = request.Image.ContentType
-            };
+            return BadRequest(ApiResponse.Fail(_loc["EvidenceImageRequired"]));
         }
+
+        var ext = System.IO.Path.GetExtension(request.Image.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        if (!System.Linq.Enumerable.Contains(allowedExtensions, ext))
+        {
+            return BadRequest(ApiResponse.Fail(_loc["InvalidImageFormat"]));
+        }
+
+        var stream = request.Image.OpenReadStream();
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            Content = stream,
+            FileName = request.Image.FileName,
+            ContentType = request.Image.ContentType
+        };
 
         await _mediator.Send(new ReportProductCommand(userId, id, request.Reason, request.Details, fileUpload), cancellationToken);
         return Ok(ApiResponse.Ok("Report submitted. Our team will review it shortly."));
@@ -119,6 +120,7 @@ public class ReportProductRequest
     /// <summary>Optional descriptive details about the issue.</summary>
     public string? Details { get; set; }
 
-    /// <summary>Optional evidence image file uploaded directly from device camera or gallery.</summary>
-    public Microsoft.AspNetCore.Http.IFormFile? Image { get; set; }
+    /// <summary>Mandatory evidence image file uploaded directly from device camera or gallery.</summary>
+    [Required(ErrorMessage = "Evidence image is required.")]
+    public Microsoft.AspNetCore.Http.IFormFile Image { get; set; } = null!;
 }
