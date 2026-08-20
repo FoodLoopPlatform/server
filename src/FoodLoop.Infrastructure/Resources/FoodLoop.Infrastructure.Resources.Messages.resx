@@ -93,4 +93,20 @@
   <data name="NotifNewBusinessRegisteredBody"><value>تم تسجيل حساب {0} جديد: {1} لمنظمة '{2}'.</value></data>
   <data name="EvidenceImageRequired"><value>صورة الإثبات مطلوبة لتقديم البلاغ.</value></data>
   <data name="InvalidImageFormat"><value>صيغة الصورة غير صالحة. الصيغ المسموحة: JPG, JPEG, PNG, WEBP, GIF.</value></data>
+  <data name="NotifDisputeWarningTitle"><value>تحذير بخصوص بلاغ (المخالفة {0}/{1})</value></data>
+  <data name="NotifDisputeWarningBody"><value>تم الإبلاغ عن المنتج '{0}' بسبب: {1}. يرجى مراجعة البلاغ وحله من لوحة تحكم التاجر لتجنب فرض عقوبات على متجرك.</value></data>
+  <data name="NotifDisputeUrgentWarningTitle"><value>تحذير عاجل: اتخاذ إجراء مطلوب (المخالفة {0}/{1})</value></data>
+  <data name="NotifDisputeUrgentWarningBody"><value>لديك {0} بلاغات نشطة غير محلولة للمنتج '{1}'. الوصول إلى {2} مخالفات سيؤدي إلى إيقاف متجرك تلقائيًا.</value></data>
+  <data name="NotifStoreSuspendedTitle"><value>تم إيقاف المتجر - تجاوز الحد الأقصى للمخالفات</value></data>
+  <data name="NotifStoreSuspendedBody"><value>بلغ متجرك {0}/{1} مخالفات غير محلولة وتم إيقافه مؤقتًا حتى تتم مراجعة الإدارة.</value></data>
+  <data name="NotifStoreAutoSuspendedTitle"><value>عاجل: تم إيقاف متجر تلقائيًا</value></data>
+  <data name="NotifStoreAutoSuspendedBody"><value>تم إيقاف المتجر '{0}' تلقائيًا بعد وصوله إلى {1}/{2} مخالفات غير محلولة من عملاء مختلفين.</value></data>
+  <data name="NotifDisputeResolvedCustomerTitle"><value>تم حل البلاغ واسترداد المبلغ</value></data>
+  <data name="NotifDisputeResolvedCustomerBody"><value>قام المتجر '{0}' بحل بلاغك وإيداع {1:F2} ج.م في محفظتك الإلكترونية.</value></data>
+  <data name="NotifDisputeResolvedMerchantTitle"><value>تم حل البلاغ بنجاح</value></data>
+  <data name="NotifDisputeResolvedMerchantBody"><value>تم حل البلاغ الخاص بـ '{0}'. عدد مخالفاتك النشطة الآن هو {1}/{2}.</value></data>
+  <data name="NotifDisputeResolvedByAdminMerchantTitle"><value>تمت مراجعة البلاغ من قِبل الإدارة</value></data>
+  <data name="NotifDisputeResolvedByAdminMerchantBody"><value>قامت الإدارة بمراجعة وحل البلاغ الخاص بـ '{0}'. القرار: {1}. المخالفات النشطة: {2}/{3}.</value></data>
+  <data name="NotifDisputeResolvedByAdminCustomerTitle"><value>تحديث بشأن بلاغك من الإدارة</value></data>
+  <data name="NotifDisputeResolvedByAdminCustomerBody"><value>قامت الإدارة بمراجعة بلاغك الخاص بـ '{0}'. القرار: {1}.</value></data>
 </root>

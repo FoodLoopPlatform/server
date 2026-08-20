@@ -94,4 +94,20 @@
   <data name="NotifNewBusinessRegisteredBody"><value>New {0} account registered: {1} for organization '{2}'.</value></data>
   <data name="EvidenceImageRequired"><value>Evidence image is required.</value></data>
   <data name="InvalidImageFormat"><value>Invalid image format. Allowed formats: JPG, JPEG, PNG, WEBP, GIF.</value></data>
+  <data name="NotifDisputeWarningTitle"><value>Dispute Warning (Strike {0}/{1})</value></data>
+  <data name="NotifDisputeWarningBody"><value>Product '{0}' was reported for {1}. Please review and resolve this dispute in your merchant dashboard to avoid store penalties.</value></data>
+  <data name="NotifDisputeUrgentWarningTitle"><value>Urgent Warning: Action Required (Strike {0}/{1})</value></data>
+  <data name="NotifDisputeUrgentWarningBody"><value>You have {0} active unresolved disputes for product '{1}'. Reaching {2} strikes will automatically suspend your store.</value></data>
+  <data name="NotifStoreSuspendedTitle"><value>Store Suspended - Maximum Disputes Exceeded</value></data>
+  <data name="NotifStoreSuspendedBody"><value>Your store has reached {0}/{1} unresolved violation strikes and has been temporarily paused pending Admin review.</value></data>
+  <data name="NotifStoreAutoSuspendedTitle"><value>Urgent: Store Auto-Suspended</value></data>
+  <data name="NotifStoreAutoSuspendedBody"><value>Store '{0}' has been automatically suspended after reaching {1}/{2} distinct unresolved customer violation strikes.</value></data>
+  <data name="NotifDisputeResolvedCustomerTitle"><value>Dispute Resolved &amp; Refund Issued</value></data>
+  <data name="NotifDisputeResolvedCustomerBody"><value>Store '{0}' has resolved your report and refunded {1:F2} EGP to your wallet balance.</value></data>
+  <data name="NotifDisputeResolvedMerchantTitle"><value>Dispute Resolved Successfully</value></data>
+  <data name="NotifDisputeResolvedMerchantBody"><value>Dispute for '{0}' has been resolved. Your active violation strike count is now {1}/{2}.</value></data>
+  <data name="NotifDisputeResolvedByAdminMerchantTitle"><value>Dispute Reviewed by Admin</value></data>
+  <data name="NotifDisputeResolvedByAdminMerchantBody"><value>Admin has reviewed and resolved the dispute for '{0}'. Resolution: {1}. Active strikes: {2}/{3}.</value></data>
+  <data name="NotifDisputeResolvedByAdminCustomerTitle"><value>Dispute Update from Admin</value></data>
+  <data name="NotifDisputeResolvedByAdminCustomerBody"><value>Admin has reviewed your report for '{0}'. Decision: {1}.</value></data>
 </root>

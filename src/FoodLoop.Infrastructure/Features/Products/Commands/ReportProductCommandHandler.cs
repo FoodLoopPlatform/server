@@ -65,15 +65,23 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var reasonString = request.Reason.ToString();
 
-        // Count existing expired reports
-        var dbExpiredCount = await _db.ProductReports
+        // 1. Anti-Sabotage: Fetch existing UNRESOLVED expired reports for this organization
+        var existingActiveReports = await _db.ProductReports
             .Include(r => r.Product)
             .Where(r => r.Product != null && r.Product.OrganizationId == product.OrganizationId &&
+                        !r.IsResolved &&
                         (r.Product.ExpirationDate < today || r.Reason == "Expired" || r.Reason == "WrongExpiry"))
-            .CountAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
         var isCurrentReportExpired = product.ExpirationDate < today || request.Reason == ProductReportReason.Expired || request.Reason == ProductReportReason.WrongExpiry;
-        var totalExpiredReports = dbExpiredCount + (isCurrentReportExpired ? 1 : 0);
+
+        // Distinct customer strikes calculation
+        var distinctReporters = existingActiveReports.Select(r => r.ReportedBy).ToHashSet();
+        if (isCurrentReportExpired)
+        {
+            distinctReporters.Add(request.ReportedBy);
+        }
+        var activeStrikes = isCurrentReportExpired ? distinctReporters.Count : 0;
 
         var report = new ProductReport
         {
@@ -91,14 +99,16 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
             .FirstOrDefaultAsync(s => s.Id == SystemSettings.SingletonId, cancellationToken);
         var threshold = settings?.MaxExpiredReportsBeforeDeactivation ?? 3;
 
-        if (totalExpiredReports >= threshold)
-        {
-            var organization = await _db.Organizations
-                .FirstOrDefaultAsync(o => o.Id == product.OrganizationId, cancellationToken)
-                ?? throw new NotFoundException("Organization", product.OrganizationId);
+        var organization = await _db.Organizations
+            .FirstOrDefaultAsync(o => o.Id == product.OrganizationId, cancellationToken)
+            ?? throw new NotFoundException("Organization", product.OrganizationId);
 
+        var isAutoSuspended = false;
+
+        if (isCurrentReportExpired && activeStrikes >= threshold)
+        {
             organization.VerificationStatus = VerificationStatus.Rejected;
-            var notice = $"\n[{DateTimeOffset.UtcNow:u}] Auto-deactivated: Exceeded maximum allowed expired product reports ({totalExpiredReports}/{threshold}).";
+            var notice = $"\n[{DateTimeOffset.UtcNow:u}] Auto-deactivated: Exceeded maximum allowed unresolved expired product reports ({activeStrikes}/{threshold} distinct customer strikes).";
             organization.AdminNote = (organization.AdminNote ?? "") + notice;
             organization.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -108,6 +118,7 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
             {
                 owner.Status = UserStatus.Suspended;
             }
+            isAutoSuspended = true;
         }
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -123,6 +134,7 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
 
         if (_notificationService != null)
         {
+            // Always notify Admin role of incoming reports
             await _notificationService.SendNotificationToRoleAsync(
                 "Admin",
                 "NotifProductReportedTitle",
@@ -132,6 +144,60 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
                 "ProductReport",
                 report.Id,
                 cancellationToken);
+
+            if (isAutoSuspended)
+            {
+                // Send Store Owner Suspension Alert
+                await _notificationService.SendNotificationToUserAsync(
+                    organization.OwnerId,
+                    "NotifStoreSuspendedTitle",
+                    "NotifStoreSuspendedBody",
+                    "StoreSuspended",
+                    new object[] { activeStrikes, threshold },
+                    "Organization",
+                    organization.Id,
+                    cancellationToken);
+
+                // Send Urgent Auto-Suspension Notice to Admin Role
+                await _notificationService.SendNotificationToRoleAsync(
+                    "Admin",
+                    "NotifStoreAutoSuspendedTitle",
+                    "NotifStoreAutoSuspendedBody",
+                    "StoreSuspended",
+                    new object[] { organization.Name, activeStrikes, threshold },
+                    "Organization",
+                    organization.Id,
+                    cancellationToken);
+            }
+            else if (isCurrentReportExpired)
+            {
+                if (activeStrikes == threshold - 1)
+                {
+                    // Urgent Warning (Strike 2 of 3)
+                    await _notificationService.SendNotificationToUserAsync(
+                        organization.OwnerId,
+                        "NotifDisputeUrgentWarningTitle",
+                        "NotifDisputeUrgentWarningBody",
+                        "DisputeUrgentWarning",
+                        new object[] { activeStrikes, product.Title, threshold },
+                        "ProductReport",
+                        report.Id,
+                        cancellationToken);
+                }
+                else
+                {
+                    // Initial Warning (Strike 1 of 3)
+                    await _notificationService.SendNotificationToUserAsync(
+                        organization.OwnerId,
+                        "NotifDisputeWarningTitle",
+                        "NotifDisputeWarningBody",
+                        "DisputeWarning",
+                        new object[] { product.Title, reasonString, activeStrikes, threshold },
+                        "ProductReport",
+                        report.Id,
+                        cancellationToken);
+                }
+            }
         }
 
         return Unit.Value;

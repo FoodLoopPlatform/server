@@ -203,17 +203,17 @@ public class DisputeAndPolicyTests : IDisposable
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
 
-        // Seed 2 expired products and report them to get count to 2
+        // Seed 2 expired products and report them by distinct users to get count to 2
         var expProd1 = new Product { Id = Guid.NewGuid(), OrganizationId = _organizationId, Title = "Exp1", ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)) };
         var expProd2 = new Product { Id = Guid.NewGuid(), OrganizationId = _organizationId, Title = "Exp2", ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-3)) };
         _dbContext.Products.AddRange(expProd1, expProd2);
 
-        var rep1 = new ProductReport { ProductId = expProd1.Id, ReportedBy = _reporterId, Reason = "Expired", ImageUrl = "https://example.com/proof1.png", CreatedAt = DateTimeOffset.UtcNow };
-        var rep2 = new ProductReport { ProductId = expProd2.Id, ReportedBy = _reporterId, Reason = "WrongExpiry", ImageUrl = "https://example.com/proof2.png", CreatedAt = DateTimeOffset.UtcNow };
+        var rep1 = new ProductReport { ProductId = expProd1.Id, ReportedBy = Guid.NewGuid(), Reason = "Expired", ImageUrl = "https://example.com/proof1.png", CreatedAt = DateTimeOffset.UtcNow };
+        var rep2 = new ProductReport { ProductId = expProd2.Id, ReportedBy = Guid.NewGuid(), Reason = "WrongExpiry", ImageUrl = "https://example.com/proof2.png", CreatedAt = DateTimeOffset.UtcNow };
         _dbContext.ProductReports.AddRange(rep1, rep2);
         await _dbContext.SaveChangesAsync();
 
-        // 3rd expired report will trigger deactivation
+        // 3rd expired report by distinct user will trigger deactivation
         var expProd3 = new Product { Id = Guid.NewGuid(), OrganizationId = _organizationId, Title = "Exp3", ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)) };
         _dbContext.Products.Add(expProd3);
         await _dbContext.SaveChangesAsync();
@@ -233,7 +233,7 @@ public class DisputeAndPolicyTests : IDisposable
         var org = await _dbContext.Organizations.FindAsync(_organizationId);
         org!.VerificationStatus.Should().Be(VerificationStatus.Rejected);
         org.AdminNote.Should().Contain("Initial admin notes.");
-        org.AdminNote.Should().Contain("Auto-deactivated: Exceeded maximum allowed expired product reports (3/3).");
+        org.AdminNote.Should().Contain("Auto-deactivated: Exceeded maximum allowed unresolved expired product reports (3/3 distinct customer strikes).");
 
         var merchant = await _dbContext.Users.FindAsync(_ownerId);
         merchant!.Status.Should().Be(UserStatus.Suspended);
