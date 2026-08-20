@@ -118,7 +118,7 @@ public class ResolveStoreDisputeCommandHandler : IRequestHandler<ResolveStoreDis
         var settings = await _db.SystemSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == SystemSettings.SingletonId, cancellationToken);
-        var threshold = settings?.MaxExpiredReportsBeforeDeactivation ?? 3;
+        var threshold = settings?.MaxExpiredReportsBeforeDeactivation ?? 5;
 
         if (_notificationService != null)
         {

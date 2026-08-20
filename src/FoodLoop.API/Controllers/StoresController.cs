@@ -319,6 +319,16 @@ public class StoresController : ControllerBase
     }
 
     /// <summary>
+    /// GET /stores/me/disputes/summary — returns store dispute health status, active strikes, and repeat product reports.
+    /// </summary>
+    [HttpGet("me/disputes/summary")]
+    public async Task<IActionResult> GetDisputesSummary(CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetStoreDisputeSummaryQuery(OwnerId), cancellationToken);
+        return Ok(ApiResponse<StoreDisputeSummaryDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /stores/me/disputes — list reports and disputes filed against products in this store.
     /// </summary>
     [HttpGet("me/disputes")]

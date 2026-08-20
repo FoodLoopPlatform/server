@@ -275,4 +275,64 @@ public class StoreAnalyticsAndDisputeTests
         result.Summary.MaxDiscountPercentage.Should().Be(50m);
         result.Products.Should().HaveCount(2);
     }
+
+    [Fact]
+    public async Task GetStoreDisputeSummary_ShouldReturnHealthAndActiveStrikes()
+    {
+        // Arrange
+        using var db = ApplicationDbContextFactory.Create();
+        var ownerId = Guid.NewGuid();
+        var store = new Organization
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = ownerId,
+            Name = "Organic Hub",
+            VerificationStatus = VerificationStatus.Verified
+        };
+        db.Organizations.Add(store);
+
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = store.Id,
+            Title = "Greek Yogurt",
+            OriginalPrice = 40m,
+            DiscountedPrice = 20m,
+            ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1))
+        };
+        db.Products.Add(product);
+
+        // 2 unresolved reports by 2 distinct users
+        var user1 = Guid.NewGuid();
+        var user2 = Guid.NewGuid();
+        db.ProductReports.AddRange(
+            new ProductReport { Id = Guid.NewGuid(), ProductId = product.Id, ReportedBy = user1, Reason = "Expired", IsResolved = false },
+            new ProductReport { Id = Guid.NewGuid(), ProductId = product.Id, ReportedBy = user2, Reason = "Expired", IsResolved = false },
+            new ProductReport { Id = Guid.NewGuid(), ProductId = product.Id, ReportedBy = user1, Reason = "WrongExpiry", IsResolved = true } // 1 resolved
+        );
+
+        db.SystemSettings.Add(new SystemSettings
+        {
+            Id = SystemSettings.SingletonId,
+            MaxExpiredReportsBeforeDeactivation = 5
+        });
+        await db.SaveChangesAsync();
+
+        var uow = new UnitOfWork(db);
+        var handler = new GetStoreDisputeSummaryQueryHandler(db, uow);
+
+        // Act
+        var result = await handler.Handle(new GetStoreDisputeSummaryQuery(ownerId), CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ActiveStrikes.Should().Be(2); // 2 distinct unresolved users
+        result.MaxAllowedStrikes.Should().Be(5);
+        result.HealthStatus.Should().Be("Warning"); // 2/5 -> Warning
+        result.TotalResolvedDisputes.Should().Be(1);
+        result.TotalUnresolvedDisputes.Should().Be(2);
+        result.RepeatProducts.Should().HaveCount(1);
+        result.RepeatProducts[0].ProductTitle.Should().Be("Greek Yogurt");
+        result.RepeatProducts[0].ReportCount.Should().Be(3);
+    }
 }
