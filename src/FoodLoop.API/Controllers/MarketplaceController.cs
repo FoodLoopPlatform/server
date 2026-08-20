@@ -75,7 +75,7 @@ public class MarketplaceController : ControllerBase
 
     /// <summary>
     /// POST /marketplace/products/{id}/report — report a listing (report_an_issue screen).
-    /// Accepts multipart/form-data with an optional image file (or image URL).
+    /// Accepts multipart/form-data with an optional evidence image file.
     /// Requires authentication so we can track who filed the report.
     /// </summary>
     [HttpPost("products/{id:guid}/report")]
@@ -105,22 +105,20 @@ public class MarketplaceController : ControllerBase
             };
         }
 
-        await _mediator.Send(new ReportProductCommand(userId, id, request.Reason, request.Details, request.ImageUrl, fileUpload), cancellationToken);
+        await _mediator.Send(new ReportProductCommand(userId, id, request.Reason, request.Details, fileUpload), cancellationToken);
         return Ok(ApiResponse.Ok("Report submitted. Our team will review it shortly."));
     }
 }
 
 public class ReportProductRequest
 {
-    /// <summary>MisleadingInfo | WrongExpiry | Expired | Spam | Inappropriate | Other</summary>
+    /// <summary>Issue category: MisleadingInfo | WrongExpiry | Expired | Spam | Inappropriate | Other</summary>
     [Required]
-    public string Reason { get; set; } = null!;
+    public FoodLoop.Domain.Enums.ProductReportReason Reason { get; set; }
+
+    /// <summary>Optional descriptive details about the issue.</summary>
     public string? Details { get; set; }
 
     /// <summary>Optional evidence image file uploaded directly from device camera or gallery.</summary>
     public Microsoft.AspNetCore.Http.IFormFile? Image { get; set; }
-
-    /// <summary>Optional direct image URL if already hosted.</summary>
-    [MaxLength(500)]
-    public string? ImageUrl { get; set; }
 }

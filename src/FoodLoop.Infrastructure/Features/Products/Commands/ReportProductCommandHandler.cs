@@ -52,11 +52,7 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
         var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == request.ProductId && !p.IsDeleted, cancellationToken)
             ?? throw new NotFoundException("Product", request.ProductId);
 
-        var validReasons = new[] { "MisleadingInfo", "WrongExpiry", "Expired", "Spam", "Inappropriate", "Other" };
-        if (!System.Array.Exists(validReasons, r => r == request.Reason))
-            throw new ArgumentException($"Invalid reason. Allowed: {string.Join(", ", validReasons)}");
-
-        string? finalImageUrl = request.ImageUrl;
+        string? finalImageUrl = null;
         if (request.ImageFile != null && _fileStorage != null)
         {
             finalImageUrl = await _fileStorage.SaveAsync(request.ImageFile, $"reports/{request.ProductId}", cancellationToken);
@@ -66,6 +62,7 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
             throw new ArgumentException("ImageUrl must be 500 characters or fewer.");
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var reasonString = request.Reason.ToString();
 
         // Count existing expired reports
         var dbExpiredCount = await _db.ProductReports
@@ -74,14 +71,14 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
                         (r.Product.ExpirationDate < today || r.Reason == "Expired" || r.Reason == "WrongExpiry"))
             .CountAsync(cancellationToken);
 
-        var isCurrentReportExpired = product.ExpirationDate < today || request.Reason == "Expired" || request.Reason == "WrongExpiry";
+        var isCurrentReportExpired = product.ExpirationDate < today || request.Reason == ProductReportReason.Expired || request.Reason == ProductReportReason.WrongExpiry;
         var totalExpiredReports = dbExpiredCount + (isCurrentReportExpired ? 1 : 0);
 
         var report = new ProductReport
         {
             ProductId = request.ProductId,
             ReportedBy = request.ReportedBy,
-            Reason = request.Reason,
+            Reason = reasonString,
             Details = request.Details,
             ImageUrl = finalImageUrl
         };
@@ -130,7 +127,7 @@ public class ReportProductCommandHandler : IRequestHandler<ReportProductCommand,
                 "NotifProductReportedTitle",
                 "NotifProductReportedBody",
                 "ProductReported",
-                new object[] { product.Title, request.Reason },
+                new object[] { product.Title, reasonString },
                 "ProductReport",
                 report.Id,
                 cancellationToken);

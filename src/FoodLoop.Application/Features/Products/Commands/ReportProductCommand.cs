@@ -1,4 +1,5 @@
 using FoodLoop.Application.Common.Models;
+using FoodLoop.Domain.Enums;
 using MediatR;
 using System;
 
@@ -8,9 +9,9 @@ namespace FoodLoop.Application.Features.Products.Commands;
 public record ReportProductCommand(
     Guid ReportedBy, 
     Guid ProductId, 
-    string Reason, 
+    ProductReportReason Reason, 
     string? Details, 
-    string? ImageUrl = null,
     FileUploadRequest? ImageFile = null
 ) : IRequest<Unit>;
+
 

@@ -95,9 +95,19 @@ public class DisputeAndPolicyTests : IDisposable
     public async Task DisputeImage_RoundTrip_Succeeds()
     {
         // Arrange
-        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
+        var mockStorage = new Mock<IFileStorageService>();
         var imageUrl = "https://example.com/dispute-proof.png";
-        var command = new ReportProductCommand(_reporterId, _productId, "MisleadingInfo", "Product price is incorrect.", imageUrl);
+        mockStorage.Setup(s => s.SaveAsync(It.IsAny<FoodLoop.Application.Common.Models.FileUploadRequest>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(imageUrl);
+
+        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object, null!, mockStorage.Object);
+        var fileUpload = new FoodLoop.Application.Common.Models.FileUploadRequest
+        {
+            FileName = "dispute-proof.png",
+            ContentType = "image/png",
+            Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
+        };
+        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.MisleadingInfo, "Product price is incorrect.", fileUpload);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -150,7 +160,7 @@ public class DisputeAndPolicyTests : IDisposable
     {
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
-        var command = new ReportProductCommand(_reporterId, _productId, "Spam", "Spam listing.", null);
+        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.Spam, "Spam listing.");
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -177,7 +187,7 @@ public class DisputeAndPolicyTests : IDisposable
             ContentType = "image/jpeg",
             Content = new System.IO.MemoryStream(new byte[] { 1, 2, 3 })
         };
-        var command = new ReportProductCommand(_reporterId, _productId, "WrongExpiry", "Wrong expiry date on label.", null, fileUpload);
+        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.WrongExpiry, "Wrong expiry date on label.", fileUpload);
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -210,7 +220,7 @@ public class DisputeAndPolicyTests : IDisposable
         _dbContext.Products.Add(expProd3);
         await _dbContext.SaveChangesAsync();
 
-        var command = new ReportProductCommand(_reporterId, expProd3.Id, "Expired", "Third expired product reported.", "https://example.com/proof3.png");
+        var command = new ReportProductCommand(_reporterId, expProd3.Id, ProductReportReason.Expired, "Third expired product reported.");
 
         // Act
         await handler.Handle(command, CancellationToken.None);
@@ -234,7 +244,7 @@ public class DisputeAndPolicyTests : IDisposable
         // Add 5 non-expired reports
         for (int i = 0; i < 5; i++)
         {
-            var command = new ReportProductCommand(_reporterId, _productId, "Spam", $"Non-expired report {i}.", "https://example.com/spam-proof.png");
+            var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.Spam, $"Non-expired report {i}.");
             await handler.Handle(command, CancellationToken.None);
         }
 
@@ -248,45 +258,12 @@ public class DisputeAndPolicyTests : IDisposable
     }
 
     [Fact]
-    public async Task ImageUrl_TooLong_ThrowsArgumentException()
-    {
-        // Arrange
-        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
-        var longImageUrl = new string('a', 501);
-        var command = new ReportProductCommand(_reporterId, _productId, "MisleadingInfo", "Detail", longImageUrl);
-
-        // Act
-        var act = async () => await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("ImageUrl must be 500 characters or fewer.");
-    }
-
-    [Theory]
-    [InlineData("InvalidReason")]
-    [InlineData("")]
-    [InlineData("HateSpeech")]
-    [InlineData("RandomString123")]
-    public async Task Report_InvalidReason_ThrowsArgumentException(string invalidReason)
-    {
-        // Arrange
-        var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
-        var command = new ReportProductCommand(_reporterId, _productId, invalidReason, "Details");
-
-        // Act
-        var act = async () => await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Invalid reason. Allowed:*");
-    }
-
-    [Fact]
     public async Task Report_NonExistentProduct_ThrowsNotFoundException()
     {
         // Arrange
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
         var nonExistentId = Guid.NewGuid();
-        var command = new ReportProductCommand(_reporterId, nonExistentId, "Expired", "Details");
+        var command = new ReportProductCommand(_reporterId, nonExistentId, ProductReportReason.Expired, "Details");
 
         // Act
         var act = async () => await handler.Handle(command, CancellationToken.None);
@@ -311,7 +288,7 @@ public class DisputeAndPolicyTests : IDisposable
         await _dbContext.SaveChangesAsync();
 
         var handler = new ReportProductCommandHandler(_dbContext, _auditLogService.Object);
-        var command = new ReportProductCommand(_reporterId, deletedProduct.Id, "Expired", "Details");
+        var command = new ReportProductCommand(_reporterId, deletedProduct.Id, ProductReportReason.Expired, "Details");
 
         // Act
         var act = async () => await handler.Handle(command, CancellationToken.None);
@@ -327,7 +304,7 @@ public class DisputeAndPolicyTests : IDisposable
         var mockNotification = new Mock<IRealTimeNotificationService>();
         var mockAudit = new Mock<IAuditLogService>();
         var handler = new ReportProductCommandHandler(_dbContext, mockAudit.Object, mockNotification.Object);
-        var command = new ReportProductCommand(_reporterId, _productId, "MisleadingInfo", "Price changed on shelf.", "https://example.com/receipt.jpg");
+        var command = new ReportProductCommand(_reporterId, _productId, ProductReportReason.MisleadingInfo, "Price changed on shelf.");
 
         // Act
         await handler.Handle(command, CancellationToken.None);
