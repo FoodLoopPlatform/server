@@ -1,7 +1,9 @@
 using FluentAssertions;
+using FoodLoop.API.Common;
 using FoodLoop.API.Controllers;
 using FoodLoop.Application.Common.Exceptions;
 using FoodLoop.Application.Common.Interfaces;
+using MediatR;
 using FoodLoop.Application.DTOs.Orders;
 using FoodLoop.Application.Features.Admin.Commands;
 using FoodLoop.Application.Features.Orders.Commands;
@@ -1209,5 +1211,118 @@ public class PaymentAndWalletTests
         dbOrder!.OrderStatus.Should().Be(OrderStatus.Completed);
         dbOrder.PaymentStatus.Should().Be(PaymentStatus.Paid);
         dbOrder.Payment!.Status.Should().Be(PaymentStatus.Paid);
+    }
+
+    [Fact]
+    public async Task OrdersController_PayWithCash_ShouldReturnOkWithCashResultDto()
+    {
+        // Arrange
+        var mockMediator = new Mock<IMediator>();
+        var mockCurrentUser = new Mock<ICurrentUserService>();
+        var userId = Guid.NewGuid();
+        var orderId = Guid.NewGuid();
+
+        mockCurrentUser.Setup(u => u.UserId).Returns(userId);
+
+        var expectedDto = new CashCheckoutResultDto
+        {
+            OrderId = orderId,
+            OrderStatus = "Confirmed",
+            PaymentStatus = "Pending",
+            PaymentMethod = "Cash",
+            AmountDue = 120.00m,
+            Message = "Order confirmed."
+        };
+
+        mockMediator.Setup(m => m.Send(It.Is<CashCheckoutCommand>(c => c.OrderId == orderId && c.UserId == userId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDto);
+
+        var controller = new OrdersController(mockMediator.Object, mockCurrentUser.Object);
+
+        // Act
+        var actionResult = await controller.PayWithCash(orderId, CancellationToken.None);
+
+        // Assert
+        actionResult.Should().BeOfType<OkObjectResult>();
+        var okResult = actionResult as OkObjectResult;
+        var apiResponse = okResult!.Value as ApiResponse<CashCheckoutResultDto>;
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeTrue();
+        apiResponse.Data!.OrderId.Should().Be(orderId);
+        apiResponse.Data.PaymentMethod.Should().Be("Cash");
+        apiResponse.Data.AmountDue.Should().Be(120.00m);
+    }
+
+    [Fact]
+    public async Task OrdersController_PayWithWallet_ShouldReturnOkWithWalletResultDto()
+    {
+        // Arrange
+        var mockMediator = new Mock<IMediator>();
+        var mockCurrentUser = new Mock<ICurrentUserService>();
+        var userId = Guid.NewGuid();
+        var orderId = Guid.NewGuid();
+
+        mockCurrentUser.Setup(u => u.UserId).Returns(userId);
+
+        var expectedDto = new WalletCheckoutResultDto
+        {
+            OrderId = orderId,
+            OrderStatus = "Confirmed",
+            PaymentStatus = "Paid",
+            AmountCharged = 80.00m,
+            RemainingWalletBalance = 20.00m
+        };
+
+        mockMediator.Setup(m => m.Send(It.Is<WalletCheckoutCommand>(c => c.OrderId == orderId && c.UserId == userId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDto);
+
+        var controller = new OrdersController(mockMediator.Object, mockCurrentUser.Object);
+
+        // Act
+        var actionResult = await controller.PayWithWallet(orderId, CancellationToken.None);
+
+        // Assert
+        actionResult.Should().BeOfType<OkObjectResult>();
+        var okResult = actionResult as OkObjectResult;
+        var apiResponse = okResult!.Value as ApiResponse<WalletCheckoutResultDto>;
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeTrue();
+        apiResponse.Data!.OrderId.Should().Be(orderId);
+        apiResponse.Data.PaymentStatus.Should().Be("Paid");
+    }
+
+    [Fact]
+    public async Task OrdersController_GetPaymobCheckout_ShouldReturnOkWithSessionDto()
+    {
+        // Arrange
+        var mockMediator = new Mock<IMediator>();
+        var mockCurrentUser = new Mock<ICurrentUserService>();
+        var userId = Guid.NewGuid();
+        var orderId = Guid.NewGuid();
+
+        mockCurrentUser.Setup(u => u.UserId).Returns(userId);
+
+        var expectedDto = new CheckoutSessionDto
+        {
+            OrderId = orderId,
+            PaymentToken = "tok_12345",
+            CheckoutUrl = "https://accept.paymob.com/unifiedcheckout/?publicKey=pk_test&clientSecret=tok_12345"
+        };
+
+        mockMediator.Setup(m => m.Send(It.Is<CheckoutOrderCommand>(c => c.OrderId == orderId && c.UserId == userId), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDto);
+
+        var controller = new OrdersController(mockMediator.Object, mockCurrentUser.Object);
+
+        // Act
+        var actionResult = await controller.GetPaymobCheckout(orderId, CancellationToken.None);
+
+        // Assert
+        actionResult.Should().BeOfType<OkObjectResult>();
+        var okResult = actionResult as OkObjectResult;
+        var apiResponse = okResult!.Value as ApiResponse<CheckoutSessionDto>;
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeTrue();
+        apiResponse.Data!.PaymentToken.Should().Be("tok_12345");
     }
 }
