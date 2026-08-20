@@ -35,6 +35,7 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
         var order = await _db.Orders
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
+            .Include(o => o.Payment)
             .FirstOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken)
             ?? throw new NotFoundException("Order", request.OrderId);
 
@@ -53,6 +54,17 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
         var oldStatus = order.OrderStatus;
         order.OrderStatus = newStatus;
 
+        // If order is completed, mark Cash payment as Paid
+        if (newStatus == OrderStatus.Completed && order.PaymentStatus != PaymentStatus.Paid)
+        {
+            order.PaymentStatus = PaymentStatus.Paid;
+            if (order.Payment != null)
+            {
+                order.Payment.Status = PaymentStatus.Paid;
+                order.Payment.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+        }
+
         // If order is cancelled, return products back to inventory
         if (newStatus == OrderStatus.Cancelled && oldStatus != OrderStatus.Cancelled)
         {
@@ -63,6 +75,7 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
                     item.Product.QuantityAvailable += item.Quantity;
                 }
             }
+
             order.PaymentStatus = PaymentStatus.Refunded;
             if (order.Payment != null)
             {

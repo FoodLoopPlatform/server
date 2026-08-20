@@ -76,6 +76,17 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// POST /orders/{id:guid}/cash-checkout — confirm an order with Cash on Pickup / Cash on Delivery.
+    /// </summary>
+    [HttpPost("{id:guid}/cash-checkout")]
+    public async Task<IActionResult> PayWithCash(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new CashCheckoutCommand(id, UserId);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<CashCheckoutResultDto>.Ok(result));
+    }
+
+    /// <summary>
     /// GET /orders — get customer's order history.
     /// </summary>
     [HttpGet]

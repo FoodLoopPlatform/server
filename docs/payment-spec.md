@@ -178,6 +178,8 @@ The lifecycle of an order and its associated payment transitions as follows:
 | `Pending` | `Pending` | Paymob callback `success=true` | `Paid` | `Confirmed` | Online payment completed successfully. |
 | `Pending` | `Pending` | Paymob callback `success=false` | `Failed` | `Pending` | Payment failed; order waits for retry or timeout. |
 | `Pending` | `Pending` | Wallet checkout executed | `Paid` | `Confirmed` | Customer checks out with wallet balance. |
+| `Pending` | `Pending` | Cash checkout executed | `Pending` | `Confirmed` | Customer selects Cash on Pickup/Delivery. Order is confirmed for store preparation. |
+| `Pending` (Cash) | `ReadyForPickup`/`Confirmed` | Store marks order complete | `Paid` | `Completed` | Customer pays cash upon pickup; order marked Paid. |
 | `Paid` | `Confirmed` | Store marks order ready | `Paid` | `ReadyForPickup` | Order prepared by store. |
 | `Paid` | `ReadyForPickup` | Store marks order complete | `Paid` | `Completed` | Customer picks up the order. |
 | `Paid` | `Confirmed`/`Ready` | Store owner triggers refund | `Refunded` | `Cancelled` | Merchant cancels and refunds order to customer wallet. |

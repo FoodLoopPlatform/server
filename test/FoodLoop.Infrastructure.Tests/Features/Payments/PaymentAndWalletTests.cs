@@ -32,6 +32,7 @@ public class PaymentAndWalletTests
     private readonly Mock<IPaymentService> _mockPaymentService = new();
     private readonly Mock<ILogger<PaymentsController>> _mockLogger = new();
     private readonly Mock<IAuditLogService> _mockAuditLog = new();
+    private readonly Mock<IRealTimeNotificationService> _mockNotification = new();
 
     [Fact]
     public async Task PaymobCallback_ValidHmac_ShouldMarkAsPaidAndConfirm()
@@ -1023,5 +1024,190 @@ public class PaymentAndWalletTests
         result.WalletBalance.Should().Be(75.50m);
         result.Transactions.Should().HaveCount(2);
         result.Transactions.Select(t => t.Amount).Should().Contain(new[] { 100.00m, 24.50m });
+    }
+
+    [Fact]
+    public async Task CashCheckout_ValidOrder_ShouldConfirmAndSetCashPending()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var customerId = Guid.NewGuid();
+        var storeOwnerId = Guid.NewGuid();
+
+        var store = new Organization
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = storeOwnerId,
+            Name = "Green Grocery",
+            IsDeleted = false
+        };
+        dbContext.Organizations.Add(store);
+
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = store.Id,
+            Title = "Fresh Tomatoes",
+            DiscountedPrice = 50.00m,
+            OriginalPrice = 70.00m,
+            QuantityAvailable = 10,
+            Status = ProductStatus.Active,
+            ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(2))
+        };
+        dbContext.Products.Add(product);
+
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = customerId,
+            TotalAmount = 100.00m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.Pending,
+            Items = new List<OrderItem>
+            {
+                new OrderItem { ProductId = product.Id, Quantity = 2, UnitPrice = 50.00m }
+            }
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var handler = new CashCheckoutCommandHandler(dbContext, _mockAuditLog.Object, _mockNotification.Object);
+
+        // Act
+        var result = await handler.Handle(new CashCheckoutCommand(order.Id, customerId), CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.OrderId.Should().Be(order.Id);
+        result.PaymentStatus.Should().Be("Pending");
+        result.OrderStatus.Should().Be("Confirmed");
+        result.PaymentMethod.Should().Be("Cash");
+        result.AmountDue.Should().Be(100.00m);
+
+        var dbOrder = await dbContext.Orders.Include(o => o.Payment).FirstOrDefaultAsync(o => o.Id == order.Id);
+        dbOrder!.OrderStatus.Should().Be(OrderStatus.Confirmed);
+        dbOrder.PaymentStatus.Should().Be(PaymentStatus.Pending);
+        dbOrder.Payment.Should().NotBeNull();
+        dbOrder.Payment!.Method.Should().Be("Cash");
+        dbOrder.Payment.Status.Should().Be(PaymentStatus.Pending);
+        dbOrder.Payment.Amount.Should().Be(100.00m);
+    }
+
+    [Fact]
+    public async Task CashCheckout_AlreadyPaidOrder_ShouldThrowConflictException()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var customerId = Guid.NewGuid();
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = customerId,
+            TotalAmount = 50.00m,
+            PaymentStatus = PaymentStatus.Paid,
+            OrderStatus = OrderStatus.Confirmed
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var handler = new CashCheckoutCommandHandler(dbContext, _mockAuditLog.Object, _mockNotification.Object);
+
+        // Act & Assert
+        var act = async () => await handler.Handle(new CashCheckoutCommand(order.Id, customerId), CancellationToken.None);
+        await act.Should().ThrowAsync<ConflictException>();
+    }
+
+    [Fact]
+    public async Task CashCheckout_UnauthorizedUser_ShouldThrowForbiddenAccessException()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var customerId = Guid.NewGuid();
+        var strangerId = Guid.NewGuid();
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = customerId,
+            TotalAmount = 50.00m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.Pending
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var handler = new CashCheckoutCommandHandler(dbContext, _mockAuditLog.Object, _mockNotification.Object);
+
+        // Act & Assert
+        var act = async () => await handler.Handle(new CashCheckoutCommand(order.Id, strangerId), CancellationToken.None);
+        await act.Should().ThrowAsync<ForbiddenAccessException>();
+    }
+
+    [Fact]
+    public async Task UpdateOrderStatus_CompletedOnCashOrder_ShouldMarkPaymentPaid()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var storeOwnerId = Guid.NewGuid();
+        var customerId = Guid.NewGuid();
+
+        var store = new Organization
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = storeOwnerId,
+            Name = "Green Grocery",
+            IsDeleted = false
+        };
+        dbContext.Organizations.Add(store);
+
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = store.Id,
+            Title = "Apples",
+            DiscountedPrice = 30.00m,
+            OriginalPrice = 40.00m,
+            QuantityAvailable = 10,
+            Status = ProductStatus.Active,
+            ExpirationDate = DateOnly.FromDateTime(DateTime.Today.AddDays(3))
+        };
+        dbContext.Products.Add(product);
+
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = customerId,
+            TotalAmount = 60.00m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.ReadyForPickup,
+            Items = new List<OrderItem>
+            {
+                new OrderItem { ProductId = product.Id, Quantity = 2, UnitPrice = 30.00m, Product = product }
+            },
+            Payment = new Payment
+            {
+                OrderId = Guid.NewGuid(),
+                Amount = 60.00m,
+                Method = "Cash",
+                Status = PaymentStatus.Pending,
+                TransactionReference = "CASH-12345678"
+            }
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var handler = new UpdateOrderStatusCommandHandler(dbContext, _mockAuditLog.Object, _mockNotification.Object);
+
+        // Act
+        var result = await handler.Handle(new UpdateOrderStatusCommand(storeOwnerId, order.Id, "Completed"), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.OrderStatus.Should().Be("Completed");
+        result.Data.PaymentStatus.Should().Be("Paid");
+
+        var dbOrder = await dbContext.Orders.Include(o => o.Payment).FirstOrDefaultAsync(o => o.Id == order.Id);
+        dbOrder!.OrderStatus.Should().Be(OrderStatus.Completed);
+        dbOrder.PaymentStatus.Should().Be(PaymentStatus.Paid);
+        dbOrder.Payment!.Status.Should().Be(PaymentStatus.Paid);
     }
 }
