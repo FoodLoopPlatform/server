@@ -31,6 +31,73 @@ public class PaymentsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /payments/paymob-callback — handles client redirection from Paymob checkout.
+    /// </summary>
+    [HttpGet("paymob-callback")]
+    public async Task<IActionResult> PaymobRedirectCallback(
+        [FromQuery] string? success,
+        [FromQuery] string? id,
+        [FromQuery(Name = "amount_cents")] string? amountCents,
+        [FromQuery(Name = "merchant_order_id")] string? merchantOrderId,
+        [FromQuery(Name = "special_reference")] string? specialReference,
+        [FromQuery(Name = "order")] string? orderParam,
+        [FromQuery] string? hmac,
+        CancellationToken cancellationToken)
+    {
+        var isSuccess = string.Equals(success, "true", StringComparison.OrdinalIgnoreCase);
+        var orderIdStr = !string.IsNullOrWhiteSpace(merchantOrderId) ? merchantOrderId
+                       : !string.IsNullOrWhiteSpace(specialReference) ? specialReference
+                       : orderParam;
+
+        if (Guid.TryParse(orderIdStr, out var orderId))
+        {
+            var order = await _db.Orders
+                .Include(o => o.Payment)
+                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+
+            if (order != null && isSuccess && order.PaymentStatus != PaymentStatus.Paid)
+            {
+                order.PaymentStatus = PaymentStatus.Paid;
+                order.OrderStatus = OrderStatus.Confirmed;
+                order.UpdatedAt = DateTimeOffset.UtcNow;
+
+                if (order.Payment != null)
+                {
+                    order.Payment.Status = PaymentStatus.Paid;
+                    order.Payment.TransactionReference = id ?? order.Payment.TransactionReference;
+                    order.Payment.UpdatedAt = DateTimeOffset.UtcNow;
+                }
+                else
+                {
+                    var newPayment = new Payment
+                    {
+                        OrderId = order.Id,
+                        Amount = order.TotalAmount,
+                        Method = "Paymob",
+                        Status = PaymentStatus.Paid,
+                        TransactionReference = id ?? string.Empty,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        UpdatedAt = DateTimeOffset.UtcNow
+                    };
+                    _db.Payments.Add(newPayment);
+                    order.Payment = newPayment;
+                }
+
+                await _db.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Order {OrderId} marked as Paid via Paymob Redirect Callback.", order.Id);
+            }
+        }
+
+        return Ok(new
+        {
+            status = isSuccess ? "success" : "failed",
+            message = isSuccess ? "Payment completed successfully." : "Payment failed or cancelled.",
+            orderId = orderIdStr,
+            transactionId = id
+        });
+    }
+
+    /// <summary>
     /// POST /payments/paymob-callback — public webhook callback for Paymob transaction updates.
     /// </summary>
     [HttpPost("paymob-callback")]
@@ -38,41 +105,69 @@ public class PaymentsController : ControllerBase
     {
         try
         {
-            if (!payload.TryGetProperty("obj", out var obj) || !payload.TryGetProperty("hmac", out var hmacElement))
+            JsonElement obj;
+            if (payload.TryGetProperty("obj", out var objProp) && objProp.ValueKind == JsonValueKind.Object)
+            {
+                obj = objProp;
+            }
+            else if (payload.ValueKind == JsonValueKind.Object && payload.TryGetProperty("amount_cents", out _))
+            {
+                obj = payload;
+            }
+            else
             {
                 return BadRequest("Invalid payload structure.");
             }
 
-            var hmacReceived = hmacElement.GetString() ?? string.Empty;
+            var queryHmac = Request?.Query["hmac"].ToString();
+            var hmacReceived = !string.IsNullOrEmpty(queryHmac)
+                ? queryHmac
+                : (payload.TryGetProperty("hmac", out var hmacElement) ? (hmacElement.GetString() ?? string.Empty) : string.Empty);
 
             // Extract fields for HMAC calculation
-            var amountCents = obj.GetProperty("amount_cents").GetRawText();
-            var createdAt = obj.GetProperty("created_at").GetString() ?? "";
-            var currency = obj.GetProperty("currency").GetString() ?? "";
-            var errorOccured = obj.GetProperty("error_occured").GetRawText(); // "true" or "false"
-            var hasParentTransaction = obj.GetProperty("has_parent_transaction").GetRawText();
-            var idProperty = obj.GetProperty("id");
+            if (!obj.TryGetProperty("amount_cents", out var amountCentsElement) ||
+                !obj.TryGetProperty("id", out var idProperty) ||
+                !obj.TryGetProperty("success", out var successElement))
+            {
+                return BadRequest("Invalid payload structure.");
+            }
+
+            var amountCents = amountCentsElement.GetRawText();
+            var createdAt = obj.TryGetProperty("created_at", out var ca) ? (ca.GetString() ?? "") : "";
+            var currency = obj.TryGetProperty("currency", out var curr) ? (curr.GetString() ?? "") : "";
+            var errorOccured = obj.TryGetProperty("error_occured", out var eo) ? eo.GetRawText() : "false";
+            var hasParentTransaction = obj.TryGetProperty("has_parent_transaction", out var hpt) ? hpt.GetRawText() : "false";
+            
             var id = idProperty.ValueKind == JsonValueKind.Number 
                 ? idProperty.GetInt64().ToString() 
                 : idProperty.GetString() ?? idProperty.GetRawText();
 
-            var integrationIdProperty = obj.GetProperty("integration_id");
-            var integrationId = integrationIdProperty.ValueKind == JsonValueKind.Number
-                ? integrationIdProperty.GetInt64().ToString()
-                : integrationIdProperty.GetString() ?? integrationIdProperty.GetRawText();
-            var is3dSecure = obj.GetProperty("is_3d_secure").GetRawText();
-            var isAuth = obj.GetProperty("is_auth").GetRawText();
-            var isCapture = obj.GetProperty("is_capture").GetRawText();
-            var isVoided = obj.GetProperty("is_voided").GetRawText();
-            var isRefunded = obj.GetProperty("is_refunded").GetRawText();
-            var pending = obj.GetProperty("pending").GetRawText();
+            var integrationId = "";
+            if (obj.TryGetProperty("integration_id", out var integrationIdProperty))
+            {
+                integrationId = integrationIdProperty.ValueKind == JsonValueKind.Number
+                    ? integrationIdProperty.GetInt64().ToString()
+                    : integrationIdProperty.GetString() ?? integrationIdProperty.GetRawText();
+            }
 
-            var sourceData = obj.GetProperty("source_data");
-            var pan = sourceData.GetProperty("pan").GetString() ?? "";
-            var subType = sourceData.GetProperty("sub_type").GetString() ?? "";
-            var type = sourceData.GetProperty("type").GetString() ?? "";
+            var is3dSecure = obj.TryGetProperty("is_3d_secure", out var i3d) ? i3d.GetRawText() : "false";
+            var isAuth = obj.TryGetProperty("is_auth", out var ia) ? ia.GetRawText() : "false";
+            var isCapture = obj.TryGetProperty("is_capture", out var ic) ? ic.GetRawText() : "false";
+            var isVoided = obj.TryGetProperty("is_voided", out var iv) ? iv.GetRawText() : "false";
+            var isRefunded = obj.TryGetProperty("is_refunded", out var ir) ? ir.GetRawText() : "false";
+            var pending = obj.TryGetProperty("pending", out var pnd) ? pnd.GetRawText() : "false";
 
-            var success = obj.GetProperty("success").GetRawText();
+            var pan = "";
+            var subType = "";
+            var type = "";
+            if (obj.TryGetProperty("source_data", out var sourceData) && sourceData.ValueKind == JsonValueKind.Object)
+            {
+                pan = sourceData.TryGetProperty("pan", out var panProp) ? (panProp.GetString() ?? "") : "";
+                subType = sourceData.TryGetProperty("sub_type", out var subProp) ? (subProp.GetString() ?? "") : "";
+                type = sourceData.TryGetProperty("type", out var typeProp) ? (typeProp.GetString() ?? "") : "";
+            }
+
+            var success = successElement.GetRawText();
 
             // Construct concatenation
             var hmacConcat = $"{amountCents}{createdAt}{currency}{errorOccured}{hasParentTransaction}{id}{integrationId}{is3dSecure}{isAuth}{isCapture}{isVoided}{isRefunded}{pending}{pan}{subType}{type}{success}";
@@ -84,7 +179,9 @@ public class PaymentsController : ControllerBase
             }
 
             // Check if transaction is successful
-            var isSuccess = obj.GetProperty("success").GetBoolean();
+            var isSuccess = successElement.ValueKind == JsonValueKind.True || (successElement.ValueKind == JsonValueKind.String && bool.TryParse(successElement.GetString(), out var sb) && sb);
+            var orderId = ExtractOrderId(obj, payload);
+
             if (isSuccess)
             {
                 // Layer 1 Idempotency Check
@@ -96,15 +193,11 @@ public class PaymentsController : ControllerBase
                     return Ok(new { status = "success", message = "Transaction already processed." });
                 }
 
-                // Retrieve merchant_order_id
-                var orderObj = obj.GetProperty("order");
-                var merchantOrderIdStr = orderObj.GetProperty("merchant_order_id").GetString();
-
-                if (Guid.TryParse(merchantOrderIdStr, out var orderId))
+                if (orderId.HasValue)
                 {
                     var order = await _db.Orders
                         .Include(o => o.Payment)
-                        .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+                        .FirstOrDefaultAsync(o => o.Id == orderId.Value, cancellationToken);
 
                     if (order != null)
                     {
@@ -170,15 +263,11 @@ public class PaymentsController : ControllerBase
             }
             else
             {
-                // Retrieve merchant_order_id
-                var orderObj = obj.GetProperty("order");
-                var merchantOrderIdStr = orderObj.GetProperty("merchant_order_id").GetString();
-
-                if (Guid.TryParse(merchantOrderIdStr, out var orderId))
+                if (orderId.HasValue)
                 {
                     var order = await _db.Orders
                         .Include(o => o.Payment)
-                        .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+                        .FirstOrDefaultAsync(o => o.Id == orderId.Value, cancellationToken);
                     if (order != null && order.PaymentStatus != PaymentStatus.Paid)
                     {
                         order.PaymentStatus = PaymentStatus.Failed;
@@ -217,5 +306,72 @@ public class PaymentsController : ControllerBase
         {
             return StatusCode(500, $"Internal error: {ex.Message}");
         }
+    }
+
+    private static Guid? ExtractOrderId(JsonElement obj, JsonElement root)
+    {
+        // 1. Check obj.order.merchant_order_id
+        if (obj.TryGetProperty("order", out var orderProp) && orderProp.ValueKind == JsonValueKind.Object)
+        {
+            if (orderProp.TryGetProperty("merchant_order_id", out var mIdProp))
+            {
+                var mIdStr = mIdProp.ValueKind == JsonValueKind.String ? mIdProp.GetString() : mIdProp.GetRawText();
+                if (!string.IsNullOrWhiteSpace(mIdStr) && Guid.TryParse(mIdStr.Trim('\"', ' '), out var g))
+                    return g;
+            }
+
+            if (orderProp.TryGetProperty("special_reference", out var sRefProp))
+            {
+                var sRefStr = sRefProp.ValueKind == JsonValueKind.String ? sRefProp.GetString() : sRefProp.GetRawText();
+                if (!string.IsNullOrWhiteSpace(sRefStr) && Guid.TryParse(sRefStr.Trim('\"', ' '), out var g))
+                    return g;
+            }
+        }
+
+        // 2. Check obj.special_reference
+        if (obj.TryGetProperty("special_reference", out var objSpecialRef))
+        {
+            var sStr = objSpecialRef.ValueKind == JsonValueKind.String ? objSpecialRef.GetString() : objSpecialRef.GetRawText();
+            if (!string.IsNullOrWhiteSpace(sStr) && Guid.TryParse(sStr.Trim('\"', ' '), out var g))
+                return g;
+        }
+
+        // 3. Check obj.merchant_order_id
+        if (obj.TryGetProperty("merchant_order_id", out var objMerchantOrderId))
+        {
+            var mStr = objMerchantOrderId.ValueKind == JsonValueKind.String ? objMerchantOrderId.GetString() : objMerchantOrderId.GetRawText();
+            if (!string.IsNullOrWhiteSpace(mStr) && Guid.TryParse(mStr.Trim('\"', ' '), out var g))
+                return g;
+        }
+
+        // 4. Check obj.extras.merchant_order_id
+        if (obj.TryGetProperty("extras", out var extrasProp) && extrasProp.ValueKind == JsonValueKind.Object)
+        {
+            if (extrasProp.TryGetProperty("merchant_order_id", out var exMid))
+            {
+                var exStr = exMid.ValueKind == JsonValueKind.String ? exMid.GetString() : exMid.GetRawText();
+                if (!string.IsNullOrWhiteSpace(exStr) && Guid.TryParse(exStr.Trim('\"', ' '), out var g))
+                    return g;
+            }
+        }
+
+        // 5. Check root special_reference or merchant_order_id
+        if (root.ValueKind == JsonValueKind.Object)
+        {
+            if (root.TryGetProperty("special_reference", out var rootSRef))
+            {
+                var rStr = rootSRef.ValueKind == JsonValueKind.String ? rootSRef.GetString() : rootSRef.GetRawText();
+                if (!string.IsNullOrWhiteSpace(rStr) && Guid.TryParse(rStr.Trim('\"', ' '), out var g))
+                    return g;
+            }
+            if (root.TryGetProperty("merchant_order_id", out var rootMid))
+            {
+                var rStr = rootMid.ValueKind == JsonValueKind.String ? rootMid.GetString() : rootMid.GetRawText();
+                if (!string.IsNullOrWhiteSpace(rStr) && Guid.TryParse(rStr.Trim('\"', ' '), out var g))
+                    return g;
+            }
+        }
+
+        return null;
     }
 }

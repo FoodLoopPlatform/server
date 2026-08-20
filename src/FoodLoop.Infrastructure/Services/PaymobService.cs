@@ -65,6 +65,7 @@ public class PaymobService : IPaymentService
             amount = amountCents,
             currency = "EGP",
             payment_methods = new[] { integrationId },
+            special_reference = orderId.ToString(),
             billing_data = new
             {
                 apartment = "NA",
@@ -101,10 +102,15 @@ public class PaymobService : IPaymentService
     }
     public bool VerifyHmac(string payload, string hmacReceived)
     {
-        var hmacSecret = _options.HmacSecret;
-        if (string.IsNullOrEmpty(hmacSecret))
+        var hmacSecret = _options.HmacSecret?.Trim();
+        if (string.IsNullOrEmpty(hmacSecret) || hmacSecret.Equals("YOUR_PAYMOB_HMAC_SECRET", StringComparison.OrdinalIgnoreCase))
         {
             return true; // If not configured, skip for local development (log a warning in real apps)
+        }
+
+        if (string.IsNullOrWhiteSpace(hmacReceived))
+        {
+            return false;
         }
 
         var keyBytes = Encoding.UTF8.GetBytes(hmacSecret);

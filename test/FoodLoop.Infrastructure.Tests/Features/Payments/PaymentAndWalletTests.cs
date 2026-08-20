@@ -97,6 +97,104 @@ public class PaymentAndWalletTests
     }
 
     [Fact]
+    public async Task PaymobCallback_SpecialReference_ShouldMarkAsPaidAndConfirm()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var orderId = Guid.NewGuid();
+        var order = new Order
+        {
+            Id = orderId,
+            TotalAmount = 800.00m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.Pending
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        _mockPaymentService.Setup(p => p.VerifyHmac(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
+
+        var controller = new PaymentsController(dbContext, _mockPaymentService.Object, _mockLogger.Object);
+
+        var jsonPayload = $@"{{
+            ""hmac"": ""valid_hmac"",
+            ""obj"": {{
+                ""amount_cents"": 80000,
+                ""created_at"": ""2026-08-20T16:00:00"",
+                ""currency"": ""EGP"",
+                ""error_occured"": false,
+                ""has_parent_transaction"": false,
+                ""id"": ""paymob_tx_800"",
+                ""integration_id"": 5855304,
+                ""is_3d_secure"": true,
+                ""is_auth"": false,
+                ""is_capture"": true,
+                ""is_voided"": false,
+                ""is_refunded"": false,
+                ""pending"": false,
+                ""success"": true,
+                ""special_reference"": ""{orderId}"",
+                ""source_data"": {{
+                    ""pan"": ""2346"",
+                    ""sub_type"": ""Visa"",
+                    ""type"": ""card""
+                }}
+            }}
+        }}";
+
+        var payloadDoc = JsonDocument.Parse(jsonPayload);
+
+        // Act
+        var result = await controller.PaymobCallback(payloadDoc.RootElement, CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var updatedOrder = await dbContext.Orders.Include(o => o.Payment).FirstOrDefaultAsync(o => o.Id == orderId);
+        updatedOrder!.PaymentStatus.Should().Be(PaymentStatus.Paid);
+        updatedOrder.OrderStatus.Should().Be(OrderStatus.Confirmed);
+        updatedOrder.Payment.Should().NotBeNull();
+        updatedOrder.Payment!.TransactionReference.Should().Be("paymob_tx_800");
+    }
+
+    [Fact]
+    public async Task PaymobRedirectCallback_Success_ShouldMarkAsPaidAndConfirm()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var orderId = Guid.NewGuid();
+        var order = new Order
+        {
+            Id = orderId,
+            TotalAmount = 800.00m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.Pending
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var controller = new PaymentsController(dbContext, _mockPaymentService.Object, _mockLogger.Object);
+
+        // Act
+        var result = await controller.PaymobRedirectCallback(
+            success: "true",
+            id: "518931048",
+            amountCents: "80000",
+            merchantOrderId: null,
+            specialReference: orderId.ToString(),
+            orderParam: null,
+            hmac: "mock_hmac",
+            cancellationToken: CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var updatedOrder = await dbContext.Orders.Include(o => o.Payment).FirstOrDefaultAsync(o => o.Id == orderId);
+        updatedOrder!.PaymentStatus.Should().Be(PaymentStatus.Paid);
+        updatedOrder.OrderStatus.Should().Be(OrderStatus.Confirmed);
+        updatedOrder.Payment.Should().NotBeNull();
+        updatedOrder.Payment!.TransactionReference.Should().Be("518931048");
+    }
+
+    [Fact]
     public async Task PaymobCallback_InvalidHmac_ShouldReturnUnauthorizedAndNoMutation()
     {
         // Arrange
