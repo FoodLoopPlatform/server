@@ -30,17 +30,16 @@ public class AiServiceLiveIntegrationTests
             Timeout = TimeSpan.FromSeconds(30)
         };
 
-        var pipelineRegistry = new ResiliencePipelineRegistry<string>();
-        
-        // Register passthrough business pipeline for live test
-        pipelineRegistry.TryAdd("AiServiceBusinessPipeline", new ResiliencePipelineBuilder<HttpResponseMessage>().Build());
-        pipelineRegistry.TryAdd("AiServiceHealthPipeline", new ResiliencePipelineBuilder<HttpResponseMessage>().Build());
+        var mockPipelineProvider = new Mock<ResiliencePipelineProvider<string>>();
+        mockPipelineProvider
+            .Setup(p => p.GetPipeline<HttpResponseMessage>(It.IsAny<string>()))
+            .Returns(ResiliencePipeline<HttpResponseMessage>.Empty);
 
         var mockLogger = new Mock<ILogger<AiServiceClient>>();
         var mockCorrelation = new Mock<ICorrelationIdAccessor>();
         mockCorrelation.Setup(c => c.GetCorrelationId()).Returns("live-test-corr-id-123");
 
-        _client = new AiServiceClient(httpClient, pipelineRegistry, mockLogger.Object, mockCorrelation.Object);
+        _client = new AiServiceClient(httpClient, mockPipelineProvider.Object, mockLogger.Object, mockCorrelation.Object);
     }
 
     [Fact]
@@ -64,7 +63,7 @@ public class AiServiceLiveIntegrationTests
     {
         var version = await _client.GetVersionAsync();
         version.Should().NotBeNull();
-        version.AppName.Should().Be("FoodLoop AI Service");
+        version.ResolvedName.Should().Be("FoodLoop AI Service");
         version.Version.Should().Be("1.0.0");
     }
 

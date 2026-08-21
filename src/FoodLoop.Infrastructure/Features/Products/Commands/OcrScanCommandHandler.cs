@@ -109,7 +109,7 @@ public class OcrScanCommandHandler : IRequestHandler<OcrScanCommand, OcrResultDt
             var categories = await _db.Categories.ToListAsync(cancellationToken);
             var matched = categories.FirstOrDefault(c => 
                 c.Name.Equals(analysis.SuggestedCategory, StringComparison.OrdinalIgnoreCase) ||
-                c.NameAr.Equals(analysis.SuggestedCategory, StringComparison.OrdinalIgnoreCase) ||
+                (c.NameAr != null && c.NameAr.Equals(analysis.SuggestedCategory, StringComparison.OrdinalIgnoreCase)) ||
                 analysis.SuggestedCategory.Contains(c.Name, StringComparison.OrdinalIgnoreCase));
             
             if (matched != null)
