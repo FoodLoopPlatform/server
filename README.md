@@ -260,10 +260,9 @@ graph TD
 
 All technical specifications, endpoint maps, and testing guides are organized in the [`docs/`](file:///c:/ITI/server/docs/) directory:
 
-| Guide / Specification | Location | Description |
-| :--- | :--- | :--- |
-| **Backend Architecture** | [`docs/backend-architecture.md`](file:///c:/ITI/server/docs/backend-architecture.md) | Clean Architecture layers, CQRS with MediatR, and persistence. |
+| **Screens Visual Gallery** | [`Screens/README.md`](file:///c:/ITI/server/Screens/README.md) | Visual catalog with embedded screenshots of all 59 UI screens. |
 | **Screens to Endpoints Map** | [`docs/screens-to-endpoints.md`](file:///c:/ITI/server/docs/screens-to-endpoints.md) | UI screen-to-API routing and method mapping. |
+| **Backend Architecture** | [`docs/backend-architecture.md`](file:///c:/ITI/server/docs/backend-architecture.md) | Clean Architecture layers, CQRS with MediatR, and persistence. |
 | **Complete API Testing Guide** | [`docs/api_testing_guide.md`](file:///c:/ITI/server/docs/api_testing_guide.md) | Endpoint testing manual with payloads for all controllers. |
 | **Notification Specification** | [`docs/notifications-spec.md`](file:///c:/ITI/server/docs/notifications-spec.md) | Hybrid SignalR WebSocket & FCM push, write-time localization. |
 | **Payment Specification** | [`docs/payment-spec.md`](file:///c:/ITI/server/docs/payment-spec.md) | Paymob Unified Checkout, Webhooks, Wallet balance, and Refunds. |
