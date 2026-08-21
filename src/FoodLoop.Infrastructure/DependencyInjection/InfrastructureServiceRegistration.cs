@@ -225,7 +225,7 @@ public static class InfrastructureServiceRegistration
                 {
                     options.BaseUrl = configuration["AI_SERVICE_BASE_URL"] 
                         ?? Environment.GetEnvironmentVariable("AI_SERVICE_BASE_URL") 
-                        ?? "http://54.92.183.187:8000";
+                        ?? "http://3.94.7.125:8000";
                 }
             })
             .ValidateDataAnnotations()
