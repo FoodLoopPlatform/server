@@ -99,14 +99,14 @@ The following audit verifies the test coverage and status for every mandatory sc
 
 ## 2. Test Execution & Pass Rates
 
-A clean execution of the test suite was performed. Zero regressions or failures were discovered.
+A clean execution of the test suite was performed. Zero regressions or failures were discovered across all test layers.
 
-| Test Project | Total Tests | Passed | Failed | Pass Rate |
-| :--- | :--- | :--- | :--- | :--- |
-| `FoodLoop.Domain.Tests` | 28 | 28 | 0 | 100% |
-| `FoodLoop.Application.Tests` | 11 | 11 | 0 | 100% |
-| `FoodLoop.Infrastructure.Tests` | 206 | 206 | 0 | 100% |
-| **Total Test Suite** | **245** | **245** | **0** | **100%** |
+| Test Project | Total Tests | Passed | Failed | Skipped | Pass Rate |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `FoodLoop.Domain.Tests` | 28 | 28 | 0 | 0 | 100% |
+| `FoodLoop.Application.Tests` | 11 | 11 | 0 | 0 | 100% |
+| `FoodLoop.Infrastructure.Tests` | 451 | 451 | 0 | 0 | 100% |
+| **Total Test Suite** | **490** | **490** | **0** | **0** | **100%** |
 
 ---
 
