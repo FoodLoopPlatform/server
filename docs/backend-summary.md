@@ -379,38 +379,35 @@ The backend platform is fully developed, tested, and live with the following cap
 
 ### 8. ⚡ Real-Time & Communications
 * **SignalR WebSockets**: Instant live push notifications for order updates, donations, and support replies.
+* **Firebase Cloud Messaging (FCM)**: Mobile background push notifications (`POST /notifications/device-token`).
 * **Localized Email Service**: HTML email notifications (Welcome, Approval, Rejection, Password Reset) with web login links.
-* **100% Automated Test Suite**: 260 integration assertions passing via `api_tests.sh`.
+* **100% Automated Test Suite**: 490 automated tests passing across Domain, Application, and Infrastructure layers.
+
+### 9. 🤖 AI Microservice & Intelligent Pricing
+* **Dual LangGraph Agents**: Monitoring Agent (inventory risk & holiday/weather tool routing) + Pricing Agent (0–15% markdown optimization).
+* **RAG Vector Knowledge**: Qdrant vector store indexing historical pricing episodes using BGE-M3 1024-d multilingual embeddings.
+* **Safety Margin Shield**: Price floor validation protecting merchant costs.
+* **Payment Processing**: Paymob unified checkout (Card & Wallets) with callbacks and customer wallet management.
 
 ---
 
-## 7. Future Roadmap & Next Steps (What Will Be Done Next)
+## 7. Future Roadmap & Next Steps
 
-The following enhancements and modules are planned for subsequent phases of the platform:
+The following enhancements are planned for subsequent phases of the platform:
 
-### 1. 💳 Live Payment Gateway Integration
-* **Direct Egyptian Gateway Integration**: Webhook receivers and automated payment capture for **Paymob**, **Fawry**, **Instapay**, and **Vodafone Cash / Mobile Wallets**.
-* **Automated In-App Refunds**: Direct refund dispatch through payment gateway APIs upon order cancellations or resolved disputes.
-
-### 2. 🚚 Dedicated Delivery Fleet & Driver App API
+### 1. 🚚 Dedicated Delivery Fleet & Driver App API
 * **Driver Role & Dispatch System**: Dedicated endpoints for third-party or in-house delivery couriers.
 * **Live GPS Route Tracking**: Real-time driver location streaming to customer apps during active order delivery.
 * **Proof of Delivery**: Digital signatures or OTP confirmation codes upon package handover.
 
-### 3. 🤖 Advanced Machine Learning Pricing Engine
-* **Demand-Driven Dynamic Pricing**: AI models forecasting optimal discount percentages based on historical store foot traffic, time of day, and weather patterns.
-* **AI Recipe Suggestions**: Recommending quick recipes for customers based on complementary surplus ingredients available near them.
-
-### 4. 🏢 Enterprise ERP & POS Synchronization
+### 2. 🏢 Enterprise ERP & POS Synchronization
 * **Retail POS Connectors**: Direct sync connectors and webhooks for supermarket ERP systems (Odoo, SAP, Microsoft Dynamics, Symphony) to sync expiring inventory automatically without manual CSV uploads.
 
-### 5. 📱 Mobile Push Notifications (FCM / APNs)
-* **Background Push Notifications**: Firebase Cloud Messaging (FCM) and Apple APNs integration for mobile lock-screen alerts when deals drop nearby or order status updates occur.
-
-### 6. 🏆 Consumer Eco-Impact Gamification
+### 3. 🏆 Consumer Eco-Impact Gamification
 * **Carbon / Food Waste Badges**: Tracking customer total kilograms of food saved and estimated CO₂ footprint reductions ("Eco Hero", "Zero Waste Champion").
 * **Loyalty Points & Rewards**: Earning points on surplus purchases redeemable for bonus discounts.
 
-### 7. 🥗 Charity Beneficiary & Distribution Logs
+### 4. 🥗 Charity Beneficiary & Distribution Logs
 * **Charity Distribution Records**: Inner-NGO management tools to record which families/charity kitchens received specific donated surplus food batches.
+
 

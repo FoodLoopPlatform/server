@@ -194,31 +194,65 @@ graph TD
 
 ---
 
-## 8. Configuration Schema (`appsettings.json`)
+## 8. Configuration Schema (`appsettings.json` / `.env`)
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=...;Database=...;User Id=...;Password=...;"
+    "DefaultConnection": "Server=YOUR_SERVER;Database=YOUR_DB;User Id=YOUR_USER;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;"
   },
-  "JwtSettings": {
+  "Jwt": {
+    "Issuer": "FoodLoop.API",
+    "Audience": "FoodLoop.Clients",
     "Secret": "A_MINIMUM_32_CHARACTER_CRYPTOGRAPHIC_SECURITY_KEY_HERE",
-    "ExpiryInMinutes": 60
+    "AccessTokenExpirationMinutes": 15,
+    "RefreshTokenExpirationDays": 30
   },
-  "Smtp": {
-    "Host": "smtp-relay.brevo.com",
-    "Port": 587,
-    "Username": "your_email@example.com",
-    "Password": "your_api_key",
-    "FromEmail": "noreply@foodloop.com"
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "https://web-nine-ivory-36.vercel.app",
+      "https://foodloop.runasp.net"
+    ]
   },
-  "Cloudinary": {
-    "Url": "cloudinary://API_KEY:API_SECRET@CLOUD_NAME"
+  "AiService": {
+    "BaseUrl": "http://3.94.7.125:8000",
+    "TimeoutSeconds": 60
+  },
+  "MonitoringScanner": {
+    "IntervalMinutes": 60,
+    "ExpirationThresholdDays": 3,
+    "VelocityThresholdMultiplier": 0.8
+  },
+  "AiPricingBatch": {
+    "IntervalMinutes": 60
+  },
+  "HistoricalIngestion": {
+    "IntervalMinutes": 60,
+    "BatchSize": 100
+  },
+  "Gemini": {
+    "ApiKey": "YOUR_GEMINI_API_KEY",
+    "Model": "gemini-1.5-flash"
+  },
+  "Paymob": {
+    "BaseUrl": "https://accept.paymob.com",
+    "ApiKey": "YOUR_PAYMOB_API_KEY",
+    "IntegrationId": "5855304",
+    "IframeId": "1069687",
+    "PublicKey": "YOUR_PAYMOB_PUBLIC_KEY",
+    "HmacSecret": "YOUR_PAYMOB_HMAC_SECRET"
+  },
+  "Firebase": {
+    "Enabled": false,
+    "ProjectId": "YOUR_PROJECT_ID",
+    "ServiceAccountJson": ""
   }
 }
 ```
 
-*Note: Environment variables (`SMTP_HOST`, `CLOUDINARY_URL`, etc.) loaded from a `.env` file override standard configurations automatically at startup.*
+*Note: Environment variables loaded from `.env` or system environment variables automatically override `appsettings.json` in production.*
 
 ---
 
@@ -235,7 +269,7 @@ All technical specifications, endpoint maps, and testing guides are organized in
 | **Payment Specification** | [`docs/payment-spec.md`](file:///c:/ITI/server/docs/payment-spec.md) | Paymob Unified Checkout, Webhooks, Wallet balance, and Refunds. |
 | **Authentication Flow** | [`docs/auth-flow.md`](file:///c:/ITI/server/docs/auth-flow.md) | Multi-role registration, JWT token rotation, and verification gates. |
 | **Data Storage Schema** | [`docs/data-storage.md`](file:///c:/ITI/server/docs/data-storage.md) | Relational database schema, indexes, and soft-delete policies. |
-| **AI Role & Integration** | [`docs/ai-role.md`](file:///c:/ITI/server/docs/ai-role.md) | OCR scanning, price recommendations, and fail-closed mitigations. |
+| **AI Role & Architecture** | [`docs/ai-role.md`](file:///c:/ITI/server/docs/ai-role.md) | Dual-agent LangGraph architecture, LLM reasoning, RAG vector store, and margin shields. |
 | **Verification & Step Reports**| [`docs/reports/`](file:///c:/ITI/server/docs/reports/) | Step-by-step test reports and cross-service audit logs. |
 
 ---
@@ -244,10 +278,11 @@ All technical specifications, endpoint maps, and testing guides are organized in
 
 Run the full test suite across all layers:
 ```powershell
-dotnet test FoodLoop.sln
+dotnet test
 ```
-*   **Total Tests**: 321 / 321 Passing (100% Green)
-    *   `FoodLoop.Domain.Tests`: 50 tests
-    *   `FoodLoop.Application.Tests`: 134 tests
-    *   `FoodLoop.Infrastructure.Tests`: 137 tests
+*   **Total Tests**: **490 / 490 Passing (100% Green)**
+    *   `FoodLoop.Domain.Tests`: 28 tests (100% passing)
+    *   `FoodLoop.Application.Tests`: 11 tests (100% passing)
+    *   `FoodLoop.Infrastructure.Tests`: 451 tests (100% passing)
+
 

@@ -1,7 +1,15 @@
 # Known Issues & Technical Debts
 
-## 1. Fail-Closed ExpiryVerificationState Mitigation (Single-Upload)
-While the AI service integration is paused, the `ExpiryVerificationState` field is client-supplied (via `CreateProductRequest.ExpiryVerificationState`) but is **ignored** for product status determination. All newly created products are forced to `ProductStatus.PendingModeration` to prevent client-side bypass of the moderation queue and ensure the admin `ProductUploaded` notification always fires. This mitigation should be revisited and updated to re-enable AI-confidence-driven `Active` status once the AI microservice is restored.
+## 1. AI Service Integration Status (Resolved & Fully Integrated)
+* **Status**: **RESOLVED & OPERATIONAL**
+* **Deployment**: Live Python FastAPI microservice deployed on AWS EC2 (`http://3.94.7.125:8000`).
+* **Integration**: Fully integrated with ASP.NET Core backend via `AiServiceClient`, Polly v8 resilience pipelines, and three automated background hosted services (`MonitoringScannerHostedService`, `PricingBatchHostedService`, `HistoricalIngestionHostedService`).
+* **Verification**: All 490 automated tests across Domain, Application, and Infrastructure pass 100% green.
 
 ## 2. Fail-Closed Bulk CSV Upload Mitigation (Resolved)
-Previously, the bulk-upload command handler (`BulkUploadProductsCommandHandler`) created products with `ProductStatus.Active` unconditionally, representing a bypass of the moderation controls. Following the precedent of single-upload fail-closed enforcement (commit `7551215`), the bulk-upload handler now forces all imported products to `ProductStatus.PendingModeration` and dispatches `ProductUploaded` admin notifications per item. Any client-supplied `expiryverificationstate` header in the CSV is optionally parsed and retained on the entity for later AI reconciliation.
+* **Status**: **RESOLVED**
+* The bulk-upload handler (`BulkUploadProductsCommandHandler`) creates imported products in `ProductStatus.PendingModeration` and dispatches `ProductUploaded` admin notifications per item to ensure full platform governance.
+
+## 3. Production CORS Allowed Origins (Resolved)
+* **Status**: **RESOLVED**
+* Added deployed production domain `https://foodloop.runasp.net` to `Cors:AllowedOrigins` in `appsettings.json` and `appsettings.Development.json` to ensure clean Swagger UI and SPA API execution.
