@@ -147,8 +147,10 @@ All endpoints are live at `https://foodloop.runasp.net`.
 | `audit_log_no_results_state` | GET | `/admin/users/{id}/activity-log` | Admin | Empty array response |
 | `platform_analytics_dashboard` | GET | `/admin/analytics/summary` | Admin | Total users / stores / orders / savings |
 | `moderation_queue_active_state` | GET | `/admin/products/pending-ai` | Admin | Low-confidence AI products awaiting review |
-| `moderation_queue_empty_state` | GET | `/admin/products/pending-ai` | Admin | Empty array response |
-| `ai_pricing_recommendation_review` | PATCH | `/admin/products/{id}/approve` | Admin | Approves a pending product |
+| `ai_pricing_recommendation_review` | GET | `/stores/me/ai-recommendations` | Merchant | Lists pending AI pricing proposals for merchant store |
+| | POST | `/stores/me/ai-recommendations/{id}/approve` | Merchant | Approves AI price cut recommendation |
+| | POST | `/stores/me/ai-recommendations/{id}/reject` | Merchant | Rejects AI price cut with reason |
+| | PATCH | `/admin/products/{id}/approve` | Admin | Approves a pending product |
 | | PATCH | `/admin/products/{id}/reject` | Admin | Rejects with a note |
 | | PATCH | `/admin/products/{id}/request-changes` | Admin | Requests changes with instructions |
 | `dispute_handling_resolution` | GET | `/admin/disputes` | Admin | Filters: isResolved / pageNumber / pageSize |
