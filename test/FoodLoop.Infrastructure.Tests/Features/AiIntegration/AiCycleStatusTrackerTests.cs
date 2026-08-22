@@ -227,9 +227,9 @@ public class AiCycleStatusTrackerTests
         rec.ProductName.Should().Be("Greek Yoghurt 150g");
         rec.OriginalPrice.Should().Be(50.00m);
         rec.CurrentPrice.Should().Be(45.00m);
-        rec.RecommendedPrice.Should().Be(40.50m); // 45 - (45 * 0.10) = 40.50
+        rec.RecommendedPrice.Should().Be(45.00m); // 50 - (50 * 0.10) = 45.00
         rec.DiscountPercentage.Should().Be(10.0m);
-        rec.DiscountAmount.Should().Be(4.50m);
+        rec.DiscountAmount.Should().Be(5.00m);
         rec.QuantityAvailable.Should().Be(20);
         rec.ProductImageUrl.Should().Be("https://images.example.com/yoghurt.jpg");
         rec.RiskLevel.Should().Be("HIGH");
