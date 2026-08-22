@@ -50,8 +50,11 @@ public class GetPendingAiRecommendationsQueryHandler : IRequestHandler<GetPendin
             var originalPrice = r.SnapshotOriginalPrice ?? (product != null ? product.OriginalPrice : 0m);
             var currentPrice = product != null ? product.DiscountedPrice : originalPrice;
             var discountPercentage = r.DiscountPercentage;
-            var discountAmount = Math.Round(originalPrice * (discountPercentage / 100m), 2);
-            var recommendedPrice = Math.Max(0m, originalPrice - discountAmount);
+
+            // Compute discount from current active price so recommendedPrice is always <= currentPrice
+            var basePrice = currentPrice > 0 ? currentPrice : originalPrice;
+            var discountAmount = Math.Round(basePrice * (discountPercentage / 100m), 2);
+            var recommendedPrice = Math.Max(0m, basePrice - discountAmount);
             var quantity = r.SnapshotQuantityAvailable ?? (product != null ? product.QuantityAvailable : 0);
             var expiry = product != null ? product.ExpirationDate : today;
             var daysRemaining = Math.Max(0, expiry.DayNumber - today.DayNumber);

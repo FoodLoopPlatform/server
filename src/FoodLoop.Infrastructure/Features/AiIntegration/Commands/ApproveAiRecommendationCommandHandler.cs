@@ -117,7 +117,10 @@ public class ApproveAiRecommendationCommandHandler : IRequestHandler<ApproveAiRe
             var settings = await _dbContext.SystemSettings.FirstOrDefaultAsync(cancellationToken);
             var floorPolicy = settings?.DefaultPriceFloorPolicy ?? PriceFloorPolicy.DynamicAi;
             var currentFloor = PriceFloorCalculator.Calculate(product.OriginalPrice, floorPolicy);
-            var proposedPrice = product.OriginalPrice * (1.0m - rec.DiscountPercentage / 100.0m);
+            var basePrice = product.DiscountedPrice > 0 && product.DiscountedPrice < product.OriginalPrice
+                ? product.DiscountedPrice
+                : product.OriginalPrice;
+            var proposedPrice = Math.Round(basePrice * (1.0m - rec.DiscountPercentage / 100.0m), 2);
 
             if (proposedPrice < currentFloor)
             {
