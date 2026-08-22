@@ -9,6 +9,8 @@ using FoodLoop.Application.Features.Users.Queries;
 using FoodLoop.Application.DTOs.Orders;
 using FoodLoop.Application.Features.Orders.Queries;
 using FoodLoop.Application.Features.AiIntegration.Commands;
+using FoodLoop.Application.Features.AiIntegration.Queries;
+using FoodLoop.Application.Common.DTOs.AI;
 using FoodLoop.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -552,6 +554,21 @@ public class AdminController : ControllerBase
             return BadRequest(ApiResponse<string>.Fail(result.Message ?? "Historical ingestion sweep failed.", result.Errors));
         }
         return Ok(ApiResponse<string>.Ok("Historical ingestion sweep completed successfully."));
+    }
+
+    /// <summary>
+    /// GET /admin/ai-status — get real-time execution status and next scheduled run timestamps for all AI background cycles.
+    /// Gated to AppRole.Admin.
+    /// </summary>
+    [HttpGet("ai-status")]
+    public async Task<IActionResult> GetAiStatus(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetAiCycleStatusQuery(), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<object?>.Fail(result.Message ?? "Failed to fetch AI status."));
+        }
+        return Ok(ApiResponse<AiCyclesOverviewDto>.Ok(result.Data!));
     }
 
     /// <summary>

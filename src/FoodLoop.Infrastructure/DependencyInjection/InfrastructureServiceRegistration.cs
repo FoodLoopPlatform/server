@@ -297,6 +297,7 @@ public static class InfrastructureServiceRegistration
         .AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
 
         services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IAiCycleStatusTracker, AiCycleStatusTracker>();
 
         services.AddOptions<MonitoringScannerOptions>()
             .Bind(configuration.GetSection(MonitoringScannerOptions.SectionName))

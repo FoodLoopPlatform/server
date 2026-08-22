@@ -279,9 +279,9 @@ Run the full test suite across all layers:
 ```powershell
 dotnet test
 ```
-*   **Total Tests**: **490 / 490 Passing (100% Green)**
+*   **Total Tests**: **497 / 497 Passing (100% Green)**
     *   `FoodLoop.Domain.Tests`: 28 tests (100% passing)
     *   `FoodLoop.Application.Tests`: 11 tests (100% passing)
-    *   `FoodLoop.Infrastructure.Tests`: 451 tests (100% passing)
+    *   `FoodLoop.Infrastructure.Tests`: 458 tests (100% passing)
 
 

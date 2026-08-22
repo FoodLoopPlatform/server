@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Features.AiIntegration.Commands;
 using FoodLoop.Infrastructure.Options;
 using MediatR;
@@ -15,15 +16,20 @@ public class HistoricalIngestionHostedService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IOptionsMonitor<HistoricalIngestionOptions> _optionsMonitor;
+    private readonly IAiCycleStatusTracker _cycleStatusTracker;
     private readonly ILogger<HistoricalIngestionHostedService> _logger;
+
+    public const string CycleName = "HistoricalIngestion";
 
     public HistoricalIngestionHostedService(
         IServiceProvider serviceProvider,
         IOptionsMonitor<HistoricalIngestionOptions> optionsMonitor,
+        IAiCycleStatusTracker cycleStatusTracker,
         ILogger<HistoricalIngestionHostedService> logger)
     {
         _serviceProvider = serviceProvider;
         _optionsMonitor = optionsMonitor;
+        _cycleStatusTracker = cycleStatusTracker;
         _logger = logger;
     }
 
@@ -40,6 +46,7 @@ public class HistoricalIngestionHostedService : BackgroundService
             }
 
             _logger.LogInformation("Starting scheduled AI historical pricing ingestion sweep. Next run in {Minutes} minutes.", intervalMinutes);
+            _cycleStatusTracker.RecordCycleStarted(CycleName);
 
             try
             {
@@ -48,10 +55,12 @@ public class HistoricalIngestionHostedService : BackgroundService
 
                 await mediator.Send(new RunHistoricalIngestionCommand(), stoppingToken);
 
+                _cycleStatusTracker.RecordCycleCompleted(CycleName, intervalMinutes);
                 _logger.LogInformation("AI historical pricing ingestion sweep completed successfully.");
             }
             catch (Exception ex)
             {
+                _cycleStatusTracker.RecordCycleFailed(CycleName, ex.Message, intervalMinutes);
                 _logger.LogError(ex, "An error occurred during background AI historical pricing ingestion sweep execution.");
             }
 

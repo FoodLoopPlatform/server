@@ -45,6 +45,20 @@ public class AiRecommendationsController : ControllerBase
     }
 
     /// <summary>
+    /// GET stores/me/ai-recommendations/schedule — get next scheduled AI pricing batch run time and automation mode for this store.
+    /// </summary>
+    [HttpGet("schedule")]
+    public async Task<IActionResult> GetAiSchedule(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetStoreAiScheduleQuery(OwnerId), cancellationToken);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<object?>.Fail(result.Message ?? "Failed to fetch AI schedule."));
+        }
+        return Ok(ApiResponse<StoreAiScheduleDto>.Ok(result.Data!));
+    }
+
+    /// <summary>
     /// POST stores/me/ai-recommendations/{id}/approve — approve a recommendation.
     /// </summary>
     [HttpPost("{id}/approve")]

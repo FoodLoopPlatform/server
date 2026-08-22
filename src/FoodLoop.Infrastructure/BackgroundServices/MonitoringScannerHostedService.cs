@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Features.AiIntegration.Commands;
 using FoodLoop.Infrastructure.Options;
 using MediatR;
@@ -15,15 +16,20 @@ public class MonitoringScannerHostedService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IOptionsMonitor<MonitoringScannerOptions> _optionsMonitor;
+    private readonly IAiCycleStatusTracker _cycleStatusTracker;
     private readonly ILogger<MonitoringScannerHostedService> _logger;
+
+    public const string CycleName = "MonitoringScanner";
 
     public MonitoringScannerHostedService(
         IServiceProvider serviceProvider,
         IOptionsMonitor<MonitoringScannerOptions> optionsMonitor,
+        IAiCycleStatusTracker cycleStatusTracker,
         ILogger<MonitoringScannerHostedService> logger)
     {
         _serviceProvider = serviceProvider;
         _optionsMonitor = optionsMonitor;
+        _cycleStatusTracker = cycleStatusTracker;
         _logger = logger;
     }
 
@@ -40,6 +46,7 @@ public class MonitoringScannerHostedService : BackgroundService
             }
 
             _logger.LogInformation("Starting scheduled AI monitoring scan. Next run in {Minutes} minutes.", intervalMinutes);
+            _cycleStatusTracker.RecordCycleStarted(CycleName);
 
             try
             {
@@ -48,10 +55,12 @@ public class MonitoringScannerHostedService : BackgroundService
 
                 await mediator.Send(new RunMonitoringScanCommand(), stoppingToken);
 
+                _cycleStatusTracker.RecordCycleCompleted(CycleName, intervalMinutes);
                 _logger.LogInformation("AI monitoring scan run completed successfully.");
             }
             catch (Exception ex)
             {
+                _cycleStatusTracker.RecordCycleFailed(CycleName, ex.Message, intervalMinutes);
                 _logger.LogError(ex, "An error occurred during background AI monitoring scan execution.");
             }
 

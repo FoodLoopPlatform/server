@@ -1,3 +1,4 @@
+using FoodLoop.Application.Common.Interfaces;
 using FoodLoop.Application.Features.AiIntegration.Commands;
 using FoodLoop.Infrastructure.Options;
 using MediatR;
@@ -15,15 +16,20 @@ public class PricingBatchHostedService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IOptionsMonitor<PricingBatchOptions> _optionsMonitor;
+    private readonly IAiCycleStatusTracker _cycleStatusTracker;
     private readonly ILogger<PricingBatchHostedService> _logger;
+
+    public const string CycleName = "PricingBatch";
 
     public PricingBatchHostedService(
         IServiceProvider serviceProvider,
         IOptionsMonitor<PricingBatchOptions> optionsMonitor,
+        IAiCycleStatusTracker cycleStatusTracker,
         ILogger<PricingBatchHostedService> logger)
     {
         _serviceProvider = serviceProvider;
         _optionsMonitor = optionsMonitor;
+        _cycleStatusTracker = cycleStatusTracker;
         _logger = logger;
     }
 
@@ -40,6 +46,7 @@ public class PricingBatchHostedService : BackgroundService
             }
 
             _logger.LogInformation("Starting scheduled AI pricing batch run. Next run in {Minutes} minutes.", intervalMinutes);
+            _cycleStatusTracker.RecordCycleStarted(CycleName);
 
             try
             {
@@ -48,10 +55,12 @@ public class PricingBatchHostedService : BackgroundService
 
                 await mediator.Send(new RunPricingBatchCommand(), stoppingToken);
 
+                _cycleStatusTracker.RecordCycleCompleted(CycleName, intervalMinutes);
                 _logger.LogInformation("AI pricing batch run completed successfully.");
             }
             catch (Exception ex)
             {
+                _cycleStatusTracker.RecordCycleFailed(CycleName, ex.Message, intervalMinutes);
                 _logger.LogError(ex, "An error occurred during background AI pricing batch execution.");
             }
 

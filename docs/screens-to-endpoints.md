@@ -146,13 +146,14 @@ All endpoints are live at `https://foodloop.runasp.net`.
 | | GET | `/admin/charities/{id}/activity-log` | Admin | Recent events for a charity |
 | `audit_log_no_results_state` | GET | `/admin/users/{id}/activity-log` | Admin | Empty array response |
 | `platform_analytics_dashboard` | GET | `/admin/analytics/summary` | Admin | Total users / stores / orders / savings |
-| `moderation_queue_active_state` | GET | `/admin/products/pending-ai` | Admin | Low-confidence AI products awaiting review |
-| `ai_pricing_recommendation_review` | GET | `/stores/me/ai-recommendations` | Merchant | Lists pending AI pricing proposals for merchant store |
+| `ai_pricing_recommendation_review` | GET | `/stores/me/ai-recommendations` | Merchant | Lists pending AI pricing proposals for merchant store with full pricing numbers |
+| | GET | `/stores/me/ai-recommendations/schedule` | Merchant | Returns next scheduled pricing cycle timestamp and store automation mode |
 | | POST | `/stores/me/ai-recommendations/{id}/approve` | Merchant | Approves AI price cut recommendation |
 | | POST | `/stores/me/ai-recommendations/{id}/reject` | Merchant | Rejects AI price cut with reason |
 | | PATCH | `/admin/products/{id}/approve` | Admin | Approves a pending product |
 | | PATCH | `/admin/products/{id}/reject` | Admin | Rejects with a note |
 | | PATCH | `/admin/products/{id}/request-changes` | Admin | Requests changes with instructions |
+| | GET | `/admin/ai-status` | Admin | Returns real-time execution status and next run times for all AI cycles |
 | `dispute_handling_resolution` | GET | `/admin/disputes` | Admin | Filters: isResolved / pageNumber / pageSize |
 | | PATCH | `/admin/disputes/{id}/resolve` | Admin | Marks dispute resolved with admin note |
 
