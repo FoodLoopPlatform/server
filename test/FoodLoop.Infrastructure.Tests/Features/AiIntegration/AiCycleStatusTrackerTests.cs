@@ -235,4 +235,88 @@ public class AiCycleStatusTrackerTests
         rec.RiskLevel.Should().Be("HIGH");
         rec.DaysRemaining.Should().Be(2);
     }
+
+    [Fact]
+    public void GetCycleStatus_ShouldReturn_Unknown_WhenCycleNotTracked()
+    {
+        // Arrange
+        var tracker = new AiCycleStatusTracker();
+
+        // Act
+        var status = tracker.GetCycleStatus("NonExistentCycle");
+
+        // Assert
+        status.Should().NotBeNull();
+        status.CycleName.Should().Be("NonExistentCycle");
+        status.Status.Should().Be("Unknown");
+        status.IsRunning.Should().BeFalse();
+        status.IntervalMinutes.Should().Be(60);
+    }
+
+    [Fact]
+    public void InitializeCycle_ShouldUpdate_ExistingCycleInterval()
+    {
+        // Arrange
+        var tracker = new AiCycleStatusTracker();
+
+        // Act
+        tracker.InitializeCycle("PricingBatch", 15);
+        var status = tracker.GetCycleStatus("PricingBatch");
+
+        // Assert
+        status.IntervalMinutes.Should().Be(15);
+        status.Status.Should().Be("Scheduled");
+    }
+
+    [Fact]
+    public async Task GetStoreAiScheduleQueryHandler_ShouldFallbackToAssisted_WhenStoreNotFound()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var db = new ApplicationDbContext(options);
+        var tracker = new AiCycleStatusTracker();
+        var handler = new GetStoreAiScheduleQueryHandler(db, tracker);
+
+        // Act
+        var result = await handler.Handle(new GetStoreAiScheduleQuery(Guid.NewGuid()), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data!.AutomationMode.Should().Be("Assisted");
+    }
+
+    [Fact]
+    public async Task GetPendingAiRecommendationsQueryHandler_ShouldReturn_EmptyList_WhenNoPendingRecommendations()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var db = new ApplicationDbContext(options);
+        var merchantUserId = Guid.NewGuid();
+        var store = new Organization
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = merchantUserId,
+            Name = "Empty Store",
+            AiOperatingMode = AiOperatingMode.Assisted
+        };
+        await db.Organizations.AddAsync(store);
+        await db.SaveChangesAsync();
+
+        var handler = new GetPendingAiRecommendationsQueryHandler(db);
+
+        // Act
+        var result = await handler.Handle(new GetPendingAiRecommendationsQuery(merchantUserId), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data.Should().BeEmpty();
+    }
 }

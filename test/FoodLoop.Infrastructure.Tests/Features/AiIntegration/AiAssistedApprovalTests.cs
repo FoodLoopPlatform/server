@@ -304,6 +304,60 @@ public class AiAssistedApprovalTests
     }
 
     [Fact]
+    public async Task Approve_Pending_recommendation_with_max_15_percent_discount_should_apply_successfully()
+    {
+        // Arrange
+        using var dbContext = CreateSqliteContext();
+
+        var merchantUserId = Guid.NewGuid();
+        var user = new ApplicationUser { Id = merchantUserId, UserName = "merchant@test.com", Email = "merchant@test.com" };
+        dbContext.Users.Add(user);
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Assisted Store", AiOperatingMode = AiOperatingMode.Assisted, OwnerId = merchantUserId };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
+        var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 100m, DiscountedPrice = 100m, Organization = org, Category = category };
+        var risk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry", 0.9, "corr-id", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
+
+        // 15% discount recommended (max per cycle) -> should calculate 85.00m
+        var recommendation = new AiPricingRecommendation(
+            product.Id, org.Id, 15.0m, "Reason", 0.9,
+            AiActionRequirement.APPROVAL_REQUIRED, "ActionReason", "corr-id",
+            AiRecommendationStatus.Pending, risk.Id
+        )
+        {
+            SnapshotOriginalPrice = product.OriginalPrice,
+            SnapshotQuantityAvailable = product.QuantityAvailable,
+            SnapshotProductStatus = product.Status
+        };
+
+        dbContext.Organizations.Add(org);
+        dbContext.Categories.Add(category);
+        dbContext.Products.Add(product);
+        dbContext.AiRiskAssessments.Add(risk);
+        dbContext.AiPricingRecommendations.Add(recommendation);
+        await dbContext.SaveChangesAsync();
+
+        var handler = new ApproveAiRecommendationCommandHandler(dbContext, _timeProvider, _mockApproveLogger.Object);
+
+        dbContext.ChangeTracker.Clear();
+
+        // Act
+        var result = await handler.Handle(new ApproveAiRecommendationCommand(merchantUserId, recommendation.Id), CancellationToken.None);
+        dbContext.ChangeTracker.Clear();
+
+        // Assert
+        result.Success.Should().BeTrue();
+
+        var freshProduct = await dbContext.Products.FindAsync(product.Id);
+        freshProduct!.DiscountedPrice.Should().Be(85.00m);
+    }
+
+    [Fact]
     public async Task Reject_Pending_recommendation_should_set_Rejected_status_with_no_price_mutation()
     {
         // Arrange
