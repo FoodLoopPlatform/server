@@ -152,8 +152,9 @@ All endpoints are live at `https://foodloop.runasp.net`.
 | | POST | `/stores/me/ai-recommendations/{id}/reject` | Merchant | Rejects AI price cut with reason |
 | | PATCH | `/admin/products/{id}/approve` | Admin | Approves a pending product |
 | | PATCH | `/admin/products/{id}/reject` | Admin | Rejects with a note |
-| | PATCH | `/admin/products/{id}/request-changes` | Admin | Requests changes with instructions |
 | | GET | `/admin/ai-status` | Admin | Returns real-time execution status and next run times for all AI cycles |
+| `platform_settings_and_rules` | GET | `/admin/system-settings` | Admin | Fetches global platform rules & defaults |
+| | POST | `/admin/system-settings` | Admin | Updates platform rules. `defaultPriceFloorPolicy`: `DynamicAi` \| `Fixed30Percent` \| `Fixed50Percent`; `newBusinessDefaultAutomationMode`: `Manual` \| `Assisted` \| `Autonomous` |
 | `dispute_handling_resolution` | GET | `/admin/disputes` | Admin | Filters: isResolved / pageNumber / pageSize |
 | | PATCH | `/admin/disputes/{id}/resolve` | Admin | Marks dispute resolved with admin note |
 
