@@ -200,7 +200,7 @@ public class AiAssistedApprovalTests
             SnapshotProductStatus = product.Status
         };
 
-        // AI recommended 15% discount (proposed price 85m). Floor is 90% (90m). Below floor!
+        // AI recommended 15% discount (proposed price 85m). Store owner approves it manually.
         var recommendation = new AiPricingRecommendation(
             product.Id, org.Id, 15.0m, "Reason", 0.9,
             AiActionRequirement.APPROVAL_REQUIRED, "ActionReason", "corr-id",
@@ -228,18 +228,20 @@ public class AiAssistedApprovalTests
         dbContext.ChangeTracker.Clear();
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Message.Should().Contain("Proposed price");
+        result.Success.Should().BeTrue();
 
         var freshProduct = await dbContext.Products.FindAsync(product.Id);
-        freshProduct!.DiscountedPrice.Should().Be(100m); // Price NOT mutated
+        freshProduct!.DiscountedPrice.Should().Be(85m); // Price mutated by store owner approval
 
         var histories = await dbContext.PriceHistories.ToListAsync();
-        histories.Should().BeEmpty(); // No PriceHistory row written
+        histories.Should().HaveCount(1);
+        histories[0].NewDiscountedPrice.Should().Be(85m);
+        histories[0].ChangedBy.Should().Be(Guid.Empty);
+        histories[0].ChangeReason.Should().Contain("AI Assisted Approval by Store Owner");
     }
 
     [Fact]
-    public async Task Approve_Pending_recommendation_below_floor_should_transition_Approved_to_Rejected_with_no_PriceHistory_row()
+    public async Task Approve_Pending_recommendation_should_transition_to_Approved_with_PriceHistory_row()
     {
         // Arrange
         using var dbContext = CreateSqliteContext();
@@ -258,7 +260,7 @@ public class AiAssistedApprovalTests
             SnapshotProductStatus = product.Status
         };
 
-        // Recommended 15% discount (proposed price 85m). Floor is 90% (90m). Below floor!
+        // Recommended 15% discount (proposed price 85m).
         var recommendation = new AiPricingRecommendation(
             product.Id, org.Id, 15.0m, "Reason", 0.9,
             AiActionRequirement.APPROVAL_REQUIRED, "ActionReason", "corr-id",
@@ -286,17 +288,19 @@ public class AiAssistedApprovalTests
         dbContext.ChangeTracker.Clear();
 
         // Assert
-        result.Success.Should().BeFalse();
+        result.Success.Should().BeTrue();
 
         var freshRec = await dbContext.AiPricingRecommendations.SingleAsync();
-        freshRec.Status.Should().Be(AiRecommendationStatus.Rejected); // Transitioned to Rejected!
-        freshRec.ActionReason.Should().Be("Price Floor Violation on Approval");
+        freshRec.Status.Should().Be(AiRecommendationStatus.Approved); // Transitioned to Approved!
+        freshRec.ActionReason.Should().Be("Approved by merchant");
 
         var freshProduct = await dbContext.Products.FindAsync(product.Id);
-        freshProduct!.DiscountedPrice.Should().Be(100m); // Price NOT mutated
+        freshProduct!.DiscountedPrice.Should().Be(85m); // Price mutated
 
         var histories = await dbContext.PriceHistories.ToListAsync();
-        histories.Should().BeEmpty(); // No PriceHistory row written
+        histories.Should().HaveCount(1);
+        histories[0].NewDiscountedPrice.Should().Be(85m);
+        histories[0].ChangedBy.Should().Be(Guid.Empty);
     }
 
     [Fact]

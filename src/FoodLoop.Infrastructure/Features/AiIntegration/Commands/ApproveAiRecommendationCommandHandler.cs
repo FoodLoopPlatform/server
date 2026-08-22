@@ -113,25 +113,11 @@ public class ApproveAiRecommendationCommandHandler : IRequestHandler<ApproveAiRe
                 return Result<Unit>.Fail("Approval failed: Stale Recommendation - Product State Changed.");
             }
 
-            // Re-verify the price floor policy using the isolated calculator
-            var settings = await _dbContext.SystemSettings.FirstOrDefaultAsync(cancellationToken);
-            var floorPolicy = settings?.DefaultPriceFloorPolicy ?? PriceFloorPolicy.DynamicAi;
-            var currentFloor = PriceFloorCalculator.Calculate(product.OriginalPrice, floorPolicy);
+            // Calculate proposed price from discount percentage
             var proposedPrice = Math.Round(product.OriginalPrice * (1.0m - rec.DiscountPercentage / 100.0m), 2);
-
-            if (proposedPrice < currentFloor)
+            if (proposedPrice <= 0m)
             {
-                // FAILED FLOOR VERIFICATION: Transition Approved -> Rejected, set ActionReason
-                await _dbContext.AiPricingRecommendations
-                    .Where(r => r.Id == request.Id)
-                    .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, AiRecommendationStatus.Rejected)
-                                              .SetProperty(r => r.ActionReason, "Price Floor Violation on Approval"),
-                                        cancellationToken);
-
-                await transaction.CommitAsync(cancellationToken);
-
-                _logger.LogWarning("Price Floor Violation on Approval for Product {ProductId}: proposed price {Proposed} is below calculated floor {Floor}. CorrelationId: {CorrelationId}, Actor: {UserId}", product.Id, proposedPrice, currentFloor, rec.CorrelationId, request.MerchantUserId);
-                return Result<Unit>.Fail($"Approval failed: Proposed price {proposedPrice:C} falls below calculated price floor {currentFloor:C}. Status set to Rejected.");
+                proposedPrice = 0.01m; // Safety floor preventing negative/zero price
             }
 
             // SUCCESS PATH: Mutate price, write PriceHistory row, and leave Status = Approved with ExecutedAt set
@@ -142,7 +128,7 @@ public class ApproveAiRecommendationCommandHandler : IRequestHandler<ApproveAiRe
                 OldDiscountedPrice = product.DiscountedPrice,
                 NewOriginalPrice = product.OriginalPrice,
                 NewDiscountedPrice = proposedPrice,
-                ChangeReason = $"AI Assisted Approval (Correlation: {rec.CorrelationId})",
+                ChangeReason = $"AI Assisted Approval by Store Owner (Correlation: {rec.CorrelationId})",
                 ChangedBy = Guid.Empty
             };
             _dbContext.PriceHistories.Add(history);
@@ -151,11 +137,12 @@ public class ApproveAiRecommendationCommandHandler : IRequestHandler<ApproveAiRe
             
             // Set ExecutedAt timestamp on recommendation
             rec.ExecutedAt = _timeProvider.GetUtcNow();
+            rec.ActionReason = "Approved by merchant";
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            _logger.LogInformation("Assisted Pricing Recommendation approved and applied. Product: {ProductId}, New Price: {Price}. CorrelationId: {CorrelationId}, Actor: {UserId}", product.Id, proposedPrice, rec.CorrelationId, request.MerchantUserId);
+            _logger.LogInformation("Assisted Pricing Recommendation approved and applied by store owner. Product: {ProductId}, New Price: {Price}. CorrelationId: {CorrelationId}, Actor: {UserId}", product.Id, proposedPrice, rec.CorrelationId, request.MerchantUserId);
             return Result<Unit>.Ok(Unit.Value);
         }
         catch (Exception ex)
