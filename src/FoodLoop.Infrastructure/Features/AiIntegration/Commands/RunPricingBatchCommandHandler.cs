@@ -252,7 +252,10 @@ public class RunPricingBatchCommandHandler : IRequestHandler<RunPricingBatchComm
                             {
                                 // Independently re-validate the recommended discount against the current price floor
                                 var computedFloor = PriceFloorCalculator.Calculate(liveProduct.OriginalPrice, floorPolicy);
-                                var proposedPrice = liveProduct.OriginalPrice * (1.0m - (decimal)decision.DiscountPercentage / 100.0m);
+                                var basePrice = liveProduct.DiscountedPrice > 0 && liveProduct.DiscountedPrice < liveProduct.OriginalPrice
+                                    ? liveProduct.DiscountedPrice
+                                    : liveProduct.OriginalPrice;
+                                var proposedPrice = Math.Round(basePrice * (1.0m - (decimal)decision.DiscountPercentage / 100.0m), 2);
 
                                 if (proposedPrice >= computedFloor)
                                 {
