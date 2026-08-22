@@ -538,6 +538,7 @@ public record AiServiceVersionDto(string Name, string Version, string Environmen
 | **GET** | `/stores/me/ai-settings` | Merchant | None | `ApiResponse<AiSettingsDto>` |
 | **PATCH**| `/stores/me/ai-settings` | Merchant | `UpdateAiSettingsRequest` | `ApiResponse<AiSettingsDto>` |
 | **GET** | `/stores/me/ai-recommendations` | Merchant | None | `ApiResponse<IReadOnlyList<AiPricingRecommendationDto>>` |
+| **GET** | `/stores/me/ai-recommendations/schedule` | Merchant | None | `ApiResponse<StoreAiScheduleDto>` |
 | **POST** | `/stores/me/ai-recommendations/{id}/approve` | Merchant | None | `ApiResponse` |
 | **POST** | `/stores/me/ai-recommendations/{id}/reject` | Merchant | `RejectRecommendationRequest` | `ApiResponse` |
 | **GET** | `/admin/stores/commissions` | Admin | None | `ApiResponse<IReadOnlyList<StoreCommissionDto>>` |
@@ -546,6 +547,7 @@ public record AiServiceVersionDto(string Name, string Version, string Environmen
 | **POST** | `/admin/monitoring-scan` | Admin | None | `ApiResponse` |
 | **POST** | `/admin/pricing-batch` | Admin | None | `ApiResponse` |
 | **POST** | `/admin/historical-ingestion`| Admin | None | `ApiResponse` |
+| **GET** | `/admin/ai-status` | Admin | None | `ApiResponse<AiCyclesOverviewDto>` |
 
 ---
 
@@ -643,6 +645,7 @@ When a merchant approves a pending pricing recommendation (`POST /stores/me/ai-r
 | `IApplicationDbContext` | `ApplicationDbContext` | Scoped | Primary database entry point |
 | `IUnitOfWork` | `UnitOfWork` | Scoped | Repository management unit |
 | `IAiServiceClient` | `AiServiceClient` | Transient | API Client to the Python Service |
+| `IAiCycleStatusTracker`| `AiCycleStatusTracker` | Singleton | Telemetry & cycle scheduling status tracker |
 | `IPaymentService` | `PaymobService` | Scoped | Payment gateway processing |
 | `IOcrService` | `GeminiOcrService` | Scoped | Expiration text scanning |
 | `IEmailService` | `BrevoEmailService` | Scoped | Transactional emails |
@@ -659,8 +662,11 @@ When a merchant approves a pending pricing recommendation (`POST /stores/me/ai-r
 *   **`Jwt:Secret`:** Symmetric signing key (min 32 characters) for token signing and validation.
 *   **`Jwt:AccessTokenExpirationMinutes` / `RefreshTokenExpirationDays`:** Security token lease lifecycles.
 *   **`AdminUser:Email` / `Password`:** Seeded system credentials for the admin role.
-*   **`AiService:BaseUrl`:** Base URL of the python service (`http://localhost:8000`).
+*   **`AiService:BaseUrl`:** Base URL of the python service (`http://3.94.7.125:8000`).
 *   **`AiService:TimeoutSeconds`:** Context timeout boundary.
+*   **`MonitoringScanner:IntervalMinutes`:** AI inventory scanner interval (default: 60 min).
+*   **`AiPricingBatch:IntervalMinutes`:** AI pricing recommendation batch interval (default: 60 min).
+*   **`HistoricalIngestion:IntervalMinutes`:** Closed episode vector ingestion interval (default: 60 min).
 *   **`Cloudinary:CloudName` / `ApiKey` / `ApiSecret`:** Identity variables for Cloudinary.
 *   **`Brevo:ApiKey` / `SenderEmail`:** Brevo credentials.
 *   **`Paymob:ApiKey` / `IntegrationId` / `IframeId` / `HmacSecret`:** Paymob setup values.
@@ -694,7 +700,7 @@ When a merchant approves a pending pricing recommendation (`POST /stores/me/ai-r
    \end{cases}$$
 
 ### Automated Test Suite Status
-*   **Domain Tests:** 28 passed.
-*   **Application Tests:** 11 passed.
-*   **Infrastructure Tests:** 206 passed (includes all mock, integration, payments, and dispute policy tests).
-*   **Total Suite Status:** **245 Passed, 0 Failed**.
+*   **Domain Tests:** 28 passed (100%).
+*   **Application Tests:** 11 passed (100%).
+*   **Infrastructure Tests:** 458 passed (100%).
+*   **Total Suite Status:** **497 Passed, 0 Failed (100% Green)**.
