@@ -591,6 +591,43 @@ public class AdminController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(ApiResponse<StoreCommissionDto>.Ok(result));
     }
+
+    /// <summary>
+    /// POST /admin/products/extend-expiration — testing utility to extend expiration dates for products.
+    /// Accessible without auth for local/staging testing ease.
+    /// </summary>
+    [HttpPost("products/extend-expiration")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ExtendProductExpiration(
+        [FromBody] ExtendProductExpirationRequest? request,
+        CancellationToken cancellationToken)
+    {
+        var days = request?.Days ?? 7;
+        var reactivate = request?.ReactivateExpiredProducts ?? true;
+        var storeId = request?.StoreId;
+
+        var command = new ExtendProductExpirationCommand(days, reactivate, storeId);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<ExtendProductExpirationResultDto>.Fail(result.Message ?? "Failed to extend expiration dates."));
+        }
+
+        return Ok(ApiResponse<ExtendProductExpirationResultDto>.Ok(result.Data!));
+    }
+}
+
+public class ExtendProductExpirationRequest
+{
+    /// <summary>Number of days to extend from today (or add to current expiration). Default is 7 days.</summary>
+    public int Days { get; set; } = 7;
+
+    /// <summary>When true, products whose status is Expired will also be reactivated to Active. Default is true.</summary>
+    public bool ReactivateExpiredProducts { get; set; } = true;
+
+    /// <summary>Optional store filter. If provided, extends expiration only for products of this store.</summary>
+    public Guid? StoreId { get; set; }
 }
 
 public class WithdrawCommissionRequest

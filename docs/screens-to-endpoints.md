@@ -198,6 +198,7 @@ These are used by multiple screens or as part of flows above.
 | `GET /admin/reviews` | GET | Admin | Admin review moderation |
 | `DELETE /admin/reviews/{id}` | DELETE | Admin | Remove inappropriate review |
 | `GET /admin/products` | GET | Admin | Admin product list with filters |
+| `POST /admin/products/extend-expiration` | POST | Admin / Testing | Bulk extend product expiration dates and reactivate expired items |
 | `DELETE /admin/products/{id}` | DELETE | Admin | Admin soft-delete product |
 | `GET /admin/support-tickets` | GET | Admin | Admin ticket queue |
 | `GET /admin/support-tickets/{id}` | GET | Admin | Admin ticket detail |
