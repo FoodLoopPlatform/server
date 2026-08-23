@@ -42,9 +42,17 @@ public class GetPendingAiRecommendationsQueryHandler : IRequestHandler<GetPendin
             .Include(r => r.RiskAssessment)
             .Where(r => r.OrganizationId == store.Id && r.Status == AiRecommendationStatus.Pending)
             .OrderByDescending(r => r.CreatedAt)
+            .ThenByDescending(r => r.Id)
             .ToListAsync(cancellationToken);
 
-        var dtos = recommendations.Select(r =>
+        // Deduplicate: Return only the latest pending recommendation per product
+        var latestPerProduct = recommendations
+            .GroupBy(r => r.ProductId)
+            .Select(g => g.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).First())
+            .OrderByDescending(r => r.CreatedAt)
+            .ToList();
+
+        var dtos = latestPerProduct.Select(r =>
         {
             var product = r.Product;
             var originalPrice = r.SnapshotOriginalPrice ?? (product != null ? product.OriginalPrice : 0m);

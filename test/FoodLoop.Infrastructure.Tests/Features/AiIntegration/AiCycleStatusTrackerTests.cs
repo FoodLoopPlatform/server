@@ -319,4 +319,87 @@ public class AiCycleStatusTrackerTests
         result.Data.Should().NotBeNull();
         result.Data.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task GetPendingAiRecommendationsQueryHandler_ShouldReturn_OnlyLatestRecommendation_PerProduct()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        await using var db = new ApplicationDbContext(options);
+        var merchantUserId = Guid.NewGuid();
+        var store = new Organization
+        {
+            Id = Guid.NewGuid(),
+            OwnerId = merchantUserId,
+            Name = "Deduplication Store",
+            AiOperatingMode = AiOperatingMode.Assisted
+        };
+        await db.Organizations.AddAsync(store);
+
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = store.Id,
+            Title = "Fresh Milk 1L",
+            OriginalPrice = 40.00m,
+            DiscountedPrice = 40.00m,
+            QuantityAvailable = 15,
+            ExpirationDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
+            Status = ProductStatus.Active
+        };
+        await db.Products.AddAsync(product);
+
+        // Older recommendation generated earlier (e.g. 2 hours ago)
+        var olderRec = new AiPricingRecommendation
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            OrganizationId = store.Id,
+            DiscountPercentage = 5.0m,
+            Confidence = 0.85,
+            Reason = "Older recommendation 5%",
+            ActionRequirement = AiActionRequirement.APPROVAL_REQUIRED,
+            Status = AiRecommendationStatus.Pending,
+            CreatedAt = DateTimeOffset.UtcNow.AddHours(-2)
+        };
+
+        // Newer recommendation generated now (e.g. latest cycle)
+        var newerRec = new AiPricingRecommendation
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            OrganizationId = store.Id,
+            DiscountPercentage = 15.0m,
+            Confidence = 0.95,
+            Reason = "Latest recommendation 15%",
+            ActionRequirement = AiActionRequirement.APPROVAL_REQUIRED,
+            Status = AiRecommendationStatus.Pending
+        };
+
+        await db.AiPricingRecommendations.AddAsync(olderRec);
+        await db.SaveChangesAsync();
+
+        await Task.Delay(100);
+
+        await db.AiPricingRecommendations.AddAsync(newerRec);
+        await db.SaveChangesAsync();
+
+        var handler = new GetPendingAiRecommendationsQueryHandler(db);
+
+        // Act
+        var result = await handler.Handle(new GetPendingAiRecommendationsQuery(merchantUserId), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+        result.Data.Should().HaveCount(1); // Exactly ONE recommendation returned, not two!
+
+        var returnedRec = result.Data![0];
+        returnedRec.Id.Should().Be(newerRec.Id); // Must be the newest one
+        returnedRec.DiscountPercentage.Should().Be(15.0m);
+        returnedRec.Reason.Should().Be("Latest recommendation 15%");
+    }
 }
