@@ -549,4 +549,63 @@ public class AiPricingBatchTests
         var recommendations = await dbContext.AiPricingRecommendations.ToListAsync();
         recommendations.Count.Should().Be(75);
     }
+
+    [Fact]
+    public async Task RunPricingBatch_in_assisted_mode_should_supersede_older_pending_recommendations_for_same_product()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+
+        var org = new Organization { Id = Guid.NewGuid(), Name = "Assisted Store", AiOperatingMode = AiOperatingMode.Assisted };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy" };
+        var product = new Product { Id = Guid.NewGuid(), Title = "Milk", OriginalPrice = 50m, DiscountedPrice = 50m, Organization = org, Category = category, Status = ProductStatus.Active, QuantityAvailable = 10 };
+
+        var oldRisk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry 1", 0.85, "corr-old", isPricingStaged: false);
+        var oldRec = new AiPricingRecommendation(
+            product.Id, org.Id, 5.0m, "5% discount", 0.85,
+            AiActionRequirement.APPROVAL_REQUIRED, "Assisted", "corr-old",
+            AiRecommendationStatus.Pending, oldRisk.Id
+        );
+
+        var newRisk = new AiRiskAssessment(product.Id, AiRiskLevel.HIGH, AiRoute.PRICING, "Nearing Expiry 2", 0.95, "corr-new", isPricingStaged: true)
+        {
+            SnapshotOriginalPrice = 50.00m,
+            SnapshotQuantityAvailable = 10,
+            SnapshotProductStatus = ProductStatus.Active
+        };
+
+        dbContext.Organizations.Add(org);
+        dbContext.Categories.Add(category);
+        dbContext.Products.Add(product);
+        dbContext.AiRiskAssessments.AddRange(oldRisk, newRisk);
+        dbContext.AiPricingRecommendations.Add(oldRec);
+        await dbContext.SaveChangesAsync();
+
+        _mockAiClient.Setup(x => x.RecommendPricingAsync(It.IsAny<PricingBatchRequestDto>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PricingBatchResponseDto(org.Id.ToString(), new List<PricingDecisionDto>
+            {
+                new PricingDecisionDto(product.Id.ToString(), 10.0, "10% markdown needed", 0.95, "APPROVAL_REQUIRED", "Assisted Mode")
+            }));
+
+        var handler = CreateHandler(dbContext);
+
+        // Act
+        var result = await handler.Handle(new RunPricingBatchCommand(), CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeTrue();
+
+        var recommendations = await dbContext.AiPricingRecommendations.OrderBy(r => r.CreatedAt).ToListAsync();
+        recommendations.Should().HaveCount(2);
+
+        // The older recommendation must have been transitioned to Rejected (superseded)
+        var updatedOldRec = recommendations.First(r => r.Id == oldRec.Id);
+        updatedOldRec.Status.Should().Be(AiRecommendationStatus.Rejected);
+        updatedOldRec.ActionReason.Should().Be("Superseded by newer AI pricing cycle");
+
+        // The new recommendation must be Pending
+        var freshRec = recommendations.First(r => r.Id != oldRec.Id);
+        freshRec.Status.Should().Be(AiRecommendationStatus.Pending);
+        freshRec.DiscountPercentage.Should().Be(10.0m);
+    }
 }

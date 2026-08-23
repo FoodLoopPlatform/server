@@ -284,6 +284,17 @@ public class RunPricingBatchCommandHandler : IRequestHandler<RunPricingBatchComm
                         {
                             // Assisted mode persists as Pending without price mutation
                             finalStatus = AiRecommendationStatus.Pending;
+
+                            // Supersede any older pending recommendations for this product so merchant only has 1 active recommendation
+                            var existingPendings = await _dbContext.AiPricingRecommendations
+                                .Where(r => r.ProductId == candidate.ProductId && r.Status == AiRecommendationStatus.Pending)
+                                .ToListAsync(cancellationToken);
+
+                            foreach (var oldPending in existingPendings)
+                            {
+                                oldPending.Status = AiRecommendationStatus.Rejected;
+                                oldPending.ActionReason = "Superseded by newer AI pricing cycle";
+                            }
                         }
 
                         var recommendation = new AiPricingRecommendation(
