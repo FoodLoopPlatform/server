@@ -53,6 +53,9 @@ public class PaymentsController : ControllerBase
         {
             var order = await _db.Orders
                 .Include(o => o.Payment)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p!.Organization)
                 .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
 
             if (order != null && isSuccess && order.PaymentStatus != PaymentStatus.Paid)
@@ -85,6 +88,49 @@ public class PaymentsController : ControllerBase
 
                 await _db.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Order {OrderId} marked as Paid via Paymob Redirect Callback.", order.Id);
+
+                // Send real-time notifications after successful payment
+                try
+                {
+                    var notificationService = HttpContext.RequestServices
+                        .GetService(typeof(Application.Common.Interfaces.IRealTimeNotificationService))
+                        as Application.Common.Interfaces.IRealTimeNotificationService;
+
+                    if (notificationService != null)
+                    {
+                        // Notify customer
+                        await notificationService.SendNotificationToUserAsync(
+                            order.UserId,
+                            "NotifOrderConfirmedTitle",
+                            "NotifOrderConfirmedBody",
+                            "OrderConfirmed",
+                            Array.Empty<object>(),
+                            cancellationToken);
+
+                        // Notify merchant(s)
+                        var merchantUserIds = order.Items
+                            .Select(i => i.Product?.Organization?.OwnerId)
+                            .Where(oid => oid.HasValue && oid.Value != Guid.Empty)
+                            .Select(oid => oid!.Value)
+                            .Distinct();
+
+                        foreach (var merchantUserId in merchantUserIds)
+                        {
+                            await notificationService.SendNotificationToUserAsync(
+                                merchantUserId,
+                                "NotifOrderReceivedTitle",
+                                "NotifOrderReceivedBody",
+                                "OrderReceived",
+                                Array.Empty<object>(),
+                                cancellationToken);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Notification failures must not break the payment confirmation flow
+                    _logger.LogError(ex, "Failed to send post-payment notifications for Order {OrderId}.", orderId);
+                }
             }
         }
 
@@ -201,13 +247,15 @@ public class PaymentsController : ControllerBase
 
                     if (order != null)
                     {
-                        // Verify amount: Paymob amount_cents is in EGP cents
+                        // Verify amount: Paymob amount_cents is in EGP cents.
+                        // Use Math.Round to avoid floating-point drift (e.g. 4999 cents = 49.99 EGP).
                         if (!decimal.TryParse(amountCents, out var parsedAmountCents))
                         {
                             return BadRequest("Invalid amount format in callback.");
                         }
-                        var callbackAmount = parsedAmountCents / 100.0m;
-                        if (order.TotalAmount != callbackAmount)
+                        var callbackAmount = Math.Round(parsedAmountCents / 100.0m, 2);
+                        var orderAmount = Math.Round(order.TotalAmount, 2);
+                        if (orderAmount != callbackAmount)
                         {
                             _logger.LogWarning("Paymob callback amount mismatch: callback={CallbackAmount} EGP, order={OrderAmount} EGP for Order {OrderId}", callbackAmount, order.TotalAmount, order.Id);
                             return BadRequest("Amount mismatch.");
