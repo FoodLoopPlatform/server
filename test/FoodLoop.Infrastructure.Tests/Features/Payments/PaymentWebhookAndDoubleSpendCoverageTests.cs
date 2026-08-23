@@ -310,7 +310,7 @@ public class PaymentWebhookAndDoubleSpendCoverageTests : IDisposable
         var result = await handler.Handle(command, CancellationToken.None);
 
         result.PaymentStatus.Should().Be("Paid");
-        result.OrderStatus.Should().Be("Pending");
+        result.OrderStatus.Should().Be("Confirmed");
         result.RemainingWalletBalance.Should().Be(150m);
 
         var user = await _db.Users.FindAsync(_userId);

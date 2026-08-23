@@ -98,11 +98,9 @@ public class WalletCheckoutCommandHandler : IRequestHandler<WalletCheckoutComman
             };
             _db.WalletTransactions.Add(walletTx);
 
-            // Update order payment status.
-            // OrderStatus stays Pending — the merchant must confirm via PATCH /stores/me/orders/{id}/status.
-            // Only PaymentStatus is marked Paid here so the merchant knows the payment is cleared.
+            // Update order payment status (Model 1: Auto-confirm on payment)
             order.PaymentStatus = PaymentStatus.Paid;
-            order.OrderStatus = OrderStatus.Pending;
+            order.OrderStatus = OrderStatus.Confirmed;
             order.UpdatedAt = DateTimeOffset.UtcNow;
 
             // Add or update Payment entity
