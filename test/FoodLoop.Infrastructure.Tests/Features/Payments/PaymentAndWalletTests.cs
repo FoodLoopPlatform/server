@@ -496,7 +496,7 @@ public class PaymentAndWalletTests
             // Assert
             result.OrderId.Should().Be(order.Id);
             result.PaymentStatus.Should().Be("Paid");
-            result.OrderStatus.Should().Be("Pending");
+            result.OrderStatus.Should().Be("Confirmed");
             result.AmountCharged.Should().Be(60.00m);
             result.RemainingWalletBalance.Should().Be(40.00m);
 
