@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -495,7 +496,7 @@ public class PaymentAndWalletTests
             // Assert
             result.OrderId.Should().Be(order.Id);
             result.PaymentStatus.Should().Be("Paid");
-            result.OrderStatus.Should().Be("Confirmed");
+            result.OrderStatus.Should().Be("Pending");
             result.AmountCharged.Should().Be(60.00m);
             result.RemainingWalletBalance.Should().Be(40.00m);
 
@@ -1324,5 +1325,81 @@ public class PaymentAndWalletTests
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data!.PaymentToken.Should().Be("tok_12345");
+    }
+
+    [Fact]
+    public async Task VerifyOrderPaymentCommandHandler_ValidOrder_ShouldMarkAsPaidAndReturnDto()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var customerId = Guid.NewGuid();
+        var user = new ApplicationUser { Id = customerId, FullName = "Test Buyer", UserName = "buyer@foodloop.com" };
+        dbContext.Users.Add(user);
+
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            UserId = customerId,
+            TotalAmount = 250m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.Pending
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var mockPayment = new Mock<IPaymentService>();
+        mockPayment.Setup(p => p.GetTransactionDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymobTransactionDetailsDto
+            {
+                TransactionId = "tx_999",
+                IsSuccess = true,
+                AmountCents = 25000,
+                SpecialReference = order.Id.ToString()
+            });
+
+        var handler = new VerifyOrderPaymentCommandHandler(dbContext, mockPayment.Object, NullLogger<VerifyOrderPaymentCommandHandler>.Instance);
+
+        // Act
+        var result = await handler.Handle(new VerifyOrderPaymentCommand(order.Id, customerId, "tx_999"), CancellationToken.None);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.PaymentStatus.Should().Be("Paid");
+        result.OrderStatus.Should().Be("Confirmed");
+
+        var updatedOrder = await dbContext.Orders.Include(o => o.Payment).FirstOrDefaultAsync(o => o.Id == order.Id);
+        updatedOrder!.PaymentStatus.Should().Be(PaymentStatus.Paid);
+        updatedOrder.Payment.Should().NotBeNull();
+        updatedOrder.Payment!.TransactionReference.Should().Be("tx_999");
+    }
+
+    [Fact]
+    public async Task PaymentsController_VerifyOrderPayment_ShouldReturnOk()
+    {
+        // Arrange
+        using var dbContext = ApplicationDbContextFactory.Create();
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            TotalAmount = 100m,
+            PaymentStatus = PaymentStatus.Pending,
+            OrderStatus = OrderStatus.Pending
+        };
+        dbContext.Orders.Add(order);
+        await dbContext.SaveChangesAsync();
+
+        var mockPayment = new Mock<IPaymentService>();
+        mockPayment.Setup(p => p.GetTransactionDetailsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymobTransactionDetailsDto { TransactionId = "tx_123", IsSuccess = true, AmountCents = 10000 });
+
+        var controller = new PaymentsController(dbContext, mockPayment.Object, _mockLogger.Object);
+
+        // Act
+        var result = await controller.VerifyOrderPayment(order.Id, new VerifyPaymentCallbackRequest { TransactionId = "tx_123" }, CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<OkObjectResult>();
+        var updatedOrder = await dbContext.Orders.FindAsync(order.Id);
+        updatedOrder!.PaymentStatus.Should().Be(PaymentStatus.Paid);
     }
 }

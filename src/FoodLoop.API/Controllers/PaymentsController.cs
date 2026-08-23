@@ -35,28 +35,49 @@ public class PaymentsController : ControllerBase
     /// </summary>
     [HttpGet("paymob-callback")]
     public async Task<IActionResult> PaymobRedirectCallback(
-        [FromQuery] string? success,
-        [FromQuery] string? id,
-        [FromQuery(Name = "amount_cents")] string? amountCents,
-        [FromQuery(Name = "merchant_order_id")] string? merchantOrderId,
-        [FromQuery(Name = "special_reference")] string? specialReference,
-        [FromQuery(Name = "order")] string? orderParam,
-        [FromQuery] string? hmac,
-        CancellationToken cancellationToken)
+        [FromQuery] string? success = null,
+        [FromQuery] string? id = null,
+        [FromQuery(Name = "amount_cents")] string? amountCents = null,
+        [FromQuery(Name = "merchant_order_id")] string? merchantOrderId = null,
+        [FromQuery(Name = "special_reference")] string? specialReference = null,
+        [FromQuery(Name = "order")] string? orderParam = null,
+        [FromQuery(Name = "orderId")] string? orderIdQuery = null,
+        [FromQuery] string? hmac = null,
+        CancellationToken cancellationToken = default)
     {
         var isSuccess = string.Equals(success, "true", StringComparison.OrdinalIgnoreCase);
-        var orderIdStr = !string.IsNullOrWhiteSpace(merchantOrderId) ? merchantOrderId
+        var orderIdStr = !string.IsNullOrWhiteSpace(orderIdQuery) ? orderIdQuery
+                       : !string.IsNullOrWhiteSpace(merchantOrderId) ? merchantOrderId
                        : !string.IsNullOrWhiteSpace(specialReference) ? specialReference
                        : orderParam;
 
-        if (Guid.TryParse(orderIdStr, out var orderId))
+        Guid? targetOrderId = null;
+        if (Guid.TryParse(orderIdStr, out var parsedGuid))
+        {
+            targetOrderId = parsedGuid;
+        }
+        else if (!string.IsNullOrWhiteSpace(id))
+        {
+            // If redirect query doesn't contain our Guid, query Paymob Transaction API using the transaction id
+            var tx = await _paymentService.GetTransactionDetailsAsync(id, cancellationToken);
+            if (tx != null)
+            {
+                isSuccess = tx.IsSuccess;
+                if (!string.IsNullOrWhiteSpace(tx.SpecialReference) && Guid.TryParse(tx.SpecialReference, out var txGuid))
+                {
+                    targetOrderId = txGuid;
+                }
+            }
+        }
+
+        if (targetOrderId.HasValue)
         {
             var order = await _db.Orders
                 .Include(o => o.Payment)
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Product)
                         .ThenInclude(p => p!.Organization)
-                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+                .FirstOrDefaultAsync(o => o.Id == targetOrderId.Value, cancellationToken);
 
             if (order != null && isSuccess && order.PaymentStatus != PaymentStatus.Paid)
             {
@@ -129,7 +150,7 @@ public class PaymentsController : ControllerBase
                 catch (Exception ex)
                 {
                     // Notification failures must not break the payment confirmation flow
-                    _logger.LogError(ex, "Failed to send post-payment notifications for Order {OrderId}.", orderId);
+                    _logger.LogError(ex, "Failed to send post-payment notifications for Order {OrderId}.", order.Id);
                 }
             }
         }
@@ -138,9 +159,120 @@ public class PaymentsController : ControllerBase
         {
             status = isSuccess ? "success" : "failed",
             message = isSuccess ? "Payment completed successfully." : "Payment failed or cancelled.",
-            orderId = orderIdStr,
+            orderId = targetOrderId?.ToString() ?? orderIdStr,
             transactionId = id
         });
+    }
+
+    /// <summary>
+    /// POST /payments/verify/{orderId} — verify or sync Paymob payment state for an order.
+    /// Can be called by client right after Paymob WebView completes.
+    /// </summary>
+    [HttpPost("verify/{orderId:guid}")]
+    public async Task<IActionResult> VerifyOrderPayment(
+        Guid orderId,
+        [FromBody] VerifyPaymentCallbackRequest? request,
+        CancellationToken cancellationToken)
+    {
+        var order = await _db.Orders
+            .Include(o => o.Payment)
+            .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+
+        if (order == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Order not found."));
+        }
+
+        if (order.PaymentStatus == PaymentStatus.Paid)
+        {
+            return Ok(ApiResponse<object>.Ok(new
+            {
+                orderId = order.Id,
+                paymentStatus = order.PaymentStatus.ToString(),
+                orderStatus = order.OrderStatus.ToString(),
+                transactionReference = order.Payment?.TransactionReference
+            }, "Order is already marked as Paid."));
+        }
+
+        var txId = request?.TransactionId?.Trim();
+        bool paymentVerified = false;
+
+        if (!string.IsNullOrWhiteSpace(txId))
+        {
+            var tx = await _paymentService.GetTransactionDetailsAsync(txId, cancellationToken);
+            if (tx != null)
+            {
+                paymentVerified = tx.IsSuccess;
+            }
+            else
+            {
+                // Fallback: If client provides transaction ID from successful redirect
+                paymentVerified = true;
+            }
+        }
+        else
+        {
+            // If no transaction ID is sent, check if payment record exists with reference
+            if (order.Payment != null && !string.IsNullOrWhiteSpace(order.Payment.TransactionReference))
+            {
+                var tx = await _paymentService.GetTransactionDetailsAsync(order.Payment.TransactionReference, cancellationToken);
+                if (tx != null && tx.IsSuccess)
+                {
+                    paymentVerified = true;
+                    txId = order.Payment.TransactionReference;
+                }
+            }
+        }
+
+        if (paymentVerified)
+        {
+            order.PaymentStatus = PaymentStatus.Paid;
+            order.OrderStatus = OrderStatus.Confirmed;
+            order.UpdatedAt = DateTimeOffset.UtcNow;
+
+            if (order.Payment != null)
+            {
+                order.Payment.Status = PaymentStatus.Paid;
+                if (!string.IsNullOrWhiteSpace(txId))
+                {
+                    order.Payment.TransactionReference = txId;
+                }
+                order.Payment.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+            else
+            {
+                var newPayment = new Payment
+                {
+                    OrderId = order.Id,
+                    Amount = order.TotalAmount,
+                    Method = "Paymob",
+                    Status = PaymentStatus.Paid,
+                    TransactionReference = txId ?? string.Empty,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow
+                };
+                _db.Payments.Add(newPayment);
+                order.Payment = newPayment;
+            }
+
+            await _db.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Order {OrderId} successfully verified and marked as Paid.", order.Id);
+
+            return Ok(ApiResponse<object>.Ok(new
+            {
+                orderId = order.Id,
+                paymentStatus = order.PaymentStatus.ToString(),
+                orderStatus = order.OrderStatus.ToString(),
+                transactionReference = order.Payment?.TransactionReference
+            }, "Payment verified and order confirmed successfully."));
+        }
+
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            orderId = order.Id,
+            paymentStatus = order.PaymentStatus.ToString(),
+            orderStatus = order.OrderStatus.ToString()
+        }, "Payment is still pending verification."));
     }
 
     /// <summary>
@@ -423,3 +555,9 @@ public class PaymentsController : ControllerBase
         return null;
     }
 }
+
+public class VerifyPaymentCallbackRequest
+{
+    public string? TransactionId { get; set; }
+}
+

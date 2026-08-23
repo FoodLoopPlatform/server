@@ -65,6 +65,17 @@ public class OrdersController : ControllerBase
     }
 
     /// <summary>
+    /// POST /orders/{id:guid}/verify-payment — verify Paymob payment status after mobile WebView completes.
+    /// </summary>
+    [HttpPost("{id:guid}/verify-payment")]
+    public async Task<IActionResult> VerifyPayment(Guid id, [FromBody] VerifyOrderPaymentRequest? request, CancellationToken cancellationToken)
+    {
+        var command = new VerifyOrderPaymentCommand(id, UserId, request?.TransactionId);
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(ApiResponse<OrderDto>.Ok(result));
+    }
+
+    /// <summary>
     /// POST /orders/{id:guid}/wallet-checkout — pay for an order using the customer's wallet balance.
     /// </summary>
     [HttpPost("{id:guid}/wallet-checkout")]
@@ -129,3 +140,9 @@ public class CheckoutItemRequestDto
     public Guid ProductId { get; set; }
     public int Quantity { get; set; }
 }
+
+public class VerifyOrderPaymentRequest
+{
+    public string? TransactionId { get; set; }
+}
+
