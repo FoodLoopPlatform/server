@@ -702,5 +702,5 @@ When a merchant approves a pending pricing recommendation (`POST /stores/me/ai-r
 ### Automated Test Suite Status
 *   **Domain Tests:** 28 passed (100%).
 *   **Application Tests:** 11 passed (100%).
-*   **Infrastructure Tests:** 468 passed (100%).
-*   **Total Suite Status:** **507 Passed, 0 Failed (100% Green)**.
+*   **Infrastructure Tests:** 470 passed (100%).
+*   **Total Suite Status:** **509 Passed, 0 Failed (100% Green)**.

@@ -35,8 +35,11 @@ All endpoints are live at `https://foodloop.runasp.net`.
 | `product_details` | GET | `/marketplace/products/{id}` | Public | Single active product detail |
 | `checkout_order_review` | POST | `/orders` | Customer | Body: `{ items: [{ productId, quantity }] }` |
 | | POST | `/orders/{id}/paymob-checkout` | Customer | Generates Paymob Unified Checkout URL |
+| | POST | `/orders/{id}/verify-payment` | Customer | Verifies/syncs Paymob payment status after WebView completion |
 | | POST | `/orders/{id}/wallet-checkout` | Customer | Charges order total to customer wallet balance |
 | | POST | `/payments/paymob-callback` | Public | Paymob transaction webhook listener |
+| | GET | `/payments/paymob-callback` | Public | Paymob transaction redirect handler (with auto transaction API fallback) |
+| | POST | `/payments/verify/{orderId}` | Public | Public payment verification & sync endpoint |
 | `order_success` | GET | `/orders/{id}` | Customer | Returns placed order detail |
 | `order_tracking` | GET | `/orders/{id}/tracking` | Customer | Pipeline steps + store info |
 | `rate_your_experience` | POST | `/reviews` | Customer | Body: `{ orderId, rating, comment }` |

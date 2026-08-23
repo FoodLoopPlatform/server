@@ -1,181 +1,56 @@
-# 🗄️ FoodLoop Platform — Comprehensive Entity Relationship Diagram (ERD) & Database Specification
+# 🎬 FoodLoop Presentation ERD — Core Showcase Database Architecture
 
-This document provides the complete technical specification, architectural mapping, and Mermaid Entity Relationship Diagram (ERD) for the **FoodLoop** relational database persistence layer (`ApplicationDbContext`).
+This document serves as the **visual, architectural, and speaking guide** for the **FoodLoop Backend Video Showcase & Presentation**. It highlights the core, mission-critical tables that demonstrate the platform's multi-tenancy, transactional checkout, AI dynamic pricing engine, and financial ledger.
 
 ---
 
-## 1. 📊 Complete Visual Mermaid ERD
+## 🌟 1. Core Showcase ERD (The Key 10 Tables)
+
+This high-impact diagram captures the heartbeat of FoodLoop: **Users**, **Stores**, **Products**, **Orders**, **Payments**, and the **AI Pricing & Feedback Subsystem**.
 
 ```mermaid
 erDiagram
-    %% ==========================================
-    %% 1. IDENTITY & USER MANAGEMENT
-    %% ==========================================
-    Users ||--o{ UserRoles : "has"
-    Roles ||--o{ UserRoles : "assigned_to"
-    Users ||--o{ RefreshTokens : "owns"
-    Users ||--o{ UserDeviceTokens : "registers"
-    Users ||--o{ Addresses : "resides_at"
-    Users ||--o{ WalletTransactions : "transacts"
-    Users ||--o{ Favorites : "favorites"
-    Users ||--o{ Reviews : "authors"
-    Users ||--o{ Notifications : "receives"
-    Users ||--o{ SupportTickets : "opens"
-    Users ||--o{ ProductReports : "submits"
-    Users ||--o{ AuditLogs : "triggers"
-    Users ||--o{ AdminNotes : "receives_or_targeted"
-
-    %% ==========================================
-    %% 2. ORGANIZATIONS (STORES & CHARITIES)
-    %% ==========================================
-    Users ||--o{ Organizations : "owns/manages"
-    Organizations ||--o{ OrganizationVerifications : "submits_docs"
-    Organizations ||--o{ Addresses : "located_at"
-    Organizations ||--o{ Products : "catalogs"
-    Organizations ||--o{ Orders : "fulfills"
-    Organizations ||--o{ Favorites : "favorited_by"
-    Organizations ||--o{ Reviews : "reviewed_by"
-    Organizations ||--o{ Donations : "donates_given"
-    Organizations ||--o{ Donations : "donates_received"
-    Organizations ||--o{ AiPricingRecommendations : "receives_pricing"
-    Organizations ||--o{ AIRecognitionResults : "runs_ocr"
-    Organizations ||--o{ AuditLogs : "scoped_to"
-    Organizations ||--o{ AdminNotes : "targeted"
-
-    %% ==========================================
-    %% 3. CATALOG & INVENTORY SUBSYSTEM
-    %% ==========================================
-    Categories ||--o{ Products : "categorizes"
-    Products ||--o{ ProductImages : "displays"
-    Products ||--o{ PriceHistories : "audits_prices"
-    Products ||--o{ OrderItems : "ordered_in"
-    Products ||--o{ ProductReports : "reported_for"
-    Products ||--o{ AIRecognitionResults : "extracted_from"
-    Products ||--o{ AiRiskAssessments : "evaluated_by"
-    Products ||--o{ AiPricingRecommendations : "priced_by"
-    Products ||--o{ ProductPricingEpisodes : "produces_episodes"
-
-    %% ==========================================
-    %% 4. ORDERS & PAYMENTS
-    %% ==========================================
+    %% CORE E-COMMERCE FLOW
+    Users ||--o{ Organizations : "owns (Store/Charity)"
     Users ||--o{ Orders : "places"
+    Organizations ||--o{ Products : "catalogs"
+    Products ||--|{ OrderItems : "snapshot_in"
     Orders ||--|{ OrderItems : "contains"
     Orders ||--o{ Payments : "settled_via"
-    Orders ||--o{ Reviews : "reviewed_in"
-    Orders ||--o{ WalletTransactions : "debited_by"
+    Users ||--o{ WalletTransactions : "transacts"
 
-    %% ==========================================
-    %% 5. AI ENGINE & INTELLIGENCE
-    %% ==========================================
+    %% AI INTELLIGENCE & FEEDBACK LOOP
+    Products ||--o{ AiRiskAssessments : "scanned_by"
     AiRiskAssessments ||--o| AiPricingRecommendations : "stages"
+    Organizations ||--o{ AiPricingRecommendations : "receives"
+    Products ||--o{ PriceHistories : "audited_by"
+    Products ||--o{ ProductPricingEpisodes : "generates_rag"
+
+    %% REAL-TIME NOTIFICATIONS
+    Users ||--o{ Notifications : "receives"
 
     %% ==========================================
-    %% 6. CUSTOMER SUPPORT & TICKETING
-    %% ==========================================
-    SupportTickets ||--|{ TicketMessages : "threads"
-    Users ||--o{ TicketMessages : "sends"
-
-    %% ==========================================
-    %% ENTITY ATTRIBUTE DEFINITIONS
+    %% TABLE ATTRIBUTE DEFINITIONS
     %% ==========================================
 
     Users {
         guid Id PK
         string FullName
         string Email
-        string UserName
-        string PhoneNumber
-        string Language
-        string ProfileImage
-        int Status "UserStatus Enum"
         decimal WalletBalance "Precision(18,2)"
-        bool OrderUpdatesEnabled
-        bool MarketingNotificationsEnabled
-        datetimeoffset CreatedAt
-        datetimeoffset UpdatedAt
-    }
-
-    Roles {
-        guid Id PK
-        string Name
-        string NormalizedName
-    }
-
-    UserRoles {
-        guid UserId PK,FK
-        guid RoleId PK,FK
-    }
-
-    RefreshTokens {
-        guid Id PK
-        guid UserId FK
-        string Token
-        datetimeoffset ExpiresAt
-        datetimeoffset CreatedAt
-        datetimeoffset RevokedAt
-        string ReplacedByToken
-    }
-
-    UserDeviceTokens {
-        guid Id PK
-        guid UserId FK
-        string DeviceToken
-        string Platform
-        datetimeoffset LastUsedAt
-    }
-
-    Addresses {
-        guid Id PK
-        guid UserId FK "Nullable"
-        guid OrganizationId FK "Nullable"
-        string Street
-        string City
-        string State
-        string PostalCode
-        string Country
-        double Latitude
-        double Longitude
-        bool IsDefault
-        string Label
+        int Status "Active | Suspended"
+        string Language "en | ar"
     }
 
     Organizations {
         guid Id PK
         guid OwnerId FK
         string Name
-        string Description
-        string LogoUrl
-        string CoverImageUrl
-        int Type "OrganizationType Enum (Store, Charity)"
-        int AiOperatingMode "AiOperatingMode Enum (Manual, Assisted, Autonomous)"
-        int AiPriceFloorPolicy "PriceFloorPolicy Enum (DynamicAi, Fixed30Percent, Fixed50Percent)"
-        bool IsVerified
+        int Type "Store (1) | Charity (2)"
+        int AiOperatingMode "Manual | Assisted | Autonomous"
+        int AiPriceFloorPolicy "DynamicAi | Fixed30% | Fixed50%"
         decimal CommissionBalance "Precision(18,2)"
-        bool IsDeleted
-        datetimeoffset DeletedAt
-        datetimeoffset CreatedAt
-        datetimeoffset UpdatedAt
-    }
-
-    OrganizationVerifications {
-        guid Id PK
-        guid OrganizationId FK
-        string DocumentType
-        string DocumentUrl
-        int Status "VerificationStatus Enum"
-        guid ReviewedBy FK "Nullable"
-        datetimeoffset ReviewedAt
-        string RejectionReason
-        datetimeoffset CreatedAt
-    }
-
-    Categories {
-        guid Id PK
-        string Name
-        string Description
-        string IconUrl
-        int DisplayOrder
-        datetimeoffset CreatedAt
+        bool IsVerified
     }
 
     Products {
@@ -183,67 +58,24 @@ erDiagram
         guid OrganizationId FK
         guid CategoryId FK
         string Title
-        string Description
-        decimal OriginalPrice "Precision(18,2)"
-        decimal DiscountedPrice "Precision(18,2)"
-        int QuantityAvailable
-        date ExpirationDate
-        int Status "ProductStatus Enum"
-        bool IsMysteryBag
-        string Barcode
-        bool IsDeleted
-        datetimeoffset DeletedAt
-        datetimeoffset CreatedAt
-        datetimeoffset UpdatedAt
-    }
-
-    ProductImages {
-        guid Id PK
-        guid ProductId FK
-        string ImageUrl
-        int DisplayOrder
-        datetimeoffset CreatedAt
-    }
-
-    PriceHistories {
-        guid Id PK
-        guid ProductId FK
-        decimal OldOriginalPrice "Precision(18,2)"
-        decimal OldDiscountedPrice "Precision(18,2)"
-        decimal NewOriginalPrice "Precision(18,2)"
-        decimal NewDiscountedPrice "Precision(18,2)"
-        string ChangeReason
-        guid ChangedBy "Guid.Empty for AI, or UserId"
-        datetimeoffset CreatedAt
-    }
-
-    AIRecognitionResults {
-        guid Id PK
-        guid ProductId FK "Nullable"
-        guid OrganizationId FK
-        string RawOcrText
-        string ExtractedTitle
-        date ExtractedExpirationDate
-        double ConfidenceScore
-        string ImageUrl
-        datetimeoffset CreatedAt
+        decimal OriginalPrice "MSRP"
+        decimal DiscountedPrice "Current Selling Price"
+        int QuantityAvailable "Stock"
+        date ExpirationDate "Shelf-Life Tracker"
+        int Status "Active | Expired | SoldOut"
+        bool IsDeleted "Soft Delete"
     }
 
     Orders {
         guid Id PK
         guid UserId FK
         guid OrganizationId FK
-        string OrderNumber "Unique Index"
-        int Status "OrderStatus Enum"
-        int PaymentStatus "PaymentStatus Enum"
-        decimal TotalAmount "Precision(18,2)"
-        decimal DiscountAmount "Precision(18,2)"
-        decimal FinalAmount "Precision(18,2)"
-        string PickupCode
-        datetimeoffset PickupExpiresAt
-        string Notes
-        datetimeoffset CreatedAt
-        datetimeoffset UpdatedAt
+        string OrderNumber "Unique Index (ORD-XXXX)"
+        decimal TotalAmount "Original Value"
+        decimal FinalAmount "Discounted Total"
+        int Status "Pending | Paid | ReadyForPickup | Completed"
+        int PaymentStatus "Pending | Paid | Failed"
+        string PickupCode "4-Digit PIN / QR"
     }
 
     OrderItems {
@@ -251,65 +83,56 @@ erDiagram
         guid OrderId FK
         guid ProductId FK
         int Quantity
-        decimal UnitPrice "Precision(18,2)"
-        decimal TotalPrice "Precision(18,2)"
-        datetimeoffset CreatedAt
+        decimal UnitPrice "Snapshot at Purchase"
+        decimal TotalPrice
     }
 
     Payments {
         guid Id PK
         guid OrderId FK
         decimal Amount "Precision(18,2)"
-        int Provider "PaymentProvider Enum"
-        string TransactionId "Unique Index"
-        int PaymentStatus "PaymentStatus Enum"
-        string PaymentMethod
-        string RawPayload
-        datetimeoffset CreatedAt
+        int Provider "Paymob (1) | Wallet (2)"
+        string TransactionId "Unique Index (Idempotency)"
+        int PaymentStatus "Pending | Succeeded | Failed"
     }
 
     WalletTransactions {
         guid Id PK
         guid UserId FK
         decimal Amount "Precision(18,2)"
-        int Type "TransactionType Enum (Credit, Debit)"
-        string Description
-        guid OrderId FK "Nullable"
+        int Type "Credit | Debit"
+        string Description "Refund | Top-up | Payment"
         string ReferenceId
-        datetimeoffset CreatedAt
     }
 
     AiRiskAssessments {
         guid Id PK
         guid ProductId FK
-        int RiskLevel "AiRiskLevel Enum (LOW, MEDIUM, HIGH, CRITICAL)"
-        int Route "AiRoute Enum (PRICING, DONATION, NONE)"
-        string Reason
-        double Confidence
-        string CorrelationId
+        int RiskLevel "LOW | MEDIUM | HIGH | CRITICAL"
+        int Route "PRICING | DONATION | NONE"
+        double Confidence "AI Confidence Score"
         bool IsPricingStaged
-        decimal SnapshotOriginalPrice
-        int SnapshotQuantityAvailable
-        int SnapshotProductStatus
-        datetimeoffset CreatedAt
+        string CorrelationId "Trace ID"
     }
 
     AiPricingRecommendations {
         guid Id PK
         guid ProductId FK
         guid OrganizationId FK
-        decimal DiscountPercentage "Range(0.0, 15.0)"
-        string Reason
-        double Confidence
-        int ActionRequirement "AiActionRequirement Enum"
-        string ActionReason
-        string CorrelationId
-        int Status "AiRecommendationStatus Enum (Pending, Approved, Rejected, AutoExecuted)"
-        datetimeoffset ExecutedAt "Nullable"
-        guid RiskAssessmentId FK "Unique Index"
-        decimal SnapshotOriginalPrice
-        int SnapshotQuantityAvailable
-        int SnapshotProductStatus
+        decimal DiscountPercentage "Capped [0.0%, 15.0%]"
+        string Reason "AI Market Explanation"
+        int Status "Pending | Approved | Rejected | AutoExecuted"
+        string ActionReason "Merchant override or Bot"
+        guid RiskAssessmentId FK "1-to-1 Unique Index"
+    }
+
+    PriceHistories {
+        guid Id PK
+        guid ProductId FK
+        decimal OldDiscountedPrice
+        decimal NewDiscountedPrice
+        string ChangeReason "AI Assisted | Autonomous | Manual"
+        guid ChangedBy "Guid.Empty for AI, or UserId"
         datetimeoffset CreatedAt
     }
 
@@ -317,191 +140,212 @@ erDiagram
         guid Id PK
         guid ProductId FK
         string EventId "Unique per Product"
-        datetimeoffset RecordedAt
-        int Outcome "PricingEpisodeOutcome Enum"
+        int Outcome "SoldOut | Expired | DiscountAvertedWaste"
         int UnitsSold
         decimal RevenueEarned
         double WasteAvertedPercentage
-        datetimeoffset IngestedAt "Nullable"
-        datetimeoffset CreatedAt
-    }
-
-    Favorites {
-        guid Id PK
-        guid UserId FK
-        guid OrganizationId FK
-        datetimeoffset CreatedAt
-    }
-
-    Reviews {
-        guid Id PK
-        guid UserId FK
-        guid OrganizationId FK
-        guid OrderId FK
-        int Rating "Range(1, 5)"
-        string Comment
-        string MerchantReply
-        datetimeoffset CreatedAt
-        datetimeoffset UpdatedAt
-    }
-
-    Donations {
-        guid Id PK
-        guid DonorOrganizationId FK
-        guid RecipientOrganizationId FK
-        int Status "DonationStatus Enum"
-        string Notes
-        datetimeoffset PickupTime
-        datetimeoffset CompletedAt "Nullable"
-        datetimeoffset CreatedAt
-    }
-
-    SupportTickets {
-        guid Id PK
-        guid UserId FK
-        string Subject
-        int Status "TicketStatus Enum"
-        int Priority "TicketPriority Enum"
-        string Category
-        datetimeoffset CreatedAt
-        datetimeoffset UpdatedAt
-    }
-
-    TicketMessages {
-        guid Id PK
-        guid TicketId FK
-        guid SenderUserId FK
-        string Message
-        string AttachmentUrl
-        bool IsStaffReply
-        datetimeoffset CreatedAt
-    }
-
-    Notifications {
-        guid Id PK
-        guid UserId FK
-        string Title
-        string Body
-        string Type
-        string DataJson
-        bool IsRead
-        datetimeoffset ReadAt "Nullable"
-        datetimeoffset CreatedAt
-    }
-
-    ProductReports {
-        guid Id PK
-        guid ProductId FK
-        guid ReporterUserId FK
-        string Reason
-        string Description
-        int Status "ReportStatus Enum"
-        string AdminNotes
-        datetimeoffset CreatedAt
-    }
-
-    AdminNotes {
-        guid Id PK
-        guid TargetUserId FK "Nullable"
-        guid TargetOrganizationId FK "Nullable"
-        string Category
-        string Template
-        string Title
-        string Body
-        bool IsInternal
-        guid AuthorAdminId FK
-        datetimeoffset CreatedAt
-    }
-
-    AuditLogs {
-        guid Id PK
-        guid UserId FK "Nullable"
-        guid OrganizationId FK "Nullable"
-        string EventType
-        string Title
-        string Description
-        string IpAddress
-        string Severity
-        datetimeoffset CreatedAt
-    }
-
-    SystemSettings {
-        guid Id PK
-        int MaxDiscountPerCyclePercent
-        int DefaultPriceFloorPolicy "PriceFloorPolicy Enum"
-        int NewBusinessDefaultAutomationMode "AiOperatingMode Enum"
-        bool AutoVerifyPartnerStores
-        bool BulkProductUploadEnabled
-        int PlatformCommissionPercent
-        int ApiRequestRateLimitPerMinute
-        datetimeoffset UpdatedAt
-        guid UpdatedBy "Nullable"
+        datetimeoffset IngestedAt "RAG Sync Timestamp"
     }
 ```
 
 ---
 
-## 2. 🏛️ Domain Cluster Schema Breakdown
+## 🎬 2. Scene-by-Scene Visual Sub-Diagrams
 
-### 2.1 👤 Identity, Auth & User Management
-* **`Users` (`ApplicationUser`)**: Core user table extending ASP.NET Core Identity (`IdentityUser<Guid>`). Supports profile localization (`Language`), wallet balance (`WalletBalance`), and role-based permissions (`Customer`, `StoreOwner`, `CharityWorker`, `Admin`).
-* **`Roles` & `UserRoles`**: Identity RBAC mapping table.
-* **`RefreshTokens`**: Cryptographically secure, rotating JWT refresh tokens with revocation auditing (`ReplacedByToken`).
-* **`UserDeviceTokens`**: FCM device tokens for real-time mobile and web push notifications.
-* **`Addresses`**: Geocoded addresses storing latitude/longitude coordinates for distance calculation (Haversine formula).
-* **`WalletTransactions`**: Full ledger tracking internal in-app credits, refunds, and debits.
+### 🛍️ Focus A: The E-Commerce & Checkout Engine (Scenes 3 & 4)
 
----
+Shows how products move from store shelves to customer carts and active pickup orders.
 
-### 2.2 🏪 Organizations (Stores & Charities)
-* **`Organizations`**: Multi-tenant business entity. Holds operating modes (`Manual`, `Assisted`, `Autonomous`), AI price floor rules (`DynamicAi`, `Fixed30Percent`, `Fixed50Percent`), and platform commission balance.
-* **`OrganizationVerifications`**: Commercial register and tax card document verification records for onboarding audits.
-* **`Donations`**: Food surplus handoff between retail food donors (`DonorOrganization`) and non-profit food rescue partners (`RecipientOrganization`).
+```mermaid
+erDiagram
+    Users ||--o{ Orders : "places"
+    Organizations ||--o{ Products : "catalogs"
+    Organizations ||--o{ Orders : "fulfills"
+    Orders ||--|{ OrderItems : "contains"
+    Products ||--|{ OrderItems : "snapshotted_in"
+    Orders ||--o{ Payments : "settled_by"
+    Users ||--o{ WalletTransactions : "debited_by"
+```
 
----
-
-### 2.3 🛒 Catalog & Inventory Subsystem
-* **`Categories`**: Global product categorization (Bakery, Dairy, Meat, Produce, Beverages, etc.).
-* **`Products`**: Core inventory entity. Stores MSRP (`OriginalPrice`), markdown (`DiscountedPrice`), stock (`QuantityAvailable`), expiration dates (`DateOnly ExpirationDate`), and lifecycle statuses. Supports soft-delete (`ISoftDelete`).
-* **`ProductImages`**: Multi-image storage supporting Cloudinary CDN links with `DisplayOrder`.
-* **`PriceHistories`**: Immutable price audit ledger. Records previous price, new price, changed by actor (`Guid.Empty` for AI automation), and correlation IDs.
-* **`AIRecognitionResults`**: Gemini AI OCR scan capture logs preserving raw text and extracted expiry dates.
+> [!TIP]
+> **Key Architecture to show:**
+> 1. **Price Isolation:** `OrderItems` snapshots `UnitPrice` and `TotalPrice` at the exact moment of purchase so future price edits never alter past receipts.
+> 2. **Pickup Security:** `Orders.PickupCode` generates a secure PIN / QR payload for merchant verification at the store counter.
+> 3. **Soft Deletion:** `Products.IsDeleted` uses EF Core Global Query Filters (`!IsDeleted`) to preserve purchase history even if a merchant deletes a listing.
 
 ---
 
-### 2.4 📦 Orders, Checkout & Payments
-* **`Orders`**: Customer purchase lifecycle (`Pending` $\rightarrow$ `Paid` $\rightarrow$ `Preparing` $\rightarrow$ `ReadyForPickup` $\rightarrow$ `Completed`). Includes verification pickup code / QR payload.
-* **`OrderItems`**: Line items snapshotting product price and quantity at time of purchase.
-* **`Payments`**: Payment transaction record. Integrates Paymob Accept v4 (Cards, Wallets, Kiosks) and In-App Wallets with unique transaction indices and idempotency guarantees.
+### 🤖 Focus B: The AI Dynamic Pricing & RAG Engine (Scene 8)
+
+Shows how our 3 background workers scan shelf-lives, generate smart markdowns, and feed training data back into the AI.
+
+```mermaid
+erDiagram
+    Products ||--o{ AiRiskAssessments : "1. MonitoringScanner identifies risk"
+    AiRiskAssessments ||--o| AiPricingRecommendations : "2. PricingBatch proposes markdown"
+    AiPricingRecommendations ||--o{ PriceHistories : "3. Price updated on Approval/Auto"
+    Products ||--o{ PriceHistories : "4. Immutable audit trail"
+    PriceHistories ||--o{ ProductPricingEpisodes : "5. HistoricalIngestion extracts outcome"
+```
+
+> [!IMPORTANT]
+> **Key Architecture to show:**
+> 1. **Dual Operating Modes:**
+>    * **Assisted Mode:** Recommendations stay `Pending` until the Store Owner clicks "Approve" (with merchant override authority).
+>    * **Autonomous Mode:** Recommendations auto-execute in the background under the **Price Floor Shield** (`DynamicAi`, `Fixed30%`, `Fixed50%`).
+> 2. **Deduplication:** When a new pricing cycle runs, older unreviewed recommendations are automatically superseded (`Status = Rejected`), keeping the merchant UI clean.
+> 3. **RAG & Feedback Loop:** `ProductPricingEpisodes` tracks real-world outcomes (`UnitsSold`, `RevenueEarned`, `WasteAvertedPercentage`) to train future pricing agents.
 
 ---
 
-### 2.5 🤖 AI Engine & Intelligence Subsystem
-* **`AiRiskAssessments`**: Automated shelf-life risk classification generated by `MonitoringScannerHostedService`. Flags high-risk products and stages them for pricing or donation routing.
-* **`AiPricingRecommendations`**: AI markdown proposals produced by Python FastAPI LangGraph microservice. In **Assisted Mode**, stores owner has manual override authority; in **Autonomous Mode**, auto-executes under the platform price floor shield.
-* **`ProductPricingEpisodes`**: Closed-loop reinforcement learning and RAG dataset. Tracks market response (units sold, revenue recovered, waste averted percentage) for completed product sales.
+### 💳 Focus C: Payments, Webhook Idempotency & Wallet Ledger (Scene 5)
+
+Shows financial security, Paymob Accept v4 integration, and in-app wallet balance tracking.
+
+```mermaid
+erDiagram
+    Users ||--o{ Orders : "initiates"
+    Orders ||--o{ Payments : "Paymob Card / Kiosk"
+    Users ||--o{ WalletTransactions : "Internal Wallet Ledger"
+    Users {
+        decimal WalletBalance "Cached current balance"
+    }
+    Payments {
+        string TransactionId "Unique Index (Prevents double webhook credits)"
+    }
+```
+
+> [!NOTE]
+> **Key Architecture to show:**
+> 1. **2-Layer Idempotency:** Paymob webhooks validate HMAC SHA-256 signatures and enforce a database **Unique Index** on `Payments.TransactionId`.
+> 2. **Atomic Ledger:** Every wallet payment or refund writes an immutable `WalletTransaction` row and updates `Users.WalletBalance` within an EF Core execution transaction.
 
 ---
 
-### 2.6 💬 Customer Support, Engagement & Administration
-* **`Favorites`**: User bookmarking for favorite local stores.
-* **`Reviews`**: 1-to-5 star store and order reviews with merchant reply capabilities.
-* **`Notifications`**: Real-time hybrid notifications delivered via SignalR and Firebase Cloud Messaging.
-* **`SupportTickets` & `TicketMessages`**: Customer support ticketing and conversational threads.
-* **`ProductReports`**: User-flagged listing reports for food safety moderation.
-* **`SystemSettings`**: Global singleton configuration governing platform commission, AI floor defaults, and rate limits.
-* **`AdminNotes` & `AuditLogs`**: Platform governance and forensic activity tracking.
+## 🎙️ 3. Table-by-Table Video Script & Screen Talking Points
+
+Use these exact bilingual speaking points when presenting each table on screen:
+
+### 1. 👤 `Users` (`ApplicationUser`)
+* **🎯 Columns on Screen:** `Id`, `FullName`, `Email`, `WalletBalance`, `Status`, `Language`.
+* **🎙️ English Script:**
+  > *"The `Users` table extends ASP.NET Core Identity with custom business domain fields. Notice the `WalletBalance` for instant internal checkout and refunds, and `Language` for bilingual English and Arabic localization across all notifications."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `Users` بيعمل Extension لـ ASP.NET Core Identity مع إضافة حقول الـ Domain الخاصة بينا، زي الـ `WalletBalance` للمحفظة الداخلية وعمليات الـ Refund الفورية، والـ `Language` لدعم تعدد اللغات عربي وإنجليزي."*
 
 ---
 
-## 3. 🔒 Foreign Key Constraints, Indexes & Invariants
+### 2. 🏪 `Organizations` (Stores & Charities)
+* **🎯 Columns on Screen:** `Id`, `OwnerId`, `AiOperatingMode`, `AiPriceFloorPolicy`, `CommissionBalance`, `Type`.
+* **🎙️ English Script:**
+  > *"The `Organizations` table manages multi-tenancy for both commercial stores and charity partners. Key architectural columns here are `AiOperatingMode`—allowing stores to run in Manual, Assisted, or Autonomous mode—and `AiPriceFloorPolicy`, which defines the safety price floor for AI price adjustments."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `Organizations` هو المسؤول عن الـ Multi-Tenancy للمتاجر والجمعيات الخيرية. أهم الحقول هنا هي `AiOperatingMode` اللي بيحدد وضع الـ AI (يدوي، أو مساعد بموافقة التاجر، أو ذاتي)، والـ `AiPriceFloorPolicy` لحماية أرباح التاجر من تخفيض الأسعار بأقل من الحد المسموح."*
 
-| Table | Index / Constraint | Purpose / Rule |
-| :--- | :--- | :--- |
-| **`Orders`** | `IX_Orders_OrderNumber` (Unique) | Guarantees unique human-readable order reference numbers (e.g. `ORD-2026-XXXX`). |
-| **`Payments`** | `IX_Payments_TransactionId` (Unique) | Prevents double-processing of payment gateway webhooks. |
-| **`AiPricingRecommendations`** | `IX_AiPricingRecommendations_RiskAssessmentId` (Unique) | 1-to-1 relationship between an AI risk assessment and its pricing recommendation. |
-| **`ProductPricingEpisodes`** | `IX_ProductPricingEpisodes_ProductId_EventId` (Unique) | Prevents duplicate episode ingestion into the AI RAG vector/learning store. |
-| **`Donations`** | `FK_DonorOrganization` & `FK_RecipientOrganization` (`OnDelete: Restrict`) | Prevents cascade conflicts on dual organization foreign keys. |
-| **`BaseEntity` & `ISoftDelete`** | Global Query Filters (`!p.IsDeleted`) | Physical deletes are converted into soft-deletes (`IsDeleted = true`, `DeletedAt = UtcNow`). |
-| **All Decimal Properties** | `HasPrecision(18, 2)` | Ensures currency and financial calculations are free from floating-point inaccuracies. |
+---
+
+### 3. 📦 `Products`
+* **🎯 Columns on Screen:** `OriginalPrice`, `DiscountedPrice`, `QuantityAvailable`, `ExpirationDate`, `IsDeleted`.
+* **🎙️ English Script:**
+  > *"The `Products` table represents inventory items. It tracks `OriginalPrice` vs dynamic `DiscountedPrice`, available stock, and the `ExpirationDate`. It implements soft-deletion via EF Core Global Query Filters (`IsDeleted`), ensuring historical orders are never corrupted if a merchant removes an item."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `Products` بيمثل المخزون. بيسجل السعر الأصلي والسعر المخفض والـ `ExpirationDate` لتتبع تاريخ الصلاحية. الجدول بيطبق الـ Soft Delete عبر EF Core Query Filters علشان نضمن سلامة سجلات المبيعات القديمة لو التاجر مسح المنتج."*
+
+---
+
+### 4. 🛒 `Orders`
+* **🎯 Columns on Screen:** `OrderNumber`, `TotalAmount`, `FinalAmount`, `Status`, `PaymentStatus`, `PickupCode`.
+* **🎙️ English Script:**
+  > *"The `Orders` table manages the purchase lifecycle. It features a unique indexed `OrderNumber` for human tracking, financial totals with exact decimal precision, and a secure `PickupCode` PIN/QR payload used by merchants to verify customers at the store counter."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `Orders` بيدير دورة حياة الطلب من الدفع حتى الاستلام. بيحتوي على `OrderNumber` برقم فريد مميز، وتفاصيل الحساب بدقة `Decimal(18,2)`، و`PickupCode` بيظهر كـ PIN و QR Code التاجر بيعمل له Scan وقت استلام العميل للطلب."*
+
+---
+
+### 5. 🧾 `OrderItems`
+* **🎯 Columns on Screen:** `OrderId`, `ProductId`, `UnitPrice`, `Quantity`, `TotalPrice`.
+* **🎙️ English Script:**
+  > *"The `OrderItems` table snapshots the exact `UnitPrice` and `Quantity` at the moment of checkout. This price isolation ensures that future price mutations or AI markdowns on the catalog never alter past order receipts."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `OrderItems` بيعمل Snapshot لسعر المنتج والكمية لحظة الشراء بالظبط. الـ Isolation ده مهم جداً علشان لو سعر المنتج اتغير أو نزل عليه تخفيض بالـ AI مستقبلاً، الفاتورة القديمة تفضل سليمة وماتتأثرش."*
+
+---
+
+### 6. 💳 `Payments`
+* **🎯 Columns on Screen:** `TransactionId`, `Provider`, `Amount`, `PaymentStatus`.
+* **🎙️ English Script:**
+  > *"The `Payments` table records external gateway settlements, integrating Paymob Accept v4 alongside in-app wallet payments. Notice the Unique Index on `TransactionId`, which provides strict idempotency and prevents double-processing of payment gateway webhooks."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `Payments` بيسجل المعاملات المالية مع بوابة Paymob والمحفظة. العمود المهم جداً هنا هو `TransactionId` وعليه Unique Index عشان يضمن الـ Idempotency ويمنع تكرار معالجة الـ Webhooks لو البوابة بعتت الإشعار مرتين."*
+
+---
+
+### 7. 💰 `WalletTransactions`
+* **🎯 Columns on Screen:** `UserId`, `Amount`, `Type`, `Description`, `ReferenceId`.
+* **🎙️ English Script:**
+  > *"The `WalletTransactions` table is our immutable double-entry ledger. Every wallet top-up, order payment, or refund writes an append-only row and updates the user's cached `WalletBalance` inside an atomic database transaction."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `WalletTransactions` هو دفتر الأستاذ (Ledger) للمحفظة. أي عملية شحن، دفع طلب، أو استرجاع (Refund) بتتسجل كعملية غير قابلة للتعديل وبتحدث رصيد المستخدم داخل Atomic Transaction."*
+
+---
+
+### 8. 🔍 `AiRiskAssessments`
+* **🎯 Columns on Screen:** `ProductId`, `RiskLevel`, `Route`, `Confidence`, `CorrelationId`.
+* **🎙️ English Script:**
+  > *"The `AiRiskAssessments` table is generated by our background `MonitoringScannerHostedService`. It classifies expiring inventory by risk level (Low, Medium, High, Critical) and routes candidates for pricing markdowns or charity donation."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `AiRiskAssessments` بيتم توليده عبر الـ Background Worker `MonitoringScanner`. بيفحص المنتجات القريبة من الانتهاء ويحدد درجة الخطورة ومسار المنتج (تخفيض سعر أو تبرع لجمعية خيرية)."*
+
+---
+
+### 9. 🤖 `AiPricingRecommendations`
+* **🎯 Columns on Screen:** `DiscountPercentage`, `Reason`, `Status`, `ActionReason`, `RiskAssessmentId`.
+* **🎙️ English Script:**
+  > *"The `AiPricingRecommendations` table holds AI-generated markdown proposals from our Python LangGraph microservice. In Assisted Mode, the store owner has manual override authority to approve recommendations; in Autonomous Mode, recommendations execute automatically under the platform's price floor shield. Older unreviewed cycles are automatically superseded to prevent UI duplication."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `AiPricingRecommendations` بيحفظ مقترحات تخفيض الأسعار القادمة من الـ AI Microservice. في وضع الـ Assisted التاجر له كامل الصلاحية لقبول التوصية، وفي وضع الـ Autonomous بتتنفذ تلقائياً تحت حماية الـ Price Floor. كما بيتم عمل Supersede للتوصيات القديمة تلقائياً لمنع التكرار في الواجهة."*
+
+---
+
+### 10. 📈 `PriceHistories`
+* **🎯 Columns on Screen:** `OldDiscountedPrice`, `NewDiscountedPrice`, `ChangeReason`, `ChangedBy`.
+* **🎙️ English Script:**
+  > *"The `PriceHistories` table is an immutable audit log of every price change in the system. Notice that AI automated adjustments stamp `ChangedBy = Guid.Empty`, while merchant manual actions stamp the user's ID alongside the AI correlation trace."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `PriceHistories` هو سجل تدقيق غير قابل للتعديل لكل تغيير في الأسعار. التعديلات الآلية للـ AI بتتسجل بـ `ChangedBy = Guid.Empty`، بينما التعديل اليدوي للتاجر بيسجل الـ UserId ورقم التتبع `CorrelationId`."*
+
+---
+
+### 11. 🧠 `ProductPricingEpisodes` (RAG & Feedback Loop)
+* **🎯 Columns on Screen:** `Outcome`, `UnitsSold`, `RevenueEarned`, `WasteAvertedPercentage`, `IngestedAt`.
+* **🎙️ English Script:**
+  > *"The `ProductPricingEpisodes` table closes the reinforcement learning loop. Our `HistoricalIngestionHostedService` tracks real-world sales outcomes—measuring units sold, revenue recovered, and waste averted percentage—and ingests these episodes into the AI vector store for RAG."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `ProductPricingEpisodes` بيقفل دائرة التعلم للـ AI (Feedback Loop). الـ Background Service بتسجل نتائج المبيعات الفعلية (الوحدات المباعة، الإيرادات، ونسبة إنقاذ الطعام من الهدر) وبترسلها للـ AI RAG للتعلم من التجارب السابقة."*
+
+---
+
+### 12. 🔔 `Notifications`
+* **🎯 Columns on Screen:** `UserId`, `Title`, `Body`, `Type`, `IsRead`.
+* **🎙️ English Script:**
+  > *"The `Notifications` table powers our hybrid communication layer, persisting push alerts sent via SignalR WebSockets for active browser users and Firebase Cloud Messaging (FCM) for mobile devices."*
+* **🎙️ Arabic Script:**
+  > *"جدول الـ `Notifications` مسؤول عن الإشعارات الفورية، وبيحفظ الإشعارات المرسلة عبر SignalR WebSockets للمتصفح المفتوح و Firebase Cloud Messaging (FCM) للموبايل."*
+
+---
+
+## 📊 4. Summary Table Matrix
+
+| Entity / Table | Core Responsibility | Key Fields to Mention | Presentation Highlights |
+| :--- | :--- | :--- | :--- |
+| **`Users`** | Identity & Profiles | `WalletBalance`, `Language`, `Status` | Extends ASP.NET Identity with in-app wallet & bilingual localization. |
+| **`Organizations`** | Multi-Tenant Businesses | `AiOperatingMode`, `AiPriceFloorPolicy` | Stores AI automation level (Assisted vs Autonomous) and safety floor rules. |
+| **`Products`** | Inventory & Expiration | `OriginalPrice`, `DiscountedPrice`, `ExpirationDate` | Tracks real-time shelf life; protected by soft-delete filters. |
+| **`Orders`** | Purchase Lifecycle | `OrderNumber`, `FinalAmount`, `PickupCode` | Unique human-readable IDs (`ORD-XXXX`) & QR pickup verification. |
+| **`Payments`** | Financial Settlement | `TransactionId`, `Provider`, `PaymentStatus` | Paymob Accept v4 integration with HMAC SHA-256 idempotency. |
+| **`WalletTransactions`** | In-App Wallet Ledger | `Amount`, `Type (Credit/Debit)`, `ReferenceId` | Financial audit ledger backing instant in-app checkouts and refunds. |
+| **`AiRiskAssessments`** | Shelf-Life Analysis | `RiskLevel`, `Route`, `Confidence` | Automated background classification of expiring food items. |
+| **`AiPricingRecommendations`**| Dynamic Markdowns | `DiscountPercentage`, `Status`, `Reason` | AI pricing engine proposals (max 15% markdown per cycle). |
+| **`PriceHistories`** | Price Audit Trail | `OldDiscountedPrice`, `NewDiscountedPrice`, `ChangedBy` | Immutable audit log of all pricing mutations (stamped `Guid.Empty` for AI). |
+| **`ProductPricingEpisodes`** | AI Reinforcement & RAG | `Outcome`, `UnitsSold`, `WasteAvertedPercentage` | Closed-loop episodic training data for LangGraph agents. |
+| **`Notifications`** | Real-Time Push Alerts | `Title`, `Type`, `IsRead` | SignalR WebSockets + Firebase Cloud Messaging (FCM) inbox. |

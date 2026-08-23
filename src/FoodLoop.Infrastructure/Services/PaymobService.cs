@@ -126,6 +126,62 @@ public class PaymobService : IPaymentService
         return CryptographicOperations.FixedTimeEquals(calculatedBytes, receivedBytes);
     }
 
+    public async Task<PaymobTransactionDetailsDto?> GetTransactionDetailsAsync(string transactionId, CancellationToken cancellationToken = default)
+    {
+        var apiKey = _options.ApiKey?.Trim();
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrWhiteSpace(transactionId))
+        {
+            return null;
+        }
+
+        try
+        {
+            var baseUrl = NormalizeBaseUrl(_options.BaseUrl);
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/acceptance/transactions/{transactionId}");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", apiKey);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            var json = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
+            var isSuccess = json.TryGetProperty("success", out var s) && (s.ValueKind == JsonValueKind.True || (s.ValueKind == JsonValueKind.String && s.GetString() == "true"));
+            var amountCents = json.TryGetProperty("amount_cents", out var ac) && ac.TryGetInt64(out var cents) ? cents : 0;
+
+            string? specialRef = null;
+            if (json.TryGetProperty("order", out var ord) && ord.ValueKind == JsonValueKind.Object)
+            {
+                if (ord.TryGetProperty("special_reference", out var sr) && sr.ValueKind == JsonValueKind.String)
+                {
+                    specialRef = sr.GetString();
+                }
+                if (string.IsNullOrEmpty(specialRef) && ord.TryGetProperty("merchant_order_id", out var mo) && mo.ValueKind == JsonValueKind.String)
+                {
+                    specialRef = mo.GetString();
+                }
+            }
+
+            if (string.IsNullOrEmpty(specialRef) && json.TryGetProperty("special_reference", out var rootSr) && rootSr.ValueKind == JsonValueKind.String)
+            {
+                specialRef = rootSr.GetString();
+            }
+
+            return new PaymobTransactionDetailsDto
+            {
+                TransactionId = transactionId,
+                IsSuccess = isSuccess,
+                AmountCents = amountCents,
+                SpecialReference = specialRef
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static string NormalizeBaseUrl(string? baseUrl)
     {
         var normalized = (baseUrl ?? "https://accept.paymob.com").Trim();
