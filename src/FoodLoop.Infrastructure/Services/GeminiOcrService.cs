@@ -67,14 +67,14 @@ public class GeminiOcrService : IOcrService
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            _logger.LogWarning("Gemini:ApiKey is not configured in appsettings.json or GEMINI_API_KEY env. Returning fallback scan.");
+            _logger.LogWarning("Gemini:ApiKey is not configured in appsettings.json or GEMINI_API_KEY env. Returning empty scan result with 0.0 confidence.");
             return new OcrAnalysisResult(
-                DetectedProduct: "Grocery Product Item",
-                ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
-                ConfidenceScore: 0.85,
-                ExtractedText: "AI Vision analysis placeholder. Configure GEMINI_API_KEY in .env to enable live Google Gemini Vision.",
-                SuggestedDescription: "Food and grocery product item.",
-                SuggestedCategory: "Canned & Pantry",
+                DetectedProduct: string.Empty,
+                ExpirationDate: null,
+                ConfidenceScore: 0.0,
+                ExtractedText: "AI Vision API key is not configured. Please enter product details manually.",
+                SuggestedDescription: null,
+                SuggestedCategory: null,
                 PackageSize: null);
         }
 
@@ -213,19 +213,19 @@ Return ONLY a JSON object matching this schema:
 
             _logger.LogError("All Gemini candidate endpoints failed. Last Status: {StatusCode}, Error: {ErrorBody}", lastResponse?.StatusCode, lastErrorBody);
             return new OcrAnalysisResult(
-                DetectedProduct: "Grocery Product Item",
-                ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
-                ConfidenceScore: 0.75,
-                ExtractedText: $"Gemini API Error ({lastResponse?.StatusCode}): {lastErrorBody}");
+                DetectedProduct: string.Empty,
+                ExpirationDate: null,
+                ConfidenceScore: 0.0,
+                ExtractedText: "Could not recognize product details from this image. Please enter details manually.");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Exception occurred while calling Google Gemini Vision OCR API.");
             return new OcrAnalysisResult(
-                DetectedProduct: "Grocery Product Item",
-                ExpirationDate: DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
-                ConfidenceScore: 0.70,
-                ExtractedText: $"OCR Exception: {ex.Message}");
+                DetectedProduct: string.Empty,
+                ExpirationDate: null,
+                ConfidenceScore: 0.0,
+                ExtractedText: "Could not process image. Please enter product details manually.");
         }
     }
 }
