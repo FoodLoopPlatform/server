@@ -57,12 +57,19 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
         var state = command.ExpiryVerificationState ?? ExpiryVerificationState.Manual;
         
-        // FAIL-CLOSED DEFAULT: While the AI service integration is paused, we ignore client-supplied
-        // ExpiryVerificationState for status determination and force ProductStatus.PendingModeration
-        // to prevent client-side bypass of the moderation queue. The client-supplied state is still
-        // retained in the entity for later AI reconciliation.
-        // TODO: Revert to trusting AI-derived confidence once the AI service is restored.
-        var status = ProductStatus.PendingModeration;
+        // Auto-derive verification state if OCR confidence score is provided
+        if (command.OcrConfidence.HasValue)
+        {
+            state = command.OcrConfidence.Value >= 0.80
+                ? ExpiryVerificationState.AiVerified
+                : ExpiryVerificationState.AiLowConfidence;
+        }
+
+        // High confidence AI verified products go live immediately (Active);
+        // Low confidence scans or manual entries require admin moderation (PendingModeration)
+        var status = state == ExpiryVerificationState.AiVerified
+            ? ProductStatus.Active
+            : ProductStatus.PendingModeration;
 
         var product = new Product
         {
