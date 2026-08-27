@@ -493,20 +493,20 @@ public class NotificationInboxIntegrationTests : IDisposable
             DiscountedPrice: 2.0m,
             QuantityAvailable: 1,
             ExpirationDate: DateOnly.FromDateTime(DateTime.Today.AddDays(2)),
-            ExpiryVerificationState: ExpiryVerificationState.AiVerified // Client attempts to bypass
+            ExpiryVerificationState: ExpiryVerificationState.AiLowConfidence
         );
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        // 1. Verify status is forced to PendingModeration
+        // 1. Verify status is PendingModeration due to low confidence
         var dbProduct = await db.Products.FindAsync(result.Id);
         dbProduct.Should().NotBeNull();
         dbProduct!.Status.Should().Be(ProductStatus.PendingModeration);
-        dbProduct.ExpiryVerificationState.Should().Be(ExpiryVerificationState.AiVerified); // client-supplied state retained
+        dbProduct.ExpiryVerificationState.Should().Be(ExpiryVerificationState.AiLowConfidence);
 
-        // 2. Verify admin notification was still sent
+        // 2. Verify admin notification was sent
         mockNotification.Verify(
             n => n.SendNotificationToRoleAsync(
                 "Admin",
